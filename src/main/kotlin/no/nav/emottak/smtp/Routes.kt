@@ -27,23 +27,23 @@ import java.time.Instant
 import kotlin.time.toKotlinDuration
 
 fun Route.mailCheck(): Route = get("/mail/check") {
-    val report = mutableMapOf<String, String>()
-    incomingStore.getFolder("INBOX").use {
-        it.open(Folder.READ_ONLY)
-        report["incomingStore Inbox"] = it.messageCount.toString()
-    }
-
-    bccStore.getFolder("INBOX").use {
-        it.open(Folder.READ_ONLY)
-        report["bccStore Inbox"] = it.messageCount.toString()
-    }
-
-    bccStore.getFolder("testdata").use {
-        it.open(Folder.READ_ONLY)
-        report["bccStore testdata"] = it.messageCount.toString()
-    }
+    val report = mapOf(
+        "incomingStore Inbox" to incomingStore.getFolder("INBOX").getMessageCountAsString(),
+        "bccStore Inbox" to bccStore.getFolder("INBOX").getMessageCountAsString(),
+        "bccStore testdata" to bccStore.getFolder("testdata").getMessageCountAsString()
+    )
     call.respond(HttpStatusCode.OK, report)
 }
+
+fun Folder.getMessageCountAsString(): String =
+    if (this.exists()) {
+        this.use {
+            it.open(Folder.READ_ONLY)
+            it.messageCount.toString()
+        }
+    } else {
+        "Folder does not exist"
+    }
 
 fun Route.mailRead(): Route = get("/mail/read") {
     val httpClient = HttpClient(CIO)
