@@ -14,9 +14,13 @@ data class Part(val headers: Map<String, String>, val bytes: ByteArray)
 
 class MailReader(private val store: Store, val expunge: Boolean = true) : AutoCloseable {
 
-    val inbox: Folder = store.getFolder("INBOX")
+    private val inbox: Folder
 
     init {
+        if (!store.isConnected) {
+            store.connect()
+        }
+        inbox = store.getFolder("INBOX")
         inbox.open(Folder.READ_WRITE)
     }
 

@@ -27,6 +27,8 @@ import java.time.Instant
 import kotlin.time.toKotlinDuration
 
 fun Route.mailCheck(): Route = get("/mail/check") {
+    if (!incomingStore.isConnected) incomingStore.connect()
+    if (!bccStore.isConnected) bccStore.connect()
     val report = mapOf(
         "incomingStore Inbox" to incomingStore.getFolder("INBOX").getMessageCountAsString(),
         "bccStore Inbox" to bccStore.getFolder("INBOX").getMessageCountAsString(),
@@ -50,7 +52,7 @@ fun Route.mailRead(): Route = get("/mail/read") {
     call.respond(HttpStatusCode.OK, "Meldingslesing startet ...")
     var messageCount = 0
     val timeStart = Instant.now()
-    val dryRun = getEnvVar("DRY_RUN", "false")
+    val dryRun = (call.request.queryParameters["dryrun"] ?: getEnvVar("DRY_RUN", "false")).toBoolean()
     runCatching {
         MailReader(incomingStore, false).use {
             messageCount = it.count()
@@ -63,8 +65,7 @@ fun Route.mailRead(): Route = get("/mail/read") {
                     asyncJobList.add(
                         async(Dispatchers.IO) {
                             runCatching {
-                                // withContext(Dispatchers.IO) {
-                                if (dryRun != "true") {
+                                if (!dryRun) {
                                     if (message.parts.size == 1 && message.parts.first().headers.isEmpty()) {
                                         httpClient.postEbmsMessageSinglePart(message)
                                     } else {
@@ -99,7 +100,7 @@ fun Route.mailRead(): Route = get("/mail/read") {
         log.error(it.message, it)
         call.respond(it.localizedMessage)
     }
-    logBccMessages()
+//    logBccMessages()
 }
 
 fun Route.logOutgoing(): Route = get("/mail/log/outgoing") {
@@ -193,15 +194,9 @@ fun Folder.deleteAll() {
     }
 }
 
-var BUG_ENCOUNTERED_CPA_REPO_TIMEOUT = false
-
 fun Routing.registerHealthEndpoints() {
     get("/internal/health/liveness") {
-        if (BUG_ENCOUNTERED_CPA_REPO_TIMEOUT) { // TODO : årsak ukjent, cpa-repo/timestamps endepunkt timer ut etter en stund
-            call.respond(HttpStatusCode.ServiceUnavailable, "Restart me X_X")
-        } else {
-            call.respondText("I'm alive! :)")
-        }
+        call.respondText("I'm alive! :)")
     }
     get("/internal/health/readiness") {
         call.respondText("I'm ready! :)")
