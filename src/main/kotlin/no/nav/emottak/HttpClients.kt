@@ -20,7 +20,7 @@ import no.nav.emottak.smtp.log
 
 // val URL_EBMS_PROVIDER_BASE = getEnvVar("URL_EBMS_PROVIDER", "http://ebms-provider.team-emottak.svc.nais.local")
 val URL_EBMS_PROVIDER_BASE = getEnvVar("URL_EBMS_PROVIDER", "http://ebms-provider")
-val URL_EBMS_PROVIDER_POST = "$URL_EBMS_PROVIDER_BASE/ebms"
+val URL_EBMS_PROVIDER_POST = "$URL_EBMS_PROVIDER_BASE/ebms/async"
 
 suspend fun HttpClient.postEbmsMessageSinglePart(message: EmailMsg) = this.post(URL_EBMS_PROVIDER_POST) {
     headers(
