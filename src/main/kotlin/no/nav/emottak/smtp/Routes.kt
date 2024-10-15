@@ -9,6 +9,7 @@ import io.ktor.server.response.respondText
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.Routing
 import io.ktor.server.routing.get
+import io.micrometer.prometheus.PrometheusMeterRegistry
 import jakarta.mail.Flags
 import jakarta.mail.Folder
 import jakarta.mail.Folder.HOLDS_MESSAGES
@@ -194,11 +195,14 @@ fun Folder.deleteAll() {
     }
 }
 
-fun Routing.registerHealthEndpoints() {
+fun Routing.registerHealthEndpoints(collectorRegistry: PrometheusMeterRegistry) {
     get("/internal/health/liveness") {
         call.respondText("I'm alive! :)")
     }
     get("/internal/health/readiness") {
         call.respondText("I'm ready! :)")
+    }
+    get("/prometheus") {
+        call.respond(collectorRegistry.scrape())
     }
 }
