@@ -14,9 +14,7 @@ import io.micrometer.prometheus.PrometheusMeterRegistry
 import org.slf4j.LoggerFactory
 
 fun main() {
-    // if (getEnvVar("NAIS_CLUSTER_NAME", "local") != "prod-fss") {
     DecoroutinatorRuntime.load()
-    // }
     embeddedServer(Netty, port = 8080, module = Application::myApplicationModule).start(wait = true)
 }
 
@@ -31,11 +29,7 @@ fun Application.myApplicationModule() {
         registry = appMicrometerRegistry
     }
     routing {
-        if (getEnvVar("NAIS_CLUSTER_NAME") != "prod-fss") {
-            mailCheck()
-            mailRead()
-            logOutgoing()
-        }
+        mailRead()
         registerHealthEndpoints(appMicrometerRegistry)
     }
 }

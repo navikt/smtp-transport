@@ -11,30 +11,39 @@ import io.ktor.http.Headers
 import io.ktor.http.HeadersBuilder
 import io.ktor.http.content.PartData
 import io.ktor.util.CaseInsensitiveMap
-import jakarta.mail.internet.MimeUtility
+import jakarta.mail.internet.MimeUtility.unfold
 import no.nav.emottak.smtp.EmailMsg
-import no.nav.emottak.smtp.MimeHeaders
-import no.nav.emottak.smtp.SMTPHeaders
+import no.nav.emottak.smtp.MimeHeaders.CONTENT_DESCRIPTION
+import no.nav.emottak.smtp.MimeHeaders.CONTENT_DISPOSITION
+import no.nav.emottak.smtp.MimeHeaders.CONTENT_ID
+import no.nav.emottak.smtp.MimeHeaders.CONTENT_TRANSFER_ENCODING
+import no.nav.emottak.smtp.MimeHeaders.CONTENT_TYPE
+import no.nav.emottak.smtp.MimeHeaders.MIME_VERSION
+import no.nav.emottak.smtp.MimeHeaders.SOAP_ACTION
+import no.nav.emottak.smtp.SMTPHeaders.DATE
+import no.nav.emottak.smtp.SMTPHeaders.FROM
+import no.nav.emottak.smtp.SMTPHeaders.MESSAGE_ID
+import no.nav.emottak.smtp.SMTPHeaders.TO
+import no.nav.emottak.smtp.SMTPHeaders.X_MAILER
 import no.nav.emottak.smtp.getEnvVar
 import no.nav.emottak.smtp.log
 
-// val URL_EBMS_PROVIDER_BASE = getEnvVar("URL_EBMS_PROVIDER", "http://ebms-provider.team-emottak.svc.nais.local")
 val URL_EBMS_PROVIDER_BASE = getEnvVar("URL_EBMS_PROVIDER", "http://ebms-provider")
 val URL_EBMS_PROVIDER_POST = "$URL_EBMS_PROVIDER_BASE/ebms/async"
 
-suspend fun HttpClient.postEbmsMessageSinglePart(message: EmailMsg) = this.post(URL_EBMS_PROVIDER_POST) {
+suspend fun HttpClient.postEbmsMessageSinglePart(message: EmailMsg) = post(URL_EBMS_PROVIDER_POST) {
     headers(
         message.headers.filterHeader(
-            MimeHeaders.MIME_VERSION,
-            MimeHeaders.CONTENT_ID,
-            MimeHeaders.SOAP_ACTION,
-            MimeHeaders.CONTENT_TYPE,
-            MimeHeaders.CONTENT_TRANSFER_ENCODING,
-            SMTPHeaders.FROM,
-            SMTPHeaders.TO,
-            SMTPHeaders.MESSAGE_ID,
-            SMTPHeaders.DATE,
-            SMTPHeaders.X_MAILER
+            MIME_VERSION,
+            CONTENT_ID,
+            SOAP_ACTION,
+            CONTENT_TYPE,
+            CONTENT_TRANSFER_ENCODING,
+            FROM,
+            TO,
+            MESSAGE_ID,
+            DATE,
+            X_MAILER
         )
     )
     setBody(
@@ -49,31 +58,31 @@ suspend fun HttpClient.postEbmsMessageMultiPart(message: EmailMsg): HttpResponse
             {},
             Headers.build(
                 part.headers.filterHeader(
-                    MimeHeaders.CONTENT_ID,
-                    MimeHeaders.CONTENT_TYPE,
-                    MimeHeaders.CONTENT_TRANSFER_ENCODING,
-                    MimeHeaders.CONTENT_DISPOSITION,
-                    MimeHeaders.CONTENT_DESCRIPTION
+                    CONTENT_ID,
+                    CONTENT_TYPE,
+                    CONTENT_TRANSFER_ENCODING,
+                    CONTENT_DISPOSITION,
+                    CONTENT_DESCRIPTION
                 )
             )
         )
     }
-    val contentType = message.headers[MimeHeaders.CONTENT_TYPE]!!
+    val contentType = message.headers[CONTENT_TYPE]!!
     val boundary = ContentType.parse(contentType).parameter("boundary")
 
-    return this.post(URL_EBMS_PROVIDER_POST) {
+    return post(URL_EBMS_PROVIDER_POST) {
         headers(
             message.headers.filterHeader(
-                MimeHeaders.MIME_VERSION,
-                MimeHeaders.CONTENT_ID,
-                MimeHeaders.SOAP_ACTION,
-                MimeHeaders.CONTENT_TYPE,
-                MimeHeaders.CONTENT_TRANSFER_ENCODING,
-                SMTPHeaders.FROM,
-                SMTPHeaders.TO,
-                SMTPHeaders.MESSAGE_ID,
-                SMTPHeaders.DATE,
-                SMTPHeaders.X_MAILER
+                MIME_VERSION,
+                CONTENT_ID,
+                SOAP_ACTION,
+                CONTENT_TYPE,
+                CONTENT_TRANSFER_ENCODING,
+                FROM,
+                TO,
+                MESSAGE_ID,
+                DATE,
+                X_MAILER
             )
         )
         setBody(
@@ -87,34 +96,28 @@ suspend fun HttpClient.postEbmsMessageMultiPart(message: EmailMsg): HttpResponse
 }
 
 fun Map<String, String>.filterHeader(vararg headerNames: String): HeadersBuilder.() -> Unit = {
-    val caseInsensitiveMap = CaseInsensitiveMap<String>().apply {
-        putAll(this@filterHeader)
-    }
-    headerNames.map {
-        Pair(it, caseInsensitiveMap[it])
-    }.forEach {
-        if (it.second != null) {
-            val headerValue = MimeUtility.unfold(it.second!!.replace("\t", " "))
-            append(it.first, headerValue)
+    val caseInsensitiveMap = CaseInsensitiveMap<String>().apply { putAll(this@filterHeader) }
+    headerNames.map { Pair(it, caseInsensitiveMap[it]) }
+        .forEach {
+            if (it.second != null) {
+                val headerValue = unfold(it.second!!.replace("\t", " "))
+                append(it.first, headerValue)
+            }
         }
-    }
-
-    appendMessageIdAsContentIdIfContentIdIsMissingOnTextXMLContentTypes(caseInsensitiveMap)
+    appendMessageIdWhenContentIdMissing(caseInsensitiveMap)
 }
 
-private fun HeadersBuilder.appendMessageIdAsContentIdIfContentIdIsMissingOnTextXMLContentTypes(
-    caseInsensitiveMap: CaseInsensitiveMap<String>
-) {
-    if (MimeUtility.unfold(caseInsensitiveMap[MimeHeaders.CONTENT_TYPE])?.contains("text/xml") == true) {
-        if (caseInsensitiveMap[MimeHeaders.CONTENT_ID] != null) {
+private fun HeadersBuilder.appendMessageIdWhenContentIdMissing(caseInsensitiveMap: CaseInsensitiveMap<String>) {
+    if (unfold(caseInsensitiveMap[CONTENT_TYPE])?.contains("text/xml") == true) {
+        if (caseInsensitiveMap[CONTENT_ID] != null) {
             log.warn(
-                "Content-Id header allerede satt for text/xml: " + caseInsensitiveMap[MimeHeaders.CONTENT_ID] +
-                    "\nMessage-Id: " + caseInsensitiveMap[SMTPHeaders.MESSAGE_ID]
+                "Content-Id header already set for text/xml: " + caseInsensitiveMap[CONTENT_ID] +
+                    "\nMessage-Id: " + caseInsensitiveMap[MESSAGE_ID]
             )
         } else {
-            val headerValue = MimeUtility.unfold(caseInsensitiveMap[SMTPHeaders.MESSAGE_ID]!!.replace("\t", " "))
-            append(MimeHeaders.CONTENT_ID, headerValue)
-            log.info("Header: <${MimeHeaders.CONTENT_ID}> - <$headerValue>")
+            val headerValue = unfold(caseInsensitiveMap[MESSAGE_ID]!!.replace("\t", " "))
+            append(CONTENT_ID, headerValue)
+            log.info("Header: <$CONTENT_ID> - <$headerValue>")
         }
     }
 }
