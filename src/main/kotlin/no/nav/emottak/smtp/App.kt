@@ -1,6 +1,5 @@
 package no.nav.emottak.smtp
 
-import dev.reformator.stacktracedecoroutinator.runtime.DecoroutinatorRuntime
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
@@ -14,8 +13,12 @@ import io.micrometer.prometheus.PrometheusMeterRegistry
 import org.slf4j.LoggerFactory
 
 fun main() {
-    DecoroutinatorRuntime.load()
-    embeddedServer(Netty, port = 8080, module = Application::myApplicationModule).start(wait = true)
+    embeddedServer(
+        Netty,
+        port = 8080,
+        module = Application::myApplicationModule
+    )
+        .start(wait = true)
 }
 
 internal val log = LoggerFactory.getLogger("no.nav.emottak.smtp")

@@ -8,6 +8,7 @@ plugins {
     id("io.ktor.plugin")
     kotlin("plugin.serialization")
     id("org.jlleitschuh.gradle.ktlint") version "11.6.1"
+    id("dev.reformator.stacktracedecoroutinator") version "2.4.6"
 }
 
 tasks {
@@ -45,7 +46,6 @@ dependencies {
     implementation(libs.ktor.client.auth)
     implementation(libs.ktor.server.auth.jvm)
     implementation(libs.token.validation.ktor.v2)
-    implementation("dev.reformator.stacktracedecoroutinator:stacktrace-decoroutinator-jvm:2.3.8")
     runtimeOnly("net.java.dev.jna:jna:5.12.1")
     testRuntimeOnly(testLibs.junit.jupiter.engine)
     testImplementation(testLibs.mockk.jvm)
