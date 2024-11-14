@@ -32,7 +32,6 @@ fun Route.mailRead(): Route = get("/mail/read") {
     call.respond(OK, "Starting to read messages...")
     var messageCount = 0
     val timeStart = Instant.now()
-    val dryRun = (call.request.queryParameters["dryrun"] ?: getEnvVar("DRY_RUN", "false")).toBoolean()
     runCatching {
         MailReader(incomingStore, false).use {
             messageCount = it.count()
@@ -41,7 +40,7 @@ fun Route.mailRead(): Route = get("/mail/read") {
             var mailCounter = 0
             do {
                 val messages = it.readMail()
-                messages.forEach { message -> postEbmsMessagesAsync(dryRun, asyncJobList, message, httpClient) }
+                messages.forEach { message -> postEbmsMessagesAsync(asyncJobList, message, httpClient) }
                 mailCounter += 1
                 if (mailCounter < (getProperty(IO_PARALLELISM_PROPERTY_NAME) ?: "64").toInt()) {
                     asyncJobList.awaitAll()
@@ -69,7 +68,6 @@ fun Route.mailRead(): Route = get("/mail/read") {
 }
 
 private fun PipelineContext<Unit, ApplicationCall>.postEbmsMessagesAsync(
-    dryRun: Boolean,
     asyncJobList: ArrayList<Deferred<Any>>,
     message: EmailMsg,
     httpClient: HttpClient
@@ -77,12 +75,10 @@ private fun PipelineContext<Unit, ApplicationCall>.postEbmsMessagesAsync(
     asyncJobList.add(
         async(Dispatchers.IO) {
             runCatching {
-                if (!dryRun) {
-                    if (message.parts.size == 1 && message.parts.first().headers.isEmpty()) {
-                        httpClient.postEbmsMessageSinglePart(message)
-                    } else {
-                        httpClient.postEbmsMessageMultiPart(message)
-                    }
+                if (message.parts.size == 1 && message.parts.first().headers.isEmpty()) {
+                    httpClient.postEbmsMessageSinglePart(message)
+                } else {
+                    httpClient.postEbmsMessageMultiPart(message)
                 }
             }
                 .onFailure { log.error(it.message, it) }
