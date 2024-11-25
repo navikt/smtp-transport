@@ -9,9 +9,10 @@ import jakarta.mail.Session
 import jakarta.mail.Store
 import jakarta.mail.internet.MimeMessage
 import jakarta.mail.internet.MimeUtility.unfold
+import no.nav.emottak.config
+import no.nav.emottak.configuration.toProperties
 import no.nav.emottak.smtp.MimeHeaders.CONTENT_TYPE
 import org.junit.jupiter.api.Test
-import java.util.Properties
 import kotlin.test.assertEquals
 
 const val testHeaderValue = """multipart/related;
@@ -23,6 +24,8 @@ private val stream = object {}.javaClass
     .getResourceAsStream("mails/nyebmstest@test-es.nav.no/INBOX/example.eml")
 
 class MessageTest {
+    private val config = config()
+
     @Test
     fun `Verify header`() {
         val headers = Headers.build { append(CONTENT_TYPE, unfold(testHeaderValue)) }
@@ -34,7 +37,7 @@ class MessageTest {
         val session = mockSession()
         val msg = MimeMessage(session, stream)
         val store = mockStore(msg)
-        val reader = MailReader(store)
+        val reader = MailReader(config.mail, store)
         val one = MailReader.mapEmailMsg().invoke(msg)
         val two = reader.readMail().first()
         assertEquals(one.headers, two.headers)
@@ -49,16 +52,7 @@ class MessageTest {
         store.getFolder("INBOX").batchDelete(100)
     }
 
-    private fun mockSession(): Session {
-        val properties = Properties().also { props ->
-            props["mail.pop3.socketFactory.fallback"] = "false"
-            props["mail.pop3.socketFactory.port"] = getEnvVar("SMTP_POP3_FACTORY_PORT", "3110")
-            props["mail.pop3.port"] = getEnvVar("SMTP_POP3_PORT", "3110")
-            props["mail.pop3.host"] = getEnvVar("SMTP_POP3_HOST", "localhost")
-            props["mail.store.protocol"] = getEnvVar("SMTP_STORE_PROTOCOL", "pop3")
-        }
-        return Session.getDefaultInstance(properties)
-    }
+    private fun mockSession() = Session.getDefaultInstance(config.smtp.toProperties())
 
     private fun mockStore(msg: Message): Store {
         val store = mockk<Store>(relaxed = true)

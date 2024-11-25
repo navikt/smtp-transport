@@ -20,27 +20,31 @@ import kotlinx.coroutines.IO_PARALLELISM_PROPERTY_NAME
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import net.logstash.logback.marker.Markers
+import no.nav.emottak.configuration.Config
+import no.nav.emottak.configuration.Ebms
 import no.nav.emottak.postEbmsMessageMultiPart
 import no.nav.emottak.postEbmsMessageSinglePart
+import no.nav.emottak.smtp.StoreFactory.createStore
 import java.lang.System.getProperty
 import java.time.Duration
 import java.time.Instant
 import kotlin.time.toKotlinDuration
 
-fun Route.mailRead(): Route = get("/mail/read") {
-    val httpClient = HttpClient(CIO)
+private val httpClient = HttpClient(CIO)
+
+fun Route.mailRead(config: Config): Route = get("/mail/read") {
     call.respond(OK, "Starting to read messages...")
     var messageCount = 0
     val timeStart = Instant.now()
     runCatching {
-        MailReader(incomingStore, false).use {
+        MailReader(config.mail, createStore(config.smtp), false).use {
             messageCount = it.count()
             log.info("Read ${it.count()} messages from inbox")
             val asyncJobList: ArrayList<Deferred<Any>> = ArrayList()
             var mailCounter = 0
             do {
                 val messages = it.readMail()
-                messages.forEach { message -> postEbmsMessagesAsync(asyncJobList, message, httpClient) }
+                messages.forEach { message -> postEbmsMessagesAsync(config.ebms, asyncJobList, message) }
                 mailCounter += 1
                 if (mailCounter < (getProperty(IO_PARALLELISM_PROPERTY_NAME) ?: "64").toInt()) {
                     asyncJobList.awaitAll()
@@ -68,17 +72,17 @@ fun Route.mailRead(): Route = get("/mail/read") {
 }
 
 private fun PipelineContext<Unit, ApplicationCall>.postEbmsMessagesAsync(
+    ebms: Ebms,
     asyncJobList: ArrayList<Deferred<Any>>,
-    message: EmailMsg,
-    httpClient: HttpClient
+    message: EmailMsg
 ) {
     asyncJobList.add(
         async(Dispatchers.IO) {
             runCatching {
                 if (message.parts.size == 1 && message.parts.first().headers.isEmpty()) {
-                    httpClient.postEbmsMessageSinglePart(message)
+                    httpClient.postEbmsMessageSinglePart(ebms, message)
                 } else {
-                    httpClient.postEbmsMessageMultiPart(message)
+                    httpClient.postEbmsMessageMultiPart(ebms, message)
                 }
             }
                 .onFailure { log.error(it.message, it) }

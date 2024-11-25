@@ -46,6 +46,8 @@ dependencies {
     implementation(libs.ktor.client.auth)
     implementation(libs.ktor.server.auth.jvm)
     implementation(libs.token.validation.ktor.v2)
+    implementation(libs.hoplite.core)
+    implementation(libs.hoplite.hocon)
     runtimeOnly("net.java.dev.jna:jna:5.12.1")
     testRuntimeOnly(testLibs.junit.jupiter.engine)
     testImplementation(testLibs.mockk.jvm)

@@ -10,6 +10,7 @@ import jakarta.mail.internet.MimeMessage
 import jakarta.mail.internet.MimeMultipart
 import net.logstash.logback.marker.LogstashMarker
 import net.logstash.logback.marker.Markers
+import no.nav.emottak.configuration.Mail
 
 data class EmailMsg(
     val headers: Map<String, String>,
@@ -22,6 +23,7 @@ data class Part(
 )
 
 class MailReader(
+    private val mail: Mail,
     private val store: Store,
     private val expunge: Boolean = true
 ) : AutoCloseable {
@@ -71,17 +73,16 @@ class MailReader(
 
     private val takeN = 1
     private var start = 1
-    private val inboxLimit: Int = getEnvVar("INBOX_LIMIT", "2000").toInt()
 
     fun count() = inbox.messageCount
 
-    private fun expunge(): Boolean = (expunge || count() > inboxLimit)
+    private fun expunge(): Boolean = (expunge || count() > mail.inboxLimit)
 
     override fun close() {
         inbox.close(
             expunge().also {
                 if (expunge != it) {
-                    log.warn("Inbox limit [$inboxLimit] exceeded. Expunge forced $it")
+                    log.warn("Inbox limit [${mail.inboxLimit}] exceeded. Expunge forced $it")
                 }
             }
         )

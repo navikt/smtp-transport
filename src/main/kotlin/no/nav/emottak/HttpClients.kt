@@ -12,6 +12,7 @@ import io.ktor.http.HeadersBuilder
 import io.ktor.http.content.PartData
 import io.ktor.util.CaseInsensitiveMap
 import jakarta.mail.internet.MimeUtility.unfold
+import no.nav.emottak.configuration.Ebms
 import no.nav.emottak.smtp.EmailMsg
 import no.nav.emottak.smtp.MimeHeaders.CONTENT_DESCRIPTION
 import no.nav.emottak.smtp.MimeHeaders.CONTENT_DISPOSITION
@@ -25,13 +26,9 @@ import no.nav.emottak.smtp.SMTPHeaders.FROM
 import no.nav.emottak.smtp.SMTPHeaders.MESSAGE_ID
 import no.nav.emottak.smtp.SMTPHeaders.TO
 import no.nav.emottak.smtp.SMTPHeaders.X_MAILER
-import no.nav.emottak.smtp.getEnvVar
 import no.nav.emottak.smtp.log
 
-val URL_EBMS_PROVIDER_BASE = getEnvVar("URL_EBMS_PROVIDER", "http://ebms-provider")
-val URL_EBMS_PROVIDER_POST = "$URL_EBMS_PROVIDER_BASE/ebms/async"
-
-suspend fun HttpClient.postEbmsMessageSinglePart(message: EmailMsg) = post(URL_EBMS_PROVIDER_POST) {
+suspend fun HttpClient.postEbmsMessageSinglePart(ebms: Ebms, message: EmailMsg) = post(ebms.providerUrl) {
     headers(
         message.headers.filterHeader(
             MIME_VERSION,
@@ -51,7 +48,7 @@ suspend fun HttpClient.postEbmsMessageSinglePart(message: EmailMsg) = post(URL_E
     )
 }
 
-suspend fun HttpClient.postEbmsMessageMultiPart(message: EmailMsg): HttpResponse {
+suspend fun HttpClient.postEbmsMessageMultiPart(ebms: Ebms, message: EmailMsg): HttpResponse {
     val partData: List<PartData> = message.parts.map { part ->
         PartData.FormItem(
             String(part.bytes),
@@ -70,7 +67,7 @@ suspend fun HttpClient.postEbmsMessageMultiPart(message: EmailMsg): HttpResponse
     val contentType = message.headers[CONTENT_TYPE]!!
     val boundary = ContentType.parse(contentType).parameter("boundary")
 
-    return post(URL_EBMS_PROVIDER_POST) {
+    return post(ebms.providerUrl) {
         headers(
             message.headers.filterHeader(
                 MIME_VERSION,
