@@ -3,6 +3,7 @@ package no.nav.emottak.smtp
 import io.ktor.http.Headers
 import io.mockk.every
 import io.mockk.mockk
+import jakarta.mail.Flags
 import jakarta.mail.Folder
 import jakarta.mail.Message
 import jakarta.mail.Session
@@ -50,6 +51,21 @@ class MessageTest {
         val msg = MimeMessage(session, stream)
         val store = mockStore(msg)
         store.getFolder("INBOX").batchDelete(100)
+    }
+
+    private fun Folder.batchDelete(batchSize: Int) {
+        val totalMessages = messageCount
+        var previousMsgNum = 1
+        do {
+            this.open(Folder.READ_WRITE)
+            val end = minOf(batchSize - 1, this.messageCount)
+            log.info("Deleting in ${this.fullName} message $previousMsgNum to ${previousMsgNum + end} out of $totalMessages")
+            this.getMessages(1, end).forEach { message ->
+                message.setFlag(Flags.Flag.DELETED, true)
+            }
+            this.close(true)
+            previousMsgNum += end
+        } while (totalMessages > previousMsgNum)
     }
 
     private fun mockSession() = Session.getDefaultInstance(config.smtp.toProperties())

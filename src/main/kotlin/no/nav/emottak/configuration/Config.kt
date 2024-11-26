@@ -2,11 +2,18 @@ package no.nav.emottak.configuration
 
 import com.sksamuel.hoplite.Masked
 import java.util.Properties
+import kotlin.time.Duration
 
 data class Config(
+    val job: Job,
     val mail: Mail,
     val ebms: Ebms,
     val smtp: Smtp
+)
+
+data class Job(
+    val initialDelay: Duration,
+    val fixedInterval: Duration
 )
 
 data class Mail(val inboxLimit: Int)
