@@ -5,7 +5,6 @@ import arrow.continuations.ktor.server
 import arrow.core.raise.result
 import arrow.fx.coroutines.resourceScope
 import arrow.resilience.Schedule
-import io.ktor.client.statement.HttpResponse
 import io.ktor.server.netty.Netty
 import io.ktor.utils.io.CancellationException
 import kotlinx.coroutines.awaitCancellation
@@ -47,10 +46,7 @@ fun main() = SuspendApp {
         }
 }
 
-private suspend fun scheduleWithInitialDelay(
-    job: Job,
-    block: suspend () -> List<Result<HttpResponse>>
-) {
+private suspend fun scheduleWithInitialDelay(job: Job, block: suspend () -> Unit) {
     // Repeat every 5 minutes
     Schedule.spaced<Unit>(job.fixedInterval)
         .delayed { attempt, _ ->

@@ -40,7 +40,7 @@ class MessageTest {
         val store = mockStore(msg)
         val reader = MailReader(config.mail, store)
         val one = MailReader.mapEmailMsg().invoke(msg)
-        val two = reader.readMail().first()
+        val two = reader.readMailBatches(reader.count()).first()
         assertEquals(one.headers, two.headers)
         assertEquals(String(one.parts.first().bytes), String(two.parts.first().bytes))
     }

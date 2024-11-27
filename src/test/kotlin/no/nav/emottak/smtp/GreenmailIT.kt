@@ -16,10 +16,10 @@ class GreenmailIT {
     fun `MailReader reads correct inbox`() {
         val store = mockStore()
         val reader = MailReader(config.mail, store, false)
-        assertEquals(1, reader.readMail().size)
-        assertEquals(1, reader.readMail().size)
-        assertEquals(1, reader.readMail().size)
-        assertEquals(0, reader.readMail().size)
+        assertEquals(1, reader.readMailBatches(1).size)
+        assertEquals(1, reader.readMailBatches(1).size)
+        assertEquals(1, reader.readMailBatches(1).size)
+        assertEquals(0, reader.readMailBatches(1).size)
     }
 
     @Test
@@ -29,20 +29,20 @@ class GreenmailIT {
 
         val inboxLimit100 = config.mail.copy(inboxLimit = 100)
         val reader = MailReader(inboxLimit100, store, false)
-        assertEquals(1, reader.readMail().size)
-        assertEquals(1, reader.readMail().size)
-        assertEquals(1, reader.readMail().size)
-        assertEquals(0, reader.readMail().size)
+        assertEquals(1, reader.readMailBatches(1).size)
+        assertEquals(1, reader.readMailBatches(1).size)
+        assertEquals(1, reader.readMailBatches(1).size)
+        assertEquals(0, reader.readMailBatches(1).size)
         reader.close()
         assertEquals(3, MailReader(inboxLimit100, store).count())
 
         val inboxLimitNegative1 = config.mail.copy(inboxLimit = -1)
         val reader2 = MailReader(inboxLimitNegative1, store, false)
 
-        assertEquals(1, reader2.readMail().size)
-        assertEquals(1, reader2.readMail().size)
-        assertEquals(1, reader2.readMail().size)
-        assertEquals(0, reader2.readMail().size)
+        assertEquals(1, reader2.readMailBatches(1).size)
+        assertEquals(1, reader2.readMailBatches(1).size)
+        assertEquals(1, reader2.readMailBatches(1).size)
+        assertEquals(0, reader2.readMailBatches(1).size)
         reader2.close()
         assertEquals(0, MailReader(inboxLimitNegative1, store).count())
     }

@@ -71,7 +71,6 @@ class MailReader(
         }
     }
 
-    private val takeN = 1
     private var start = 1
 
     fun count() = inbox.messageCount
@@ -89,17 +88,17 @@ class MailReader(
     }
 
     @Throws(Exception::class)
-    fun readMail(): List<EmailMsg> {
+    fun readMailBatches(batchSize: Int): List<EmailMsg> {
         try {
-            val messageCount = inbox.messageCount
+            val messageCount = count()
             return if (messageCount != 0) {
-                val endIndex = (takeN + start - 1).takeIf { it < messageCount } ?: messageCount
+                val endIndex = (batchSize + start - 1).takeIf { it < messageCount } ?: messageCount
                 val result = inbox.getMessages(start, endIndex)
                     .map { it as MimeMessage }
                     .toList()
                     .onEach(::processMimeMessage)
-                start += takeN
-                result.map(mapEmailMsg())
+                start += batchSize // Update start index
+                result.map(mapEmailMsg()) // Return all mapped emails
             } else {
                 emptyList<EmailMsg>().also { log.info("No email messages found") }
             }

@@ -21,41 +21,33 @@ class MailService(
 ) {
     private val httpClient = HttpClient(CIO)
 
-    suspend fun processMessages(): List<Result<HttpResponse>> {
+    suspend fun processMessages() {
         val timeStart = Instant.now()
-        val processedMessages = mutableListOf<Result<HttpResponse>>()
         runCatching {
             MailReader(config.mail, store, false).use { reader ->
-                log.info("Starting to read ${reader.count()} messages from inbox")
-                do {
-                    val messages = reader.readMail()
-                    val currentProcessedMessages = messages
-                        .parMap(concurrency = 64, context = Dispatchers.IO) {
-                            postEbmsMessages(config.ebms, it)
-                        }
-
-                    processedMessages.addAll(currentProcessedMessages)
-                    log.info("Processed a batch of ${messages.size} messages")
-                } while (messages.isNotEmpty())
-
-                log.info("Finished reading and processing all ${processedMessages.size} messages")
+                val countedMessages = reader.count()
+                log.info("Starting to read $countedMessages messages from inbox")
+                return@use reader.readMailBatches(countedMessages)
+                    .also { log.info("Finished reading all messages from inbox. Starting to process all messages") }
+                    .parMap(concurrency = countedMessages, context = Dispatchers.IO) {
+                        postEbmsMessages(config.ebms, it)
+                    }
+                    .also { log.info("Finished processing all messages") }
             }
         }
             .onSuccess {
                 val timeToCompletion = Duration.between(timeStart, Instant.now())
                 val throughputPerMinute =
-                    processedMessages.size / (timeToCompletion.toMillis().toDouble() / 1000 / 60)
+                    it.size / (timeToCompletion.toMillis().toDouble() / 1000 / 60)
                 log.info(
                     Markers.appendEntries(mapOf(Pair("MailReaderTPM", throughputPerMinute))),
-                    "${processedMessages.size} messages processed in ${timeToCompletion.toKotlinDuration()},($throughputPerMinute tpm)"
+                    "${it.size} messages processed in ${timeToCompletion.toKotlinDuration()},($throughputPerMinute tpm)"
                 )
             }
             .onFailure {
                 log.error(it.message, it)
                 log.info(it.localizedMessage)
             }
-
-        return processedMessages
     }
 
     private suspend fun postEbmsMessages(ebms: Ebms, message: EmailMsg): Result<HttpResponse> {
