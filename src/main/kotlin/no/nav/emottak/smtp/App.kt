@@ -15,7 +15,7 @@ import no.nav.emottak.metricsRegistry
 import no.nav.emottak.plugin.configureContentNegotiation
 import no.nav.emottak.plugin.configureMetrics
 import no.nav.emottak.plugin.configureRoutes
-import no.nav.emottak.store
+import no.nav.emottak.sessionAndStore
 import org.slf4j.LoggerFactory
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
@@ -27,14 +27,14 @@ fun main() = SuspendApp {
     result {
         resourceScope {
             val registry = metricsRegistry()
-            val store = store(config.smtp)
             val httpClient = httpClient()
+            val sessionAndStore = sessionAndStore(config.smtp)
             server(Netty, port = 8080, preWait = 5.seconds) {
                 configureMetrics(registry)
                 configureContentNegotiation()
                 configureRoutes(registry)
             }
-            val mailService = MailService(config, store, httpClient)
+            val mailService = MailService(config, sessionAndStore.store, httpClient)
             scheduleWithInitialDelay(config.job, mailService::processMessages)
 
             awaitCancellation()
