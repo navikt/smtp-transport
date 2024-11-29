@@ -10,6 +10,7 @@ import io.ktor.utils.io.CancellationException
 import kotlinx.coroutines.awaitCancellation
 import no.nav.emottak.config
 import no.nav.emottak.configuration.Job
+import no.nav.emottak.httpClient
 import no.nav.emottak.metricsRegistry
 import no.nav.emottak.plugin.configureContentNegotiation
 import no.nav.emottak.plugin.configureMetrics
@@ -27,12 +28,13 @@ fun main() = SuspendApp {
         resourceScope {
             val registry = metricsRegistry()
             val store = store(config.smtp)
+            val httpClient = httpClient()
             server(Netty, port = 8080, preWait = 5.seconds) {
                 configureMetrics(registry)
                 configureContentNegotiation()
                 configureRoutes(registry)
             }
-            val mailService = MailService(config, store)
+            val mailService = MailService(config, store, httpClient)
             scheduleWithInitialDelay(config.job, mailService::processMessages)
 
             awaitCancellation()

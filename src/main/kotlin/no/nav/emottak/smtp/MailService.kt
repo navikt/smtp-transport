@@ -2,7 +2,6 @@ package no.nav.emottak.smtp
 
 import arrow.fx.coroutines.parMap
 import io.ktor.client.HttpClient
-import io.ktor.client.engine.cio.CIO
 import io.ktor.client.statement.HttpResponse
 import jakarta.mail.Store
 import kotlinx.coroutines.Dispatchers
@@ -17,17 +16,16 @@ import kotlin.time.toKotlinDuration
 
 class MailService(
     private val config: Config,
-    private val store: Store
+    private val store: Store,
+    private val httpClient: HttpClient
 ) {
-    private val httpClient = HttpClient(CIO)
-
     suspend fun processMessages() {
         val timeStart = Instant.now()
         runCatching {
             MailReader(config.mail, store, false).use { reader ->
                 val countedMessages = reader.count()
                 log.info("Starting to read $countedMessages messages from inbox")
-                return@use reader.readMailBatches(countedMessages)
+                reader.readMailBatches(countedMessages)
                     .also { log.info("Finished reading all messages from inbox. Starting to process all messages") }
                     .parMap(concurrency = countedMessages, context = Dispatchers.IO) {
                         postEbmsMessages(config.ebms, it)
