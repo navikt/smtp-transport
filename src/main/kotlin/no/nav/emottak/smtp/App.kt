@@ -3,6 +3,7 @@ package no.nav.emottak.smtp
 import arrow.continuations.SuspendApp
 import arrow.continuations.ktor.server
 import arrow.core.raise.result
+import arrow.fx.coroutines.parZip
 import arrow.fx.coroutines.resourceScope
 import arrow.resilience.Schedule
 import io.ktor.server.netty.Netty
@@ -15,7 +16,7 @@ import no.nav.emottak.metricsRegistry
 import no.nav.emottak.plugin.configureContentNegotiation
 import no.nav.emottak.plugin.configureMetrics
 import no.nav.emottak.plugin.configureRoutes
-import no.nav.emottak.sessionAndStore
+import no.nav.emottak.store
 import org.slf4j.LoggerFactory
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
@@ -27,14 +28,14 @@ fun main() = SuspendApp {
     result {
         resourceScope {
             val registry = metricsRegistry()
-            val httpClient = httpClient()
-            val sessionAndStore = sessionAndStore(config.smtp)
             server(Netty, port = 8080, preWait = 5.seconds) {
                 configureMetrics(registry)
                 configureContentNegotiation()
                 configureRoutes(registry)
             }
-            val mailService = MailService(config, sessionAndStore.store, httpClient)
+            val mailService = parZip({ store(config.smtp) }, { httpClient() }) { store, client ->
+                MailService(config, store, client)
+            }
             scheduleWithInitialDelay(config.job, mailService::processMessages)
 
             awaitCancellation()

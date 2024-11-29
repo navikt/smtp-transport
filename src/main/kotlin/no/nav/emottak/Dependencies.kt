@@ -1,5 +1,6 @@
 package no.nav.emottak
 
+import arrow.core.memoize
 import arrow.fx.coroutines.ExitCase
 import arrow.fx.coroutines.ResourceScope
 import io.ktor.client.HttpClient
@@ -13,19 +14,17 @@ import jakarta.mail.Store
 import no.nav.emottak.configuration.Smtp
 import no.nav.emottak.configuration.toProperties
 
-data class SessionAndStore(val session: Session, val store: Store)
-
 suspend fun ResourceScope.httpClient(): HttpClient =
     install({ HttpClient(CIO) }) { h, _: ExitCase -> h.close() }
 
 suspend fun ResourceScope.metricsRegistry(): PrometheusMeterRegistry =
     install({ PrometheusMeterRegistry((DEFAULT)) }) { p, _: ExitCase -> p.close() }
 
-suspend fun ResourceScope.store(smtp: Smtp, session: Session): Store =
-    install({ session.getStore(smtp.storeProtocol.value).also { it.connect() } }) { s, _: ExitCase -> s.close() }
+suspend fun ResourceScope.store(smtp: Smtp): Store =
+    install({ session(smtp).getStore(smtp.storeProtocol.value).also { it.connect() } }) { s, _: ExitCase -> s.close() }
 
-suspend fun ResourceScope.sessionAndStore(smtp: Smtp): SessionAndStore {
-    val session = Session.getInstance(
+val session: (Smtp) -> Session = { smtp: Smtp ->
+    Session.getInstance(
         smtp.toProperties(),
         object : Authenticator() {
             override fun getPasswordAuthentication() = PasswordAuthentication(
@@ -34,6 +33,5 @@ suspend fun ResourceScope.sessionAndStore(smtp: Smtp): SessionAndStore {
             )
         }
     )
-
-    return SessionAndStore(session, store(smtp, session))
 }
+    .memoize()
