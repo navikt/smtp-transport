@@ -24,23 +24,33 @@ class MailService(
         runCatching {
             MailReader(config.mail, store, false).use { reader ->
                 val countedMessages = reader.count()
-                log.info("Starting to read $countedMessages messages from inbox")
-                reader.readMailBatches(countedMessages)
-                    .also { log.info("Finished reading all messages from inbox. Starting to process all messages") }
-                    .parMap(concurrency = countedMessages, context = Dispatchers.IO) {
-                        postEbmsMessages(config.ebms, it)
+                when {
+                    countedMessages > 0 -> {
+                        log.info("Starting to read $countedMessages messages from inbox")
+                        reader.readMailBatches(countedMessages)
+                            .also { log.info("Finished reading all messages from inbox. Starting to process all messages") }
+                            .parMap(concurrency = countedMessages, context = Dispatchers.IO) {
+                                postEbmsMessages(config.ebms, it)
+                            }
+                            .also { log.info("Finished processing all messages") }
                     }
-                    .also { log.info("Finished processing all messages") }
+
+                    else -> {
+                        emptyList<Result<HttpResponse>>().also { log.info("No messages found in inbox") }
+                    }
+                }
             }
         }
             .onSuccess {
-                val timeToCompletion = Duration.between(timeStart, Instant.now())
-                val throughputPerMinute =
-                    it.size / (timeToCompletion.toMillis().toDouble() / 1000 / 60)
-                log.info(
-                    Markers.appendEntries(mapOf(Pair("MailReaderTPM", throughputPerMinute))),
-                    "${it.size} messages processed in ${timeToCompletion.toKotlinDuration()},($throughputPerMinute tpm)"
-                )
+                if (it.isNotEmpty()) {
+                    val timeToCompletion = Duration.between(timeStart, Instant.now())
+                    val throughputPerMinute =
+                        it.size / (timeToCompletion.toMillis().toDouble() / 1000 / 60)
+                    log.info(
+                        Markers.appendEntries(mapOf(Pair("MailReaderTPM", throughputPerMinute))),
+                        "${it.size} messages processed in ${timeToCompletion.toKotlinDuration()},($throughputPerMinute tpm)"
+                    )
+                }
             }
             .onFailure {
                 log.error(it.message, it)

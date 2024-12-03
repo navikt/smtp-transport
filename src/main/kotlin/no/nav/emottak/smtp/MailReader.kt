@@ -27,55 +27,10 @@ class MailReader(
     private val store: Store,
     private val expunge: Boolean = true
 ) : AutoCloseable {
+    private var start = 1
     private val inbox: Folder = getInbox()
 
-    companion object {
-        fun mapEmailMsg(): (MimeMessage) -> EmailMsg = { message ->
-            val messageContent = message.content
-            val bodyparts: List<Part> = when (messageContent is MimeMultipart) {
-                true -> createMimeBodyParts(messageContent)
-                else -> createEmptyMimeBodyParts(message)
-            }
-            EmailMsg(
-                message.allHeaders
-                    .toList()
-                    .groupBy({ it.name }, { it.value })
-                    .mapValues { it.value.joinToString(",") },
-                bodyparts
-            )
-        }
-
-        private fun createEmptyMimeBodyParts(message: MimeMessage) = listOf(
-            Part(
-                emptyMap(),
-                message.rawInputStream.readAllBytes()
-            )
-        )
-
-        private fun createMimeBodyParts(messageContent: MimeMultipart) = mutableListOf<MimeBodyPart>()
-            .apply {
-                for (i in 0 until messageContent.count) {
-                    add(messageContent.getBodyPart(i) as MimeBodyPart)
-                }
-            }
-            .map(mapBodyPart())
-
-        private fun mapBodyPart(): (MimeBodyPart) -> Part = { bodyPart ->
-            Part(
-                bodyPart.allHeaders
-                    .toList()
-                    .groupBy({ it.name }, { it.value })
-                    .mapValues { it.value.joinToString(",") },
-                bodyPart.rawInputStream.readAllBytes()
-            )
-        }
-    }
-
-    private var start = 1
-
     fun count() = inbox.messageCount
-
-    private fun expunge(): Boolean = (expunge || count() > mail.inboxLimit)
 
     override fun close() {
         inbox.close(
@@ -98,7 +53,7 @@ class MailReader(
                     .toList()
                     .onEach(::processMimeMessage)
                 start += batchSize // Update start index
-                result.map(mapEmailMsg()) // Return all mapped emails
+                result.map(::mapEmailMsg) // Return all mapped emails
             } else {
                 emptyList<EmailMsg>().also { log.info("No email messages found") }
             }
@@ -107,6 +62,8 @@ class MailReader(
             throw e
         }
     }
+
+    private fun expunge(): Boolean = (expunge || count() > mail.inboxLimit)
 
     private fun processMimeMessage(mimeMessage: MimeMessage) {
         log.info("Reading emails startIndex $start")
@@ -160,4 +117,44 @@ class MailReader(
         .appendEntries(
             mutableMapOf("system source" to (xMailer ?: "-"))
         )
+
+    internal fun mapEmailMsg(message: MimeMessage): EmailMsg {
+        val messageContent = message.content
+        val bodyparts: List<Part> = when (messageContent is MimeMultipart) {
+            true -> createMimeBodyParts(messageContent)
+            else -> createEmptyMimeBodyParts(message)
+        }
+        return EmailMsg(
+            message.allHeaders
+                .toList()
+                .groupBy({ it.name }, { it.value })
+                .mapValues { it.value.joinToString(",") },
+            bodyparts
+        )
+    }
+
+    private fun createEmptyMimeBodyParts(message: MimeMessage) = listOf(
+        Part(
+            emptyMap(),
+            message.rawInputStream.readAllBytes()
+        )
+    )
+
+    private fun createMimeBodyParts(messageContent: MimeMultipart) = mutableListOf<MimeBodyPart>()
+        .apply {
+            for (i in 0 until messageContent.count) {
+                add(messageContent.getBodyPart(i) as MimeBodyPart)
+            }
+        }
+        .map(mapBodyPart())
+
+    private fun mapBodyPart(): (MimeBodyPart) -> Part = { bodyPart ->
+        Part(
+            bodyPart.allHeaders
+                .toList()
+                .groupBy({ it.name }, { it.value })
+                .mapValues { it.value.joinToString(",") },
+            bodyPart.rawInputStream.readAllBytes()
+        )
+    }
 }
