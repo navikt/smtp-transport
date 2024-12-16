@@ -1,12 +1,8 @@
 package no.nav.emottak.processor
 
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.emptyFlow
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
 import no.nav.emottak.log
 import no.nav.emottak.publisher.MailPublisher
 import no.nav.emottak.smtp.EmailMsg
@@ -20,11 +16,7 @@ class MailProcessor(
     private val mailPublisher: MailPublisher
     // private val payloadRepository: PayloadRepository
 ) {
-    suspend fun processMessages(): Job = coroutineScope {
-        readMessages()
-            .onEach(::processMessage)
-            .launchIn(this)
-    }
+    suspend fun processMessages() = readMessages().collect(::processMessage)
 
     private fun readMessages(): Flow<EmailMsg> =
         mailReader.use { reader ->
