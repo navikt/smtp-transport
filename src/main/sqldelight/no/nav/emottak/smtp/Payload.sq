@@ -1,0 +1,29 @@
+-- no/nav/emottak/smtp/Payload.sq
+
+CREATE TABLE payload
+(
+    reference_id        VARCHAR(256)		NOT NULL,
+    content_id		    VARCHAR(256)		NOT NULL,
+    content_type		VARCHAR(256)		NOT NULL,
+    content             BYTEA		        NOT NULL,
+    direction           TEXT                NOT NULL,
+    created_at		    TIMESTAMP		    DEFAULT now(),
+	PRIMARY KEY (reference_id, content_id)
+);
+
+insertPayload:
+INSERT INTO payload (
+    reference_id,
+    content_id,
+    content_type,
+    content,
+    direction
+)
+VALUES (
+:reference_id,
+:content_id,
+:content_type,
+:content,
+:direction
+)
+RETURNING reference_id, content_id;

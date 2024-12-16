@@ -8,13 +8,14 @@ import io.kotest.matchers.equals.shouldBeEqual
 import io.kotest.matchers.shouldBe
 import jakarta.mail.internet.MimeMessage
 import no.nav.emottak.config
-import no.nav.emottak.initDependencies
+import no.nav.emottak.session
+import no.nav.emottak.store
 import java.nio.file.Path.of
 
 private const val REQUEST = "mails/test@test.test/INBOX/EgenAndelForespoersel.eml"
 private const val EXAMPLE = "mails/test@test.test/INBOX/example.eml"
 
-class MailReaderTest : StringSpec({
+class MailReaderSpec : StringSpec({
     val config = config()
 
     val classLoader = this::class.java.classLoader
@@ -41,19 +42,20 @@ class MailReaderTest : StringSpec({
 
     "MailReader reads inbox with messages and verifies content" {
         resourceScope {
-            val deps = initDependencies(config)
+            val store = store(config.smtp)
+            val session = session(config.smtp)
 
-            val reader = MailReader(config.mail, deps.store, false)
+            val reader = MailReader(config.mail, store, false)
             val messages = reader.readMailBatches(3)
 
-            val exampleMessage = MimeMessage(deps.session, classLoader.getResourceAsStream((EXAMPLE)))
+            val exampleMessage = MimeMessage(session, classLoader.getResourceAsStream((EXAMPLE)))
             val expectedFirstMessage = reader.mapEmailMsg(exampleMessage)
 
             val firstMessage = messages.first()
             // firstMessage.headers shouldBe expectedFirstMessage.headers - doesn't run in GHA
             // firstMessage.parts.first() shouldMatchBytes expectedFirstMessage.parts.first() - doesn't run in GHA
 
-            val acknowledgmentMessage = MimeMessage(deps.session, classLoader.getResourceAsStream((REQUEST)))
+            val acknowledgmentMessage = MimeMessage(session, classLoader.getResourceAsStream((REQUEST)))
             val expectedLastMessage = reader.mapEmailMsg(acknowledgmentMessage)
 
             val lastMessage = messages.last()
@@ -67,25 +69,25 @@ class MailReaderTest : StringSpec({
 
     "MailReader reads inbox with messages and prunes messages accordingly" {
         resourceScope {
-            val deps = initDependencies(config)
+            val store = store(config.smtp)
 
             val inboxLimit100 = config.mail.copy(inboxLimit = 100)
-            val reader = MailReader(inboxLimit100, deps.store, false)
+            val reader = MailReader(inboxLimit100, store, false)
 
             reader.readMailBatches(3).size shouldBe 3
             reader.readMailBatches(3).size shouldBe 0
             reader.close()
 
-            MailReader(inboxLimit100, deps.store).count() shouldBe 3
+            MailReader(inboxLimit100, store).count() shouldBe 3
 
             val inboxLimitNegative1 = config.mail.copy(inboxLimit = -1)
-            val reader2 = MailReader(inboxLimitNegative1, deps.store, false)
+            val reader2 = MailReader(inboxLimitNegative1, store, false)
 
             reader2.readMailBatches(3).size shouldBe 3
             reader2.readMailBatches(3).size shouldBe 0
             reader2.close()
 
-            MailReader(inboxLimitNegative1, deps.store).count() shouldBe 0
+            MailReader(inboxLimitNegative1, store).count() shouldBe 0
         }
     }
 })
