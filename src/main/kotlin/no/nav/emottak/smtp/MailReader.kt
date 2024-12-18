@@ -112,7 +112,7 @@ class MailReader(
 
     private fun getInbox() = store.isConnected
         .let { connected -> if (!connected) store.connect() }
-        .run { store.getFolder("INBOX").apply { open(READ_WRITE) } }
+        .run { store.getFolder("INBOX").apply { if (!isOpen) open(READ_WRITE) } }
 
     private fun createHeaderMarker(xMailer: String?): LogstashMarker = Markers
         .appendEntries(

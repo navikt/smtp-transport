@@ -1,8 +1,13 @@
 package no.nav.emottak.processor
 
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import no.nav.emottak.Dependencies
+import no.nav.emottak.configuration.Config
 import no.nav.emottak.log
 import no.nav.emottak.publisher.MailPublisher
 import no.nav.emottak.smtp.EmailMsg
@@ -12,14 +17,19 @@ import no.nav.emottak.util.toPayloads
 import java.util.UUID.randomUUID
 
 class MailProcessor(
-    private val mailReader: MailReader,
+    private val config: Config,
+    private val deps: Dependencies,
     private val mailPublisher: MailPublisher
     // private val payloadRepository: PayloadRepository
 ) {
-    suspend fun processMessages() = readMessages().collect(::processMessage)
+    suspend fun processMessages() = coroutineScope {
+        readMessages()
+            .onEach(::processMessage)
+            .launchIn(this)
+    }
 
     private fun readMessages(): Flow<EmailMsg> =
-        mailReader.use { reader ->
+        MailReader(config.mail, deps.store, false).use { reader ->
             val messageCount = reader.count()
 
             if (messageCount > 0) {
