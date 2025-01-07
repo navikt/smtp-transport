@@ -7,4 +7,9 @@ sealed class Error {
         val referenceId: String,
         val contentId: String
     ) : Error()
+
+    data class PayloadDoesNotExist(
+        val referenceId: String,
+        val contentId: String
+    ) : Error()
 }

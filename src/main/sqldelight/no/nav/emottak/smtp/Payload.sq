@@ -6,7 +6,6 @@ CREATE TABLE payload
     content_id		    VARCHAR(256)		NOT NULL,
     content_type		VARCHAR(256)		NOT NULL,
     content             BYTEA		        NOT NULL,
-    direction           TEXT                NOT NULL,
     created_at		    TIMESTAMP		    DEFAULT now(),
 	PRIMARY KEY (reference_id, content_id)
 );
@@ -16,14 +15,15 @@ INSERT INTO payload (
     reference_id,
     content_id,
     content_type,
-    content,
-    direction
+    content
 )
 VALUES (
 :reference_id,
 :content_id,
 :content_type,
-:content,
-:direction
+:content
 )
 RETURNING reference_id, content_id;
+
+retrievePayload:
+SELECT * FROM payload WHERE reference_id = ? AND content_id = ?;

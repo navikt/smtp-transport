@@ -1,9 +1,11 @@
 package no.nav.emottak.processor
 
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import no.nav.emottak.Dependencies
@@ -25,6 +27,7 @@ class MailProcessor(
     suspend fun processMessages() = coroutineScope {
         readMessages()
             .onEach(::processMessage)
+            .flowOn(Dispatchers.IO)
             .launchIn(this)
     }
 
