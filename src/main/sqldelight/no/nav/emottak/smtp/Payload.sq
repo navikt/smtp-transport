@@ -25,5 +25,8 @@ VALUES (
 )
 RETURNING reference_id, content_id;
 
+retrievePayloads:
+SELECT * FROM payload WHERE reference_id = ?;
+
 retrievePayload:
 SELECT * FROM payload WHERE reference_id = ? AND content_id = ?;

@@ -10,6 +10,6 @@ sealed class Error {
 
     data class PayloadDoesNotExist(
         val referenceId: String,
-        val contentId: String
+        val contentId: String? = null
     ) : Error()
 }

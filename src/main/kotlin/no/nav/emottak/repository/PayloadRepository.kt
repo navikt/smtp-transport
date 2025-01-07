@@ -18,8 +18,26 @@ class PayloadRepository(payloadDatabase: PayloadDatabase) {
     suspend fun Raise<PayloadAlreadyExist>.insert(payloads: List<Payload>): List<Pair<String, String>> =
         withContext(IO) { payloads.map { payload -> insertPayload(payload) } }
 
+    suspend fun Raise<PayloadDoesNotExist>.retrieve(referenceId: String): List<Payload> =
+        withContext(IO) { retrievePayloads(referenceId) }
+
     suspend fun Raise<PayloadDoesNotExist>.retrieve(referenceId: String, contentId: String): Payload =
         withContext(IO) { retrievePayload(referenceId, contentId) }
+
+    private fun Raise<PayloadDoesNotExist>.retrievePayloads(referenceId: String): List<Payload> {
+        val payloads = payloadQueries.retrievePayloads(referenceId).executeAsList()
+        return when (payloads.isEmpty()) {
+            true -> raise(PayloadDoesNotExist(referenceId))
+            else -> payloads.map {
+                Payload(
+                    it.reference_id,
+                    it.content_id,
+                    it.content_type,
+                    it.content
+                )
+            }
+        }
+    }
 
     private fun Raise<PayloadDoesNotExist>.retrievePayload(referenceId: String, contentId: String) =
         when (val payload = payloadQueries.retrievePayload(referenceId, contentId).executeAsOneOrNull()) {

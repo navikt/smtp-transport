@@ -5,6 +5,7 @@ import arrow.core.Either.Right
 import arrow.core.raise.either
 import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import no.nav.emottak.Error.PayloadAlreadyExist
 import no.nav.emottak.Error.PayloadDoesNotExist
@@ -39,7 +40,12 @@ class PayloadRepositorySpec : StringSpec(
         }
 
         "should insert and retrieve a single payload" {
-            val payload = Payload("ref", "cont", "t", "d".toByteArray())
+            val payload = Payload(
+                "ref",
+                "cont",
+                "t",
+                "d".toByteArray()
+            )
 
             with(repository) {
                 either { insert(listOf(payload)) }
@@ -47,10 +53,35 @@ class PayloadRepositorySpec : StringSpec(
                 val eitherPayload = either { retrieve("ref", "cont") }
                 val retrievedPayload = eitherPayload.shouldBeRight()
 
-                retrievedPayload.referenceId shouldBe payload.referenceId
-                retrievedPayload.contentId shouldBe payload.contentId
-                retrievedPayload.contentType shouldBe payload.contentType
-                retrievedPayload.content shouldBe payload.content
+                shouldBeEqual(retrievedPayload, payload)
+            }
+        }
+
+        "should insert and retrieve multiple payloads" {
+            val firstPayload = Payload(
+                "r",
+                "c1",
+                "t",
+                "d".toByteArray()
+            )
+            val secondPayload = Payload(
+                "r",
+                "c2",
+                "t",
+                "d".toByteArray()
+            )
+
+            with(repository) {
+                either { insert(listOf(firstPayload, secondPayload)) }
+
+                val eitherPayload = either { retrieve("r") }
+                val retrievedPayloads = eitherPayload.shouldBeRight()
+
+                retrievedPayloads shouldHaveSize 2
+
+                shouldBeEqual(retrievedPayloads.first(), firstPayload)
+
+                shouldBeEqual(retrievedPayloads.last(), secondPayload)
             }
         }
 
@@ -61,6 +92,14 @@ class PayloadRepositorySpec : StringSpec(
                         "no-ref-id",
                         "no-content-id"
                     )
+                )
+            }
+        }
+
+        "should fail on non existing payloads" {
+            with(repository) {
+                either { retrieve("no-ref-id") } shouldBe Left(
+                    PayloadDoesNotExist("no-ref-id")
                 )
             }
         }
@@ -118,3 +157,13 @@ private fun createDuplicatePayloads() = listOf(
         "duplicate".toByteArray()
     )
 )
+
+private fun shouldBeEqual(
+    firstRetrievedPayload: Payload,
+    firstPayload: Payload
+) {
+    firstRetrievedPayload.referenceId shouldBe firstPayload.referenceId
+    firstRetrievedPayload.contentId shouldBe firstPayload.contentId
+    firstRetrievedPayload.contentType shouldBe firstPayload.contentType
+    firstRetrievedPayload.content shouldBe firstPayload.content
+}
