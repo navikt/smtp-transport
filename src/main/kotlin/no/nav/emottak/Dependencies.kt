@@ -39,7 +39,7 @@ data class Dependencies(
     val meterRegistry: PrometheusMeterRegistry
 )
 
-private const val MIGRATIONS_PATH = "filesystem:./build/generated/migrations"
+private const val MIGRATIONS_PATH = "filesystem:/app/migrations"
 
 internal suspend fun ResourceScope.metricsRegistry(): PrometheusMeterRegistry =
     install({ PrometheusMeterRegistry(DEFAULT) }) { p, _: ExitCase ->
@@ -56,7 +56,6 @@ internal suspend fun ResourceScope.jdbcDriver(dataSource: DataSource) =
 
 internal suspend fun ResourceScope.hikari(database: Database): HikariDataSource =
     autoCloseable {
-        log.info("Database: {}", database)
         createHikariDataSourceWithVaultIntegration(
             HikariConfig(database.toProperties()),
             database.mountPath.value,
