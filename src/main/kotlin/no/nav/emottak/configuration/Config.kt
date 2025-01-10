@@ -153,7 +153,6 @@ value class Role(val value: String)
 
 data class Database(
     val url: Url,
-    val driver: Driver,
     val minimumIdleConnections: MinimumIdleConnections,
     val maxLifetimeConnections: MaxLifeTimeConnections,
     val maxConnectionPoolSize: MaxConnectionPoolSize,
@@ -167,7 +166,6 @@ data class Database(
 fun Database.toProperties() = Properties()
     .apply {
         put("jdbcUrl", url.value)
-        put("driverClassName", driver.value)
         put("minimumIdle", minimumIdleConnections.value)
         put("maxLifetime", maxLifetimeConnections.value)
         put("maximumPoolSize", maxConnectionPoolSize.value)
