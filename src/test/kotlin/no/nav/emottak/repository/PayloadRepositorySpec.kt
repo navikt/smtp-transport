@@ -9,12 +9,17 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import no.nav.emottak.Error.PayloadAlreadyExist
 import no.nav.emottak.Error.PayloadDoesNotExist
+import no.nav.emottak.log
 import no.nav.emottak.payloadDatabase
+import no.nav.emottak.runMigrations
 import no.nav.emottak.util.Payload
 
 class PayloadRepositorySpec : StringSpec(
     {
         val repository = PayloadRepository(payloadDatabase())
+        val migrateResult = runMigrations()
+
+        log.info("Migrations executed: ${migrateResult.migrationsExecuted}")
 
         "should insert single payload" {
             val payloads = createSinglePayload()
@@ -53,7 +58,7 @@ class PayloadRepositorySpec : StringSpec(
                 val eitherPayload = either { retrieve("ref", "cont") }
                 val retrievedPayload = eitherPayload.shouldBeRight()
 
-                shouldBeEqual(retrievedPayload, payload)
+                retrievedPayload shouldBeEqual payload
             }
         }
 
@@ -78,10 +83,8 @@ class PayloadRepositorySpec : StringSpec(
                 val retrievedPayloads = eitherPayload.shouldBeRight()
 
                 retrievedPayloads shouldHaveSize 2
-
-                shouldBeEqual(retrievedPayloads.first(), firstPayload)
-
-                shouldBeEqual(retrievedPayloads.last(), secondPayload)
+                retrievedPayloads.first() shouldBeEqual firstPayload
+                retrievedPayloads.last() shouldBeEqual secondPayload
             }
         }
 
@@ -158,12 +161,9 @@ private fun createDuplicatePayloads() = listOf(
     )
 )
 
-private fun shouldBeEqual(
-    firstRetrievedPayload: Payload,
-    firstPayload: Payload
-) {
-    firstRetrievedPayload.referenceId shouldBe firstPayload.referenceId
-    firstRetrievedPayload.contentId shouldBe firstPayload.contentId
-    firstRetrievedPayload.contentType shouldBe firstPayload.contentType
-    firstRetrievedPayload.content shouldBe firstPayload.content
+private infix fun Payload.shouldBeEqual(payload: Payload) {
+    payload.referenceId shouldBe referenceId
+    payload.contentId shouldBe contentId
+    payload.contentType shouldBe contentType
+    payload.content shouldBe content
 }

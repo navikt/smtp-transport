@@ -128,21 +128,44 @@ fun Smtp.toProperties() = Properties()
 value class Url(val value: String)
 
 @JvmInline
-value class DriverClassName(val value: String)
+value class MinimumIdleConnections(val value: Int)
+
+@JvmInline
+value class MaxLifeTimeConnections(val value: Int)
+
+@JvmInline
+value class MaxConnectionPoolSize(val value: Int)
+
+@JvmInline
+value class ConnectionTimeout(val value: Int)
+
+@JvmInline
+value class IdleConnectionTimeout(val value: Int)
+
+@JvmInline
+value class MountPath(val value: String)
+
+@JvmInline
+value class Role(val value: String)
 
 data class Database(
     val url: Url,
-    val username: Username,
-    val password: Masked,
-    val driverClassName: DriverClassName,
-    val maxConnectionPoolSize: Int
+    val minimumIdleConnections: MinimumIdleConnections,
+    val maxLifetimeConnections: MaxLifeTimeConnections,
+    val maxConnectionPoolSize: MaxConnectionPoolSize,
+    val connectionTimeout: ConnectionTimeout,
+    val idleConnectionTimeout: IdleConnectionTimeout,
+    val mountPath: MountPath,
+    val userRole: Role,
+    val adminRole: Role
 )
 
 fun Database.toProperties() = Properties()
     .apply {
         put("jdbcUrl", url.value)
-        put("username", username.value)
-        put("password", password.value)
-        put("driverClassName", driverClassName)
-        put("maximumPoolSize", maxConnectionPoolSize)
+        put("minimumIdle", minimumIdleConnections.value)
+        put("maxLifetime", maxLifetimeConnections.value)
+        put("maximumPoolSize", maxConnectionPoolSize.value)
+        put("connectionTimeout", connectionTimeout.value)
+        put("idleTimeout", idleConnectionTimeout.value)
     }

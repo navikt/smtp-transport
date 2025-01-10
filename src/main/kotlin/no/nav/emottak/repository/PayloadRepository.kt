@@ -6,7 +6,7 @@ import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.withContext
 import no.nav.emottak.Error.PayloadAlreadyExist
 import no.nav.emottak.Error.PayloadDoesNotExist
-import no.nav.emottak.smtp.PayloadDatabase
+import no.nav.emottak.queries.PayloadDatabase
 import no.nav.emottak.util.Payload
 import org.postgresql.util.PSQLException
 import org.postgresql.util.PSQLState.UNIQUE_VIOLATION

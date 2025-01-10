@@ -14,6 +14,7 @@ import no.nav.emottak.plugin.configureMetrics
 import no.nav.emottak.plugin.configureRoutes
 import no.nav.emottak.processor.MailProcessor
 import no.nav.emottak.publisher.MailPublisher
+import no.nav.emottak.repository.PayloadRepository
 import org.slf4j.LoggerFactory
 import kotlin.time.Duration.Companion.seconds
 
@@ -24,15 +25,18 @@ fun main() = SuspendApp {
     result {
         resourceScope {
             val deps = initDependencies(config)
+
+            deps.migrationService.migrate()
+
             server(Netty, port = 8080, preWait = 5.seconds) {
                 configureMetrics(deps.meterRegistry)
                 configureContentNegotiation()
                 configureRoutes(deps.meterRegistry)
             }
-            // val payloadRepository = PayloadRepository(deps.payloadDatabase)
+            val payloadRepository = PayloadRepository(deps.payloadDatabase)
             val mailPublisher = MailPublisher(config.kafka, deps.kafkaPublisher)
 
-            val mailProcessor = MailProcessor(config, deps, mailPublisher)
+            val mailProcessor = MailProcessor(config, deps, mailPublisher, payloadRepository)
 
             scheduleProcessMessages(config.job, mailProcessor)
 

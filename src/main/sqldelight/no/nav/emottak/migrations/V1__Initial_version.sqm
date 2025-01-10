@@ -5,5 +5,5 @@ CREATE TABLE payload
     content_type		VARCHAR(256)		NOT NULL,
     content             BYTEA		        NOT NULL,
     created_at		    TIMESTAMP		    DEFAULT now(),
-    PRIMARY KEY (reference_id, content_id)
+	PRIMARY KEY (reference_id, content_id)
 );
