@@ -128,6 +128,9 @@ fun Smtp.toProperties() = Properties()
 value class Url(val value: String)
 
 @JvmInline
+value class Driver(val value: String)
+
+@JvmInline
 value class MinimumIdleConnections(val value: Int)
 
 @JvmInline
@@ -150,6 +153,7 @@ value class Role(val value: String)
 
 data class Database(
     val url: Url,
+    val driver: Driver,
     val minimumIdleConnections: MinimumIdleConnections,
     val maxLifetimeConnections: MaxLifeTimeConnections,
     val maxConnectionPoolSize: MaxConnectionPoolSize,
@@ -163,6 +167,7 @@ data class Database(
 fun Database.toProperties() = Properties()
     .apply {
         put("jdbcUrl", url.value)
+        put("driverClassName", driver.value)
         put("minimumIdle", minimumIdleConnections.value)
         put("maxLifetime", maxLifetimeConnections.value)
         put("maximumPoolSize", maxConnectionPoolSize.value)

@@ -56,6 +56,7 @@ internal suspend fun ResourceScope.jdbcDriver(dataSource: DataSource) =
 
 internal suspend fun ResourceScope.hikari(database: Database): HikariDataSource =
     autoCloseable {
+        log.debug("Database properties: {}", database.toProperties())
         createHikariDataSourceWithVaultIntegration(
             HikariConfig(database.toProperties()),
             database.mountPath.value,
