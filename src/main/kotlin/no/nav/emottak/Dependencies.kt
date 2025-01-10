@@ -57,7 +57,6 @@ internal suspend fun ResourceScope.jdbcDriver(dataSource: DataSource) =
 internal suspend fun ResourceScope.hikari(database: Database): HikariDataSource =
     autoCloseable {
         log.info("Database: {}", database)
-        log.info("Database properties: {}", database.toProperties().toString())
         createHikariDataSourceWithVaultIntegration(
             HikariConfig(database.toProperties()),
             database.mountPath.value,
@@ -77,7 +76,7 @@ private fun migrationService(database: Database): Flyway {
     return Flyway
         .configure()
         .dataSource(database.url.value, user, password)
-        .initSql("SET ROLE ${database.adminRole}")
+        .initSql("SET ROLE ${database.adminRole.value}")
         .locations(MIGRATIONS_PATH)
         .load()
 }
