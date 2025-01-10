@@ -76,7 +76,7 @@ private fun migrationService(database: Database): Flyway {
     return Flyway
         .configure()
         .dataSource(database.url.value, user, password)
-        .initSql("SET ROLE ${database.adminRole.value}")
+        .initSql("SET ROLE \"${database.adminRole.value}\"")
         .locations(MIGRATIONS_PATH)
         .load()
 }
