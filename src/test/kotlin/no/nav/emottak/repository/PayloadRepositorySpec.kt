@@ -7,8 +7,8 @@ import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
-import no.nav.emottak.Error.PayloadAlreadyExist
-import no.nav.emottak.Error.PayloadDoesNotExist
+import no.nav.emottak.PayloadAlreadyExist
+import no.nav.emottak.PayloadDoesNotExist
 import no.nav.emottak.payloadDatabase
 import no.nav.emottak.runMigrations
 import no.nav.emottak.util.Payload

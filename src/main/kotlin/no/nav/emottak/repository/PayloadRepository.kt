@@ -4,8 +4,8 @@ import arrow.core.raise.Raise
 import arrow.core.raise.catch
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.withContext
-import no.nav.emottak.Error.PayloadAlreadyExist
-import no.nav.emottak.Error.PayloadDoesNotExist
+import no.nav.emottak.PayloadAlreadyExist
+import no.nav.emottak.PayloadDoesNotExist
 import no.nav.emottak.queries.PayloadDatabase
 import no.nav.emottak.util.Payload
 import org.postgresql.util.PSQLException
