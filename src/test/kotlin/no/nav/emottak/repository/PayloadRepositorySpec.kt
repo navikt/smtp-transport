@@ -9,7 +9,6 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import no.nav.emottak.Error.PayloadAlreadyExist
 import no.nav.emottak.Error.PayloadDoesNotExist
-import no.nav.emottak.log
 import no.nav.emottak.payloadDatabase
 import no.nav.emottak.runMigrations
 import no.nav.emottak.util.Payload
@@ -17,9 +16,8 @@ import no.nav.emottak.util.Payload
 class PayloadRepositorySpec : StringSpec(
     {
         val repository = PayloadRepository(payloadDatabase())
-        val migrateResult = runMigrations()
 
-        log.info("Migrations executed: ${migrateResult.migrationsExecuted}")
+        beforeSpec { runMigrations() }
 
         "should insert single payload" {
             val payloads = createSinglePayload()

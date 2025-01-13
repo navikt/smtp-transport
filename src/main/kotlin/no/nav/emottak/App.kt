@@ -25,7 +25,6 @@ fun main() = SuspendApp {
     result {
         resourceScope {
             val deps = initDependencies(config)
-
             deps.migrationService.migrate()
 
             server(Netty, port = 8080, preWait = 5.seconds) {

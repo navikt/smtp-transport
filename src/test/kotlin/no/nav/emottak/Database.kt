@@ -21,6 +21,7 @@ fun runMigrations(): MigrateResult {
         .configure()
         .dataSource(container.jdbcUrl, container.username, container.password)
         .locations(MIGRATIONS_PATH)
+        .loggers("slf4j")
         .load()
         .migrate()
 }

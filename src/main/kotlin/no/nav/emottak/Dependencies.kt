@@ -77,6 +77,7 @@ private fun migrationService(database: Database): Flyway {
         .dataSource(database.url.value, user, password)
         .initSql("SET ROLE \"${database.adminRole.value}\"")
         .locations(MIGRATIONS_PATH)
+        .loggers("slf4j")
         .load()
 }
 
