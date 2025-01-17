@@ -1,5 +1,8 @@
 package no.nav.emottak.util
 
+import no.nav.emottak.model.Payload
+import no.nav.emottak.model.PayloadMessage
+import no.nav.emottak.model.SignalMessage
 import no.nav.emottak.smtp.EmailMsg
 import no.nav.emottak.smtp.Part
 import java.util.UUID
@@ -7,23 +10,32 @@ import java.util.UUID
 private const val CONTENT_ID = "Content-Id"
 private const val CONTENT_TYPE = "Content-Type"
 
-data class Payload(
-    val referenceId: String,
-    val contentId: String,
-    val contentType: String,
-    val content: ByteArray
+fun EmailMsg.toSignalMessage(messageId: UUID): SignalMessage = SignalMessage(
+    messageId,
+    getEnvelope()
 )
 
-fun EmailMsg.getContent() = parts.first().bytes
+fun EmailMsg.toPayloadMessage(messageId: UUID): PayloadMessage = PayloadMessage(
+    messageId,
+    getEnvelope(),
+    getPayloads(messageId)
+)
 
-fun EmailMsg.toPayloads(referenceId: UUID) = parts.map { it.toPayload(referenceId) }
+private fun EmailMsg.getEnvelope() = parts
+    .first()
+    .bytes
+
+private fun EmailMsg.getPayloads(messageId: UUID) = parts
+    // drop the envelope
+    .drop(1)
+    .map { it.toPayload(messageId) }
 
 private fun Part.getContentId() = "${headers[CONTENT_ID]}"
 
 private fun Part.getContentType() = "${headers[CONTENT_TYPE]}"
 
 private fun Part.toPayload(referenceId: UUID) = Payload(
-    referenceId.toString(),
+    referenceId,
     getContentId(),
     getContentType(),
     bytes

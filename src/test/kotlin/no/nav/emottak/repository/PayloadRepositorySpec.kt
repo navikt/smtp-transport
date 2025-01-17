@@ -9,9 +9,10 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import no.nav.emottak.PayloadAlreadyExist
 import no.nav.emottak.PayloadDoesNotExist
+import no.nav.emottak.model.Payload
 import no.nav.emottak.payloadDatabase
 import no.nav.emottak.runMigrations
-import no.nav.emottak.util.Payload
+import java.util.UUID
 
 class PayloadRepositorySpec : StringSpec(
     {
@@ -20,31 +21,34 @@ class PayloadRepositorySpec : StringSpec(
         beforeSpec { runMigrations() }
 
         "should insert single payload" {
-            val payloads = createSinglePayload()
+            val referenceId = UUID.randomUUID()
+            val payloads = createSinglePayload(referenceId)
 
             with(repository) {
                 either { insert(payloads) } shouldBe Right(
-                    listOf(Pair("reference-id", "content-id"))
+                    listOf(Pair(referenceId.toString(), "content-id"))
                 )
             }
         }
 
         "should insert multiple payloads" {
-            val payloads = createMultiplePayloads()
+            val referenceIds = listOf(UUID.randomUUID(), UUID.randomUUID())
+            val payloads = createMultiplePayloads(referenceIds)
 
             with(repository) {
                 either { insert(payloads) } shouldBe Right(
                     listOf(
-                        Pair("first-reference-id", "first-content-id"),
-                        Pair("second-reference-id", "second-content-id")
+                        Pair(referenceIds.first().toString(), "first-content-id"),
+                        Pair(referenceIds.last().toString(), "second-content-id")
                     )
                 )
             }
         }
 
         "should insert and retrieve a single payload" {
+            val referenceId = UUID.randomUUID()
             val payload = Payload(
-                "ref",
+                referenceId,
                 "cont",
                 "t",
                 "d".toByteArray()
@@ -53,7 +57,7 @@ class PayloadRepositorySpec : StringSpec(
             with(repository) {
                 either { insert(listOf(payload)) }
 
-                val eitherPayload = either { retrieve("ref", "cont") }
+                val eitherPayload = either { retrieve(referenceId, "cont") }
                 val retrievedPayload = eitherPayload.shouldBeRight()
 
                 retrievedPayload shouldBeEqual payload
@@ -61,14 +65,15 @@ class PayloadRepositorySpec : StringSpec(
         }
 
         "should insert and retrieve multiple payloads" {
+            val referenceId = UUID.randomUUID()
             val firstPayload = Payload(
-                "r",
+                referenceId,
                 "c1",
                 "t",
                 "d".toByteArray()
             )
             val secondPayload = Payload(
-                "r",
+                referenceId,
                 "c2",
                 "t",
                 "d".toByteArray()
@@ -77,7 +82,7 @@ class PayloadRepositorySpec : StringSpec(
             with(repository) {
                 either { insert(listOf(firstPayload, secondPayload)) }
 
-                val eitherPayload = either { retrieve("r") }
+                val eitherPayload = either { retrieve(referenceId) }
                 val retrievedPayloads = eitherPayload.shouldBeRight()
 
                 retrievedPayloads shouldHaveSize 2
@@ -87,10 +92,11 @@ class PayloadRepositorySpec : StringSpec(
         }
 
         "should fail on non existing payload" {
+            val nonExistingReferenceId = UUID.randomUUID()
             with(repository) {
-                either { retrieve("no-ref-id", "no-content-id") } shouldBe Left(
+                either { retrieve(nonExistingReferenceId, "no-content-id") } shouldBe Left(
                     PayloadDoesNotExist(
-                        "no-ref-id",
+                        nonExistingReferenceId.toString(),
                         "no-content-id"
                     )
                 )
@@ -98,20 +104,22 @@ class PayloadRepositorySpec : StringSpec(
         }
 
         "should fail on non existing payloads" {
+            val nonExistingReferenceId = UUID.randomUUID()
             with(repository) {
-                either { retrieve("no-ref-id") } shouldBe Left(
-                    PayloadDoesNotExist("no-ref-id")
+                either { retrieve(nonExistingReferenceId) } shouldBe Left(
+                    PayloadDoesNotExist(nonExistingReferenceId.toString())
                 )
             }
         }
 
         "should fail on duplicate payload" {
-            val payloads = createDuplicatePayloads()
+            val referenceId = UUID.randomUUID()
+            val payloads = createDuplicatePayloads(referenceId)
 
             with(repository) {
                 either { insert(payloads) } shouldBe Left(
                     PayloadAlreadyExist(
-                        "duplicate-reference-id",
+                        referenceId.toString(),
                         "duplicate-content-id"
                     )
                 )
@@ -120,44 +128,45 @@ class PayloadRepositorySpec : StringSpec(
     }
 )
 
-private fun createSinglePayload() = listOf(
+private fun createSinglePayload(referenceId: UUID) = listOf(
     Payload(
-        "reference-id",
+        referenceId,
         "content-id",
         "text",
         "data".toByteArray()
     )
 )
 
-private fun createMultiplePayloads() = listOf(
+private fun createMultiplePayloads(referenceIds: List<UUID>) = listOf(
     Payload(
-        "first-reference-id",
+        referenceIds.first(),
         "first-content-id",
         "text",
         "first".toByteArray()
     ),
     Payload(
-        "second-reference-id",
+        referenceIds.last(),
         "second-content-id",
         "text",
         "second".toByteArray()
     )
 )
 
-private fun createDuplicatePayloads() = listOf(
-    Payload(
-        "duplicate-reference-id",
-        "duplicate-content-id",
-        "text",
-        "duplicate".toByteArray()
-    ),
-    Payload(
-        "duplicate-reference-id",
-        "duplicate-content-id",
-        "text",
-        "duplicate".toByteArray()
+private fun createDuplicatePayloads(referenceId: UUID) =
+    listOf(
+        Payload(
+            referenceId,
+            "duplicate-content-id",
+            "text",
+            "duplicate".toByteArray()
+        ),
+        Payload(
+            referenceId,
+            "duplicate-content-id",
+            "text",
+            "duplicate".toByteArray()
+        )
     )
-)
 
 private infix fun Payload.shouldBeEqual(payload: Payload) {
     payload.referenceId shouldBe referenceId

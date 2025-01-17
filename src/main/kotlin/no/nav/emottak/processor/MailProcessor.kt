@@ -1,8 +1,6 @@
 package no.nav.emottak.processor
 
-import arrow.core.Either.Right
-import arrow.core.left
-import arrow.core.raise.either
+import arrow.core.raise.fold
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -14,13 +12,14 @@ import kotlinx.coroutines.flow.onEach
 import no.nav.emottak.Dependencies
 import no.nav.emottak.configuration.Config
 import no.nav.emottak.log
+import no.nav.emottak.model.PayloadMessage
+import no.nav.emottak.model.SignalMessage
 import no.nav.emottak.publisher.MailPublisher
 import no.nav.emottak.repository.PayloadRepository
 import no.nav.emottak.smtp.EmailMsg
 import no.nav.emottak.smtp.MailReader
-import no.nav.emottak.util.dropFirst
-import no.nav.emottak.util.getContent
-import no.nav.emottak.util.toPayloads
+import no.nav.emottak.util.toPayloadMessage
+import no.nav.emottak.util.toSignalMessage
 import java.util.UUID.randomUUID
 
 class MailProcessor(
@@ -52,18 +51,23 @@ class MailProcessor(
         }
 
     private suspend fun processMessage(emailMsg: EmailMsg) {
-        val referenceId = randomUUID()
-        val payloads = emailMsg.toPayloads(referenceId)
-
-        if (payloads.size > 1) {
-            // Multipart message: Insert payloads (drop the first which will be published)
-            when (val result = with(payloadRepository) { either { insert(payloads.dropFirst()) } }) {
-                is Right -> mailPublisher.publishPayloadMessage(referenceId, emailMsg.getContent())
-                else -> log.error("Could not insert payload: ${result.left()}")
-            }
-        } else {
-            // Single-part message: Directly publish
-            mailPublisher.publishSignalMessage(referenceId, emailMsg.getContent())
+        val messageId = randomUUID()
+        when (emailMsg.multipart) {
+            true -> publishPayloadMessage(emailMsg.toPayloadMessage(messageId))
+            false -> publishSignalMessage(emailMsg.toSignalMessage(messageId))
         }
     }
+
+    private suspend fun publishPayloadMessage(payloadMessage: PayloadMessage) {
+        with(payloadRepository) {
+            fold(
+                block = { insert(payloadMessage.payloads) },
+                recover = { log.error("Could not insert payloads: ${payloadMessage.payloads.map { it }}") },
+                transform = { mailPublisher.publishPayloadMessage(payloadMessage) }
+            )
+        }
+    }
+
+    private suspend fun publishSignalMessage(signalMessage: SignalMessage) =
+        mailPublisher.publishSignalMessage(signalMessage)
 }

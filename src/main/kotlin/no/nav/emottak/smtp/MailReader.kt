@@ -14,6 +14,7 @@ import no.nav.emottak.configuration.Mail
 import no.nav.emottak.log
 
 data class EmailMsg(
+    val multipart: Boolean,
     val headers: Map<String, String>,
     val parts: List<Part>
 )
@@ -121,11 +122,13 @@ class MailReader(
 
     internal fun mapEmailMsg(message: MimeMessage): EmailMsg {
         val messageContent = message.content
-        val bodyparts: List<Part> = when (messageContent is MimeMultipart) {
-            true -> createMimeBodyParts(messageContent)
+        val multiPartMessage = messageContent is MimeMultipart
+        val bodyparts: List<Part> = when (multiPartMessage) {
+            true -> createMimeBodyParts(messageContent as MimeMultipart)
             else -> createEmptyMimeBodyParts(message)
         }
         return EmailMsg(
+            multiPartMessage,
             message.allHeaders
                 .toList()
                 .groupBy({ it.name }, { it.value })
