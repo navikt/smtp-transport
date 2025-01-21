@@ -30,9 +30,14 @@ private fun EmailMsg.getPayloads(messageId: UUID) = parts
     .drop(1)
     .map { it.toPayload(messageId) }
 
-private fun Part.getContentId() = "${headers[CONTENT_ID]}"
+private fun Part.getContentId() = getContent(CONTENT_ID)
 
-private fun Part.getContentType() = "${headers[CONTENT_TYPE]}"
+private fun Part.getContentType() = getContent(CONTENT_TYPE)
+
+private fun Part.getContent(type: String) = headers
+    .entries
+    .first { (key, _) -> key.equals(type, ignoreCase = true) }
+    .value
 
 private fun Part.toPayload(referenceId: UUID) = Payload(
     referenceId,
