@@ -38,6 +38,7 @@ private fun Part.getContent(type: String) = headers
     .entries
     .first { (key, _) -> key.equals(type, ignoreCase = true) }
     .value
+    .stripAngleBrackets()
 
 private fun Part.toPayload(referenceId: UUID) = Payload(
     referenceId,
@@ -45,3 +46,5 @@ private fun Part.toPayload(referenceId: UUID) = Payload(
     getContentType(),
     bytes
 )
+
+private fun String.stripAngleBrackets() = removePrefix("<").removeSuffix(">")
