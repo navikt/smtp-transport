@@ -5,10 +5,13 @@ import arrow.continuations.ktor.server
 import arrow.core.raise.result
 import arrow.fx.coroutines.resourceScope
 import arrow.resilience.Schedule
+import io.ktor.server.application.Application
 import io.ktor.server.netty.Netty
 import io.ktor.utils.io.CancellationException
+import io.micrometer.prometheus.PrometheusMeterRegistry
 import kotlinx.coroutines.awaitCancellation
 import no.nav.emottak.configuration.Job
+import no.nav.emottak.plugin.configureAuthentication
 import no.nav.emottak.plugin.configureContentNegotiation
 import no.nav.emottak.plugin.configureMetrics
 import no.nav.emottak.plugin.configureRoutes
@@ -21,23 +24,27 @@ import kotlin.time.Duration.Companion.seconds
 internal val log = LoggerFactory.getLogger("no.nav.emottak.smtp")
 
 fun main() = SuspendApp {
-    val config = config()
+    log.info("smtp-transport starting")
     result {
         resourceScope {
-            val deps = initDependencies(config)
+            val deps = initDependencies(config())
             deps.migrationService.migrate()
-
-            server(Netty, port = 8080, preWait = 5.seconds) {
-                configureMetrics(deps.meterRegistry)
-                configureContentNegotiation()
-                configureRoutes(deps.meterRegistry)
-            }
             val payloadRepository = PayloadRepository(deps.payloadDatabase)
-            val mailPublisher = MailPublisher(config.kafka, deps.kafkaPublisher)
 
-            val mailProcessor = MailProcessor(config, deps, mailPublisher, payloadRepository)
+            server(
+                Netty,
+                port = 8080,
+                preWait = 5.seconds,
+                module = smtpTransportModule(
+                    deps.meterRegistry,
+                    payloadRepository
+                )
+            )
 
-            scheduleProcessMessages(config.job, mailProcessor)
+            val mailPublisher = MailPublisher(config().kafka, deps.kafkaPublisher)
+            val mailProcessor = MailProcessor(config(), deps, mailPublisher, payloadRepository)
+
+            scheduleProcessMessages(config().job, mailProcessor)
 
             awaitCancellation()
         }
@@ -48,6 +55,18 @@ fun main() = SuspendApp {
                 else -> logError(error)
             }
         }
+}
+
+fun smtpTransportModule(
+    meterRegistry: PrometheusMeterRegistry,
+    payloadRepository: PayloadRepository
+): Application.() -> Unit {
+    return {
+        configureMetrics(meterRegistry)
+        configureContentNegotiation()
+        configureAuthentication()
+        configureRoutes(meterRegistry, payloadRepository)
+    }
 }
 
 private suspend fun scheduleProcessMessages(job: Job, mailProcessor: MailProcessor) =
