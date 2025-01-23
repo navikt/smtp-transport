@@ -12,8 +12,11 @@ dependencyResolutionManagement {
     versionCatalogs {
         create("libs") {
             version("arrow", "1.2.4")
+            version("flyway", "9.16.3")
+            version("hikari", "5.0.1")
             version("suspendapp", "0.4.0")
             version("ktor", "2.3.8")
+            version("token-validation-ktor", "4.1.4")
             version("jakarta-mail", "2.1.2")
             version("eclipse-angus", "2.0.2")
             version("hoplite", "2.8.2")
@@ -21,6 +24,9 @@ dependencyResolutionManagement {
             version("sqldelight", "2.0.2")
             version("postgres", "42.7.4")
             version("vault-jdbc", "1.3.10")
+            version("prometheus", "1.12.4")
+            version("logback", "1.4.11")
+            version("logstash", "7.4")
 
             library("arrow-core", "io.arrow-kt", "arrow-core").versionRef("arrow")
             library("arrow-fx-coroutines", "io.arrow-kt", "arrow-fx-coroutines").versionRef("arrow")
@@ -44,10 +50,10 @@ dependencyResolutionManagement {
             library("ktor-client-auth", "io.ktor", "ktor-client-auth").versionRef("ktor")
 
             library("ktor-server-metrics-micrometer", "io.ktor", "ktor-server-metrics-micrometer").versionRef("ktor")
-            library("micrometer-registry-prometheus", "io.micrometer:micrometer-registry-prometheus:1.12.4")
+            library("micrometer-registry-prometheus", "io.micrometer", "micrometer-registry-prometheus").versionRef("prometheus")
 
-            library("logback-classic", "ch.qos.logback:logback-classic:1.4.11")
-            library("logback-logstash", "net.logstash.logback:logstash-logback-encoder:7.4")
+            library("logback-classic", "ch.qos.logback", "logback-classic").versionRef("logback")
+            library("logback-logstash", "net.logstash.logback", "logstash-logback-encoder").versionRef("logstash")
 
             library("sqldelight-jdbc-driver", "app.cash.sqldelight", "jdbc-driver").versionRef("sqldelight")
             library("sqldelight-postgresql-dialect", "app.cash.sqldelight", "postgresql-dialect").versionRef("sqldelight")
@@ -56,11 +62,11 @@ dependencyResolutionManagement {
 
             library("postgresql", "org.postgresql", "postgresql").versionRef("postgres")
             library("vault-jdbc", "no.nav", "vault-jdbc").versionRef("vault-jdbc")
-            library("hikari", "com.zaxxer:HikariCP:5.0.1")
+            library("hikari", "com.zaxxer", "HikariCP").versionRef("hikari")
 
-            library("ktor-server-auth-jvm", "io.ktor:ktor-server-auth-jvm:2.3.8")
-            library("token-validation-ktor-v2", "no.nav.security:token-validation-ktor-v2:4.1.4")
-            library("flyway-core", "org.flywaydb:flyway-core:9.16.3")
+            library("ktor-server-auth-jvm", "io.ktor", "ktor-server-auth-jvm").versionRef("ktor")
+            library("token-validation-ktor-v2", "no.nav.security", "token-validation-ktor-v2").versionRef("token-validation-ktor")
+            library("flyway-core", "org.flywaydb", "flyway-core").versionRef("flyway")
 
             library("jakarta-mail-api", "jakarta.mail", "jakarta.mail-api").versionRef("jakarta-mail")
             library("eclipse-angus", "org.eclipse.angus", "jakarta.mail").versionRef("eclipse-angus")
@@ -71,9 +77,11 @@ dependencyResolutionManagement {
         }
 
         create("testLibs") {
+            version("arrow", "1.2.4")
             version("testPostgres", "1.18.0")
             version("ktor-server-test", "2.3.4")
             version("kotest", "5.9.1")
+            version("mock-oauth2", "2.1.2")
             version("testcontainers", "1.18.1")
             version("kotest-extensions", "2.0.2")
             version("greenmail", "2.1.0-alpha-3")
@@ -82,13 +90,11 @@ dependencyResolutionManagement {
             //                             kotlinx-coroutines-core-jvm:1.9.0 som gjør at SmtpTransportIntegrationTest.kt
             //                             feiler med NoSuchMethodError for operasjon
             //                             LockFreeLinkedListHead.addLast(kotlinx.coroutines.internal.LockFreeLinkedListNode)
-            version("arrow", "1.2.4")
-
             library("greenmail", "com.icegreen", "greenmail").versionRef("greenmail")
             library("greenmail-junit5", "com.icegreen", "greenmail-junit5").versionRef("greenmail")
 
             library("ktor-server-test-host", "io.ktor", "ktor-server-test-host").versionRef("ktor-server-test")
-            library("mock-oauth2-server", "no.nav.security:mock-oauth2-server:2.1.2")
+            library("mock-oauth2-server", "no.nav.security", "mock-oauth2-server").versionRef("mock-oauth2")
 
             library("kotest-runner-junit5", "io.kotest", "kotest-runner-junit5").versionRef("kotest")
             library("kotest-framework-datatest", "io.kotest", "kotest-framework-datatest").versionRef("kotest")
