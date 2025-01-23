@@ -76,7 +76,6 @@ dependencies {
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.cio)
     implementation(libs.bundles.jakarta.mail)
-    implementation(libs.jsch)
     implementation(libs.ktor.client.auth)
     implementation(libs.ktor.server.auth.jvm)
     implementation(libs.token.validation.ktor.v2)
@@ -85,12 +84,7 @@ dependencies {
     implementation(libs.postgresql)
     implementation(libs.sqldelight.jdbc.driver)
     implementation(libs.vault.jdbc)
-    runtimeOnly("net.java.dev.jna:jna:5.12.1")
-    testRuntimeOnly(testLibs.junit.jupiter.engine)
     testImplementation(testLibs.mock.oauth2.server)
-    testImplementation(testLibs.mockk.jvm)
-    testImplementation(testLibs.mockk.dsl.jvm)
-    testImplementation(testLibs.junit.jupiter.api)
     testImplementation(testLibs.bundles.kotest)
     testImplementation(testLibs.ktor.server.test.host)
     testImplementation(testLibs.testcontainers)
@@ -101,10 +95,8 @@ dependencies {
     testImplementation(testLibs.kotest.assertions.arrow)
     testImplementation(testLibs.postgresql)
     testImplementation(testLibs.turbine)
-    testImplementation("com.icegreen:greenmail:2.1.0-alpha-3")
-    testImplementation("com.icegreen:greenmail-junit5:2.1.0-alpha-3")
+    testImplementation(testLibs.bundles.greenmail)
     testImplementation(kotlin("test"))
-    implementation(kotlin("stdlib-jdk8"))
 }
 
 application {
