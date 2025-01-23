@@ -1,6 +1,5 @@
 package no.nav.emottak
 
-import no.nav.emottak.util.getEnvVar
 import no.nav.security.token.support.v2.IssuerConfig
 import no.nav.security.token.support.v2.TokenSupportConfig
 
@@ -36,5 +35,8 @@ class AuthConfig {
         )
 
         private fun getAcceptedAudience(): List<String> = listOf(getEnvVar("AZURE_APP_CLIENT_ID", getScope()))
+
+        private fun getEnvVar(varName: String, defaultValue: String? = null) =
+            System.getenv(varName) ?: System.getProperty(varName) ?: defaultValue ?: throw RuntimeException("Environment: Missing required variable \"$varName\"")
     }
 }
