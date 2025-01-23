@@ -60,7 +60,7 @@ jobs:
 
       - name: "Build and push ${{ env.MODULE_NAME }} docker image"
         run: | 
-          docker build --tag ${{ env.IMAGE_NAME }} -f Dockerfile --pull 
+          docker build --tag ${{ env.IMAGE_NAME }} -f Dockerfile . --pull 
           docker push ${{ env.IMAGE_NAME }}
 
   deploy:
