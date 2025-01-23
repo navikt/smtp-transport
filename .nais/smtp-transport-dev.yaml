@@ -1,0 +1,90 @@
+apiVersion: "nais.io/v1alpha1"
+kind: "Application"
+metadata:
+  name: "smtp-transport"
+  namespace: "team-emottak"
+  labels:
+    "team": "team-emottak"
+spec:
+  azure:
+    application:
+      enabled: true
+  webproxy: true
+  image: {{image}}
+  liveness:
+    path: "/internal/health/liveness"
+    port: 8080
+    initialDelay: 30
+    timeout: 10
+    failureThreshold: 10
+  observability:
+    autoInstrumentation:
+      enabled: true
+      runtime: java
+      destinations:
+        - id: "grafana-lgtm"
+        - id: "elastic-apm"
+    logging:
+      destinations:
+        - id: elastic
+  prometheus:
+    enabled: true
+    path: /prometheus
+  readiness:
+    path: "/internal/health/readiness"
+    port: 8080
+    initialDelay: 30
+    timeout: 10
+    failureThreshold: 10
+  replicas:
+    min: 1
+    max: 1
+    cpuThresholdPercentage: 50
+  resources:
+    limits:
+      cpu: "1000m"
+      memory: "1024Mi"
+    requests:
+      cpu: "200m"
+      memory: "512Mi"
+  ingresses:
+    - "https://smtp-transport.intern.dev.nav.no"
+  kafka:
+    pool: nav-dev
+  envFrom:
+    - secret: smtp-transport-secrets
+  vault:
+    enabled: true
+    paths:
+      - kvPath: /serviceuser/data/dev/srvtokt
+        mountPath: /secret/serviceuser
+  accessPolicy:
+    inbound:
+      rules:
+        - application: ebms-provider
+        - application: azure-token-generator
+          namespace: aura
+          cluster: dev-gcp
+  env:
+    - name: SMTP_POP3_FACTORY_PORT
+      value: "110"
+    - name: SMTP_POP3_PORT
+      value: "110"
+    - name: SMTP_POP3_HOST
+      value: "d32mxvl002.oera-t.local"
+    - name: SMTP_STORE_PROTOCOL
+      value: "pop3"
+    - name: SMTP_INCOMING_USERNAME
+      value: "nyebmstest@test-es.nav.no"
+    - name: SMTP_BCC_USERNAME
+      value: "nyebmsbcc@test-es.nav.no"
+    - name: SMTP_OUTGOING_USERNAME_NY
+      value: "nyebms2@test-es.nav.no"
+    - name: POSTGRES_JDBC_URL
+      value: "jdbc:postgresql://b27dbvl035.preprod.local:5432/emottak-smtp-transport-payload"
+    - name: POSTGRES_MOUNT_PATH
+      value: "postgresql/preprod-fss"
+    - name: POSTGRES_USER_ROLE
+      value: "emottak-smtp-transport-payload-user"
+    - name: POSTGRES_ADMIN_ROLE
+      value: "emottak-smtp-transport-payload-admin"
