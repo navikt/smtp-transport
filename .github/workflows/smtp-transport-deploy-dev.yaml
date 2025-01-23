@@ -12,7 +12,7 @@ on:
 
 env:
   MODULE_NAME: "smtp-transport"
-  IMAGE_NAME: "ghcr.io/${{ github.repository }}/smtp-transport:${{ github.sha }}"
+  IMAGE_NAME: "ghcr.io/${{ github.repository }}:${{ github.sha }}"
   NAIS_MANIFEST: "smtp-transport-dev.yaml"
 
 jobs:
