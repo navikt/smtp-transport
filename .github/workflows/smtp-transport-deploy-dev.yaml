@@ -45,7 +45,7 @@ jobs:
               ${{ runner.os }}-gradle-cache-
 
       - name: "Build and tests ${{ env.MODULE_NAME }}"
-        run: ./gradlew :$MODULE_NAME:test :$MODULE_NAME:build
+        run: ./gradlew :test :build
         env:
             ORG_GRADLE_PROJECT_githubUser: x-access-token
             ORG_GRADLE_PROJECT_githubPassword: ${{ secrets.GITHUB_TOKEN }}
