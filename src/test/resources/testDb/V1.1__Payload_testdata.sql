@@ -1,13 +1,3 @@
-CREATE TABLE payload
-(
-    reference_id        VARCHAR(256)		NOT NULL,
-    content_id		    VARCHAR(256)		NOT NULL,
-    content_type		VARCHAR(256)		NOT NULL,
-    content             BYTEA		        NOT NULL,
-    created_at		    TIMESTAMP		    DEFAULT now(),
-    PRIMARY KEY (reference_id, content_id)
-);
-
 INSERT INTO payload (reference_id, content_id, content_type, content)
 VALUES (
 	'99819a74-3f1d-453b-b1d3-735d900cfc5d',
