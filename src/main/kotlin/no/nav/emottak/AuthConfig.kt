@@ -3,40 +3,16 @@ package no.nav.emottak
 import no.nav.security.token.support.v2.IssuerConfig
 import no.nav.security.token.support.v2.TokenSupportConfig
 
-const val AZURE_AD_AUTH = "AZURE_AD"
-
-private const val appName = "smtp-transport"
-private const val appScopeProperty = "SMTP_TRANSPORT_SCOPE"
-
 class AuthConfig {
-
     companion object {
+        private val config = config()
+
         fun getTokenSupportConfig(): TokenSupportConfig = TokenSupportConfig(
             IssuerConfig(
-                name = AZURE_AD_AUTH,
-                discoveryUrl = getAzureWellKnownUrl(),
-                acceptedAudience = getAcceptedAudience()
+                name = config.azureAuth.azureAdAuth.value,
+                discoveryUrl = config.azureAuth.azureWellKnownUrl.value,
+                acceptedAudience = listOf(config.azureAuth.azureAppClientId.value)
             )
         )
-
-        fun getScope(): String = getEnvVar(
-            appScopeProperty,
-            "api://${getEnvVar("NAIS_CLUSTER_NAME", "dev-fss")}.team-emottak.$appName/.default"
-        )
-
-        fun getAzureWellKnownUrl(): String = getEnvVar(
-            "AZURE_APP_WELL_KNOWN_URL",
-            "http://localhost:3344/${getEnvVar("AZURE_APP_TENANT_ID", AZURE_AD_AUTH)}/.well-known/openid-configuration"
-        )
-
-        fun getAzureTokenEndpoint(): String = getEnvVar(
-            "AZURE_OPENID_CONFIG_TOKEN_ENDPOINT",
-            "http://localhost:3344/$AZURE_AD_AUTH/token"
-        )
-
-        private fun getAcceptedAudience(): List<String> = listOf(getEnvVar("AZURE_APP_CLIENT_ID", getScope()))
-
-        private fun getEnvVar(varName: String, defaultValue: String? = null) =
-            System.getenv(varName) ?: System.getProperty(varName) ?: defaultValue ?: throw RuntimeException("Environment: Missing required variable \"$varName\"")
     }
 }
