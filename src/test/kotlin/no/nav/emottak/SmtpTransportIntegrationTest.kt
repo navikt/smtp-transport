@@ -27,6 +27,8 @@ import kotlin.test.assertNotEquals
 
 class SmtpTransportIntegrationTest {
 
+    private val config = config()
+
     companion object {
         lateinit var mockOAuth2Server: MockOAuth2Server
         private val dbContainer: PostgreSQLContainer<Nothing> = smtpTransportPostgres("testDb/db.sql")
@@ -144,8 +146,8 @@ class SmtpTransportIntegrationTest {
         assertEquals("ReferenceId is not a valid UUID: 'ugyldig-reference-id'", httpResponse.bodyAsText())
     }
 
-    private fun getToken(audience: String = AuthConfig.getScope()): SignedJWT = mockOAuth2Server.issueToken(
-        issuerId = AZURE_AD_AUTH,
+    private fun getToken(audience: String = config.azureAuth.appScope.value): SignedJWT = mockOAuth2Server.issueToken(
+        issuerId = config.azureAuth.azureAdAuth.value,
         audience = audience,
         subject = "testUser"
     )
