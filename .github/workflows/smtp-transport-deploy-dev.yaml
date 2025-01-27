@@ -3,12 +3,10 @@ on:
   push:
     branches:
       - main
-      - dev
-      - dev/**
-    paths:
-      - smtp-transport/**
-      - .nais/smtp-transport-dev.yaml
-      - .github/workflows/smtp-transport-deploy-dev.yaml
+#    paths:
+#      - smtp-transport/**
+#      - .nais/smtp-transport-dev.yaml
+#      - .github/workflows/smtp-transport-deploy-dev.yaml
 
 env:
   MODULE_NAME: "smtp-transport"
