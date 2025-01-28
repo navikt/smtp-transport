@@ -1,7 +1,7 @@
 plugins {
     application
-    kotlin("jvm") version "1.9.22"
-    kotlin("plugin.serialization") version "1.9.0"
+    kotlin("jvm") version "2.1.10"
+    kotlin("plugin.serialization") version "2.1.10"
     id("io.ktor.plugin") version "2.3.4"
     id("app.cash.sqldelight") version "2.0.2"
     id("org.jlleitschuh.gradle.ktlint") version "11.6.1"
@@ -58,6 +58,7 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().all {
 
 dependencies {
     implementation(libs.arrow.core)
+    implementation(libs.arrow.functions)
     implementation(libs.arrow.fx.coroutines)
     implementation(libs.arrow.resilience)
     implementation(libs.arrow.suspendapp)
@@ -78,7 +79,7 @@ dependencies {
     implementation(libs.bundles.jakarta.mail)
     implementation(libs.ktor.client.auth)
     implementation(libs.ktor.server.auth.jvm)
-    implementation(libs.token.validation.ktor.v2)
+    implementation(libs.token.validation.ktor.v3)
     implementation(libs.hoplite.core)
     implementation(libs.hoplite.hocon)
     implementation(libs.postgresql)

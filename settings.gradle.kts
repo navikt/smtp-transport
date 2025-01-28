@@ -11,12 +11,12 @@ dependencyResolutionManagement {
 
     versionCatalogs {
         create("libs") {
-            version("arrow", "1.2.4")
+            version("arrow", "2.0.1")
             version("flyway", "9.16.3")
             version("hikari", "5.0.1")
-            version("suspendapp", "0.4.0")
-            version("ktor", "2.3.8")
-            version("token-validation-ktor", "4.1.4")
+            version("suspendapp", "0.5.0")
+            version("ktor", "3.0.3")
+            version("token-validation-ktor", "5.0.15")
             version("jakarta-mail", "2.1.2")
             version("eclipse-angus", "2.0.2")
             version("hoplite", "2.8.2")
@@ -29,6 +29,7 @@ dependencyResolutionManagement {
             version("logstash", "7.4")
 
             library("arrow-core", "io.arrow-kt", "arrow-core").versionRef("arrow")
+            library("arrow-functions", "io.arrow-kt", "arrow-functions").versionRef("arrow")
             library("arrow-fx-coroutines", "io.arrow-kt", "arrow-fx-coroutines").versionRef("arrow")
             library("arrow-resilience", "io.arrow-kt", "arrow-resilience").versionRef("arrow")
             library("arrow-suspendapp", "io.arrow-kt", "suspendapp").versionRef("suspendapp")
@@ -65,7 +66,7 @@ dependencyResolutionManagement {
             library("hikari", "com.zaxxer", "HikariCP").versionRef("hikari")
 
             library("ktor-server-auth-jvm", "io.ktor", "ktor-server-auth-jvm").versionRef("ktor")
-            library("token-validation-ktor-v2", "no.nav.security", "token-validation-ktor-v2").versionRef("token-validation-ktor")
+            library("token-validation-ktor-v3", "no.nav.security", "token-validation-ktor-v3").versionRef("token-validation-ktor")
             library("flyway-core", "org.flywaydb", "flyway-core").versionRef("flyway")
 
             library("jakarta-mail-api", "jakarta.mail", "jakarta.mail-api").versionRef("jakarta-mail")
@@ -79,17 +80,14 @@ dependencyResolutionManagement {
         create("testLibs") {
             version("arrow", "1.2.4")
             version("testPostgres", "1.18.0")
-            version("ktor-server-test", "2.3.4")
+            version("ktor-server-test", "3.0.3")
             version("kotest", "5.9.1")
             version("mock-oauth2", "2.1.2")
             version("testcontainers", "1.18.1")
             version("kotest-extensions", "2.0.2")
             version("greenmail", "2.1.0-alpha-3")
             version("postgres", "42.7.4")
-            version("turbine", "1.1.0") // Nedgradert fra 1.2.0 pga avhengigheten til
-            //                             kotlinx-coroutines-core-jvm:1.9.0 som gjør at SmtpTransportIntegrationTest.kt
-            //                             feiler med NoSuchMethodError for operasjon
-            //                             LockFreeLinkedListHead.addLast(kotlinx.coroutines.internal.LockFreeLinkedListNode)
+            version("turbine", "1.2.0")
             library("greenmail", "com.icegreen", "greenmail").versionRef("greenmail")
             library("greenmail-junit5", "com.icegreen", "greenmail-junit5").versionRef("greenmail")
 
