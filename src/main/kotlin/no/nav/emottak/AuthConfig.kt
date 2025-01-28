@@ -1,7 +1,7 @@
 package no.nav.emottak
 
-import no.nav.security.token.support.v2.IssuerConfig
-import no.nav.security.token.support.v2.TokenSupportConfig
+import no.nav.security.token.support.v3.IssuerConfig
+import no.nav.security.token.support.v3.TokenSupportConfig
 
 class AuthConfig {
     companion object {
