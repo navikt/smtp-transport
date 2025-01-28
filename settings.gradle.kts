@@ -87,10 +87,7 @@ dependencyResolutionManagement {
             version("kotest-extensions", "2.0.2")
             version("greenmail", "2.1.0-alpha-3")
             version("postgres", "42.7.4")
-            version("turbine", "1.1.0") // Nedgradert fra 1.2.0 pga avhengigheten til
-            //                             kotlinx-coroutines-core-jvm:1.9.0 som gjør at SmtpTransportIntegrationTest.kt
-            //                             feiler med NoSuchMethodError for operasjon
-            //                             LockFreeLinkedListHead.addLast(kotlinx.coroutines.internal.LockFreeLinkedListNode)
+            version("turbine", "1.2.0")
             library("greenmail", "com.icegreen", "greenmail").versionRef("greenmail")
             library("greenmail-junit5", "com.icegreen", "greenmail-junit5").versionRef("greenmail")
 
