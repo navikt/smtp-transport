@@ -1,32 +1,12 @@
 package no.nav.emottak
 
-import kotlinx.serialization.Serializable
+sealed interface PayloadError
 
-sealed interface Error
+data class PayloadAlreadyExist(val referenceId: String, val contentId: String) : PayloadError
+data class PayloadDoesNotExist(val referenceId: String) : PayloadError
 
-@Serializable
-data class PayloadAlreadyExist(
-    val referenceId: String,
-    val contentId: String
-) : Error
+sealed interface PayloadRequestError : PayloadError
 
-@Serializable
-data class PayloadDoesNotExist(
-    val referenceId: String,
-    val contentId: String? = null
-) : Error
-
-sealed interface PayloadRequestValidationError : Error
-
-data object EmptyReferenceId : PayloadRequestValidationError {
-    override fun toString() = "ReferenceId cannot be empty"
-}
-data object EmptyContentId : PayloadRequestValidationError {
-    override fun toString() = "ContentId cannot be empty"
-}
-
-sealed interface NotValidUUID : PayloadRequestValidationError
-
-data class InvalidReferenceId(val referenceId: String) : NotValidUUID {
-    override fun toString() = "ReferenceId is not a valid UUID: '$referenceId'"
-}
+data object ReferenceIdMissing : PayloadRequestError
+data object EmptyReferenceId : PayloadRequestError
+data class InvalidReferenceId(val referenceId: String) : PayloadRequestError

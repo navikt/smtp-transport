@@ -11,7 +11,7 @@ import no.nav.emottak.queries.PayloadDatabase
 import org.postgresql.util.PSQLException
 import org.postgresql.util.PSQLState.UNIQUE_VIOLATION
 import java.sql.SQLException
-import java.util.UUID
+import kotlin.uuid.Uuid
 
 class PayloadRepository(payloadDatabase: PayloadDatabase) {
     private val payloadQueries = payloadDatabase.payloadQueries
@@ -19,19 +19,19 @@ class PayloadRepository(payloadDatabase: PayloadDatabase) {
     suspend fun Raise<PayloadAlreadyExist>.insert(payloads: List<Payload>): List<Pair<String, String>> =
         withContext(IO) { payloads.map { payload -> insertPayload(payload) } }
 
-    suspend fun Raise<PayloadDoesNotExist>.retrieve(referenceId: UUID): List<Payload> =
+    suspend fun Raise<PayloadDoesNotExist>.retrieve(referenceId: Uuid): List<Payload> =
         withContext(IO) { retrievePayloads(referenceId) }
 
-    suspend fun Raise<PayloadDoesNotExist>.retrieve(referenceId: UUID, contentId: String): Payload =
+    suspend fun Raise<PayloadDoesNotExist>.retrieve(referenceId: Uuid, contentId: String): Payload =
         withContext(IO) { retrievePayload(referenceId, contentId) }
 
-    private fun Raise<PayloadDoesNotExist>.retrievePayloads(referenceId: UUID): List<Payload> {
+    private fun Raise<PayloadDoesNotExist>.retrievePayloads(referenceId: Uuid): List<Payload> {
         val payloads = payloadQueries.retrievePayloads(referenceId.toString()).executeAsList()
         return when (payloads.isEmpty()) {
             true -> raise(PayloadDoesNotExist(referenceId.toString()))
             else -> payloads.map {
                 Payload(
-                    UUID.fromString(it.reference_id),
+                    Uuid.parse(it.reference_id),
                     it.content_id,
                     it.content_type,
                     it.content
@@ -40,11 +40,11 @@ class PayloadRepository(payloadDatabase: PayloadDatabase) {
         }
     }
 
-    private fun Raise<PayloadDoesNotExist>.retrievePayload(referenceId: UUID, contentId: String) =
+    private fun Raise<PayloadDoesNotExist>.retrievePayload(referenceId: Uuid, contentId: String) =
         when (val payload = payloadQueries.retrievePayload(referenceId.toString(), contentId).executeAsOneOrNull()) {
-            null -> raise(PayloadDoesNotExist(referenceId.toString(), contentId))
+            null -> raise(PayloadDoesNotExist(referenceId.toString()))
             else -> Payload(
-                UUID.fromString(payload.reference_id),
+                Uuid.parse(payload.reference_id),
                 payload.content_id,
                 payload.content_type,
                 payload.content

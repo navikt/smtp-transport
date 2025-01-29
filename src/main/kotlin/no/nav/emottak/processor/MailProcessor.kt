@@ -20,7 +20,7 @@ import no.nav.emottak.smtp.EmailMsg
 import no.nav.emottak.smtp.MailReader
 import no.nav.emottak.util.toPayloadMessage
 import no.nav.emottak.util.toSignalMessage
-import java.util.UUID.randomUUID
+import kotlin.uuid.Uuid
 
 class MailProcessor(
     private val config: Config,
@@ -51,7 +51,7 @@ class MailProcessor(
         }
 
     private suspend fun processMessage(emailMsg: EmailMsg) {
-        val messageId = randomUUID()
+        val messageId = Uuid.random()
         when (emailMsg.multipart) {
             true -> publishPayloadMessage(emailMsg.toPayloadMessage(messageId))
             false -> publishSignalMessage(emailMsg.toSignalMessage(messageId))

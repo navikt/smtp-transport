@@ -5,17 +5,17 @@ import no.nav.emottak.model.PayloadMessage
 import no.nav.emottak.model.SignalMessage
 import no.nav.emottak.smtp.EmailMsg
 import no.nav.emottak.smtp.Part
-import java.util.UUID
+import kotlin.uuid.Uuid
 
 private const val CONTENT_ID = "Content-Id"
 private const val CONTENT_TYPE = "Content-Type"
 
-fun EmailMsg.toSignalMessage(messageId: UUID): SignalMessage = SignalMessage(
+fun EmailMsg.toSignalMessage(messageId: Uuid): SignalMessage = SignalMessage(
     messageId,
     getEnvelope()
 )
 
-fun EmailMsg.toPayloadMessage(messageId: UUID): PayloadMessage = PayloadMessage(
+fun EmailMsg.toPayloadMessage(messageId: Uuid): PayloadMessage = PayloadMessage(
     messageId,
     getEnvelope(),
     getPayloads(messageId)
@@ -25,7 +25,7 @@ private fun EmailMsg.getEnvelope() = parts
     .first()
     .bytes
 
-private fun EmailMsg.getPayloads(messageId: UUID) = parts
+private fun EmailMsg.getPayloads(messageId: Uuid) = parts
     // drop the envelope
     .drop(1)
     .map { it.toPayload(messageId) }
@@ -40,7 +40,7 @@ private fun Part.getContent(type: String) = headers
     .value
     .stripAngleBrackets()
 
-private fun Part.toPayload(referenceId: UUID) = Payload(
+private fun Part.toPayload(referenceId: Uuid) = Payload(
     referenceId,
     getContentId(),
     getContentType(),

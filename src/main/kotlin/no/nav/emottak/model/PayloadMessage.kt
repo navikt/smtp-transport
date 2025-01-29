@@ -1,9 +1,9 @@
 package no.nav.emottak.model
 
-import java.util.UUID
+import kotlin.uuid.Uuid
 
 data class PayloadMessage(
-    val messageId: UUID,
+    val messageId: Uuid,
     val envelope: ByteArray,
     val payloads: List<Payload>
 )

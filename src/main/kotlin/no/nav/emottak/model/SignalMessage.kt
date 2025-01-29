@@ -1,8 +1,8 @@
 package no.nav.emottak.model
 
-import java.util.UUID
+import kotlin.uuid.Uuid
 
 data class SignalMessage(
-    val messageId: UUID,
+    val messageId: Uuid,
     val envelope: ByteArray
 )

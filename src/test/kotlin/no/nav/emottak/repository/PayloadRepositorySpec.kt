@@ -12,7 +12,7 @@ import no.nav.emottak.PayloadDoesNotExist
 import no.nav.emottak.model.Payload
 import no.nav.emottak.payloadDatabase
 import no.nav.emottak.runMigrations
-import java.util.UUID
+import kotlin.uuid.Uuid
 
 class PayloadRepositorySpec : StringSpec(
     {
@@ -21,7 +21,7 @@ class PayloadRepositorySpec : StringSpec(
         beforeSpec { runMigrations() }
 
         "should insert single payload" {
-            val referenceId = UUID.randomUUID()
+            val referenceId = Uuid.random()
             val payloads = createSinglePayload(referenceId)
 
             with(repository) {
@@ -32,7 +32,7 @@ class PayloadRepositorySpec : StringSpec(
         }
 
         "should insert multiple payloads" {
-            val referenceIds = listOf(UUID.randomUUID(), UUID.randomUUID())
+            val referenceIds = listOf(Uuid.random(), Uuid.random())
             val payloads = createMultiplePayloads(referenceIds)
 
             with(repository) {
@@ -46,7 +46,7 @@ class PayloadRepositorySpec : StringSpec(
         }
 
         "should insert and retrieve a single payload" {
-            val referenceId = UUID.randomUUID()
+            val referenceId = Uuid.random()
             val payload = Payload(
                 referenceId,
                 "cont",
@@ -65,7 +65,7 @@ class PayloadRepositorySpec : StringSpec(
         }
 
         "should insert and retrieve multiple payloads" {
-            val referenceId = UUID.randomUUID()
+            val referenceId = Uuid.random()
             val firstPayload = Payload(
                 referenceId,
                 "c1",
@@ -92,19 +92,16 @@ class PayloadRepositorySpec : StringSpec(
         }
 
         "should fail on non existing payload" {
-            val nonExistingReferenceId = UUID.randomUUID()
+            val nonExistingReferenceId = Uuid.random()
             with(repository) {
-                either { retrieve(nonExistingReferenceId, "no-content-id") } shouldBe Left(
-                    PayloadDoesNotExist(
-                        nonExistingReferenceId.toString(),
-                        "no-content-id"
-                    )
+                either { retrieve(nonExistingReferenceId) } shouldBe Left(
+                    PayloadDoesNotExist(nonExistingReferenceId.toString())
                 )
             }
         }
 
         "should fail on non existing payloads" {
-            val nonExistingReferenceId = UUID.randomUUID()
+            val nonExistingReferenceId = Uuid.random()
             with(repository) {
                 either { retrieve(nonExistingReferenceId) } shouldBe Left(
                     PayloadDoesNotExist(nonExistingReferenceId.toString())
@@ -113,7 +110,7 @@ class PayloadRepositorySpec : StringSpec(
         }
 
         "should fail on duplicate payload" {
-            val referenceId = UUID.randomUUID()
+            val referenceId = Uuid.random()
             val payloads = createDuplicatePayloads(referenceId)
 
             with(repository) {
@@ -128,7 +125,7 @@ class PayloadRepositorySpec : StringSpec(
     }
 )
 
-private fun createSinglePayload(referenceId: UUID) = listOf(
+private fun createSinglePayload(referenceId: Uuid) = listOf(
     Payload(
         referenceId,
         "content-id",
@@ -137,7 +134,7 @@ private fun createSinglePayload(referenceId: UUID) = listOf(
     )
 )
 
-private fun createMultiplePayloads(referenceIds: List<UUID>) = listOf(
+private fun createMultiplePayloads(referenceIds: List<Uuid>) = listOf(
     Payload(
         referenceIds.first(),
         "first-content-id",
@@ -152,7 +149,7 @@ private fun createMultiplePayloads(referenceIds: List<UUID>) = listOf(
     )
 )
 
-private fun createDuplicatePayloads(referenceId: UUID) =
+private fun createDuplicatePayloads(referenceId: Uuid) =
     listOf(
         Payload(
             referenceId,

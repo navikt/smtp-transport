@@ -79,7 +79,10 @@ class SmtpTransportIntegrationTest {
         assertEquals("99819a74-3f1d-453b-b1d3-735d900cfc5d", payloads[0].referenceId.toString())
         assertEquals("f7aeef95-afca-4355-b6f7-1692e58c61cc", payloads[0].contentId)
         assertEquals("text/xml", payloads[0].contentType)
-        assertEquals("<?xml version=\"1.0\" encoding=\"utf-8\"?><dummy>xml 1</dummy>", payloads[0].content.decodeToString())
+        assertEquals(
+            "<?xml version=\"1.0\" encoding=\"utf-8\"?><dummy>xml 1</dummy>",
+            payloads[0].content.decodeToString()
+        )
     }
 
     @Test
@@ -126,8 +129,6 @@ class SmtpTransportIntegrationTest {
             }
         }
         assertEquals(HttpStatusCode.NotFound, httpResponse.status)
-        val payloadNotFound: PayloadDoesNotExist = httpResponse.body()
-        assertEquals("f7aeef95-afca-4355-b6f7-1692e58c61cc", payloadNotFound.referenceId)
     }
 
     @Test
@@ -143,7 +144,7 @@ class SmtpTransportIntegrationTest {
             }
         }
         assertEquals(HttpStatusCode.BadRequest, httpResponse.status)
-        assertEquals("ReferenceId is not a valid UUID: 'ugyldig-reference-id'", httpResponse.bodyAsText())
+        assertEquals("Invalid reference id (ugyldig-reference-id)", httpResponse.bodyAsText())
     }
 
     private fun getToken(audience: String = config.azureAuth.appScope.value): SignedJWT = mockOAuth2Server.issueToken(
