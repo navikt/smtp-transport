@@ -14,7 +14,7 @@ import no.nav.emottak.configuration.withKafka
 import no.nav.emottak.kafkaPublisher
 import no.nav.emottak.model.PayloadMessage
 import no.nav.emottak.model.SignalMessage
-import java.util.UUID
+import kotlin.uuid.Uuid
 
 class MailPublisherSpec : KafkaSpec(
     {
@@ -38,7 +38,7 @@ class MailPublisherSpec : KafkaSpec(
                         kafkaPublisher(config.kafka)
                     )
 
-                    val referenceId = UUID.randomUUID()
+                    val referenceId = Uuid.random()
                     val content = "payload".toByteArray()
                     val payloadMessage = PayloadMessage(referenceId, content, emptyList())
 
@@ -65,7 +65,7 @@ class MailPublisherSpec : KafkaSpec(
                         kafkaPublisher(config.kafka)
                     )
 
-                    val referenceId = UUID.randomUUID()
+                    val referenceId = Uuid.random()
                     val content = "signal".toByteArray()
                     val signalMessage = SignalMessage(referenceId, content)
 

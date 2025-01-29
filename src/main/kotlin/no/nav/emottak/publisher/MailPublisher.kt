@@ -6,7 +6,7 @@ import no.nav.emottak.log
 import no.nav.emottak.model.PayloadMessage
 import no.nav.emottak.model.SignalMessage
 import org.apache.kafka.clients.producer.ProducerRecord
-import java.util.UUID
+import kotlin.uuid.Uuid
 
 class MailPublisher(
     private val kafka: Kafka,
@@ -18,14 +18,14 @@ class MailPublisher(
     suspend fun publishSignalMessage(message: SignalMessage) =
         publishMessage(kafka.signalTopic, message.messageId, message.envelope)
 
-    private suspend fun publishMessage(topic: String, referenceId: UUID, content: ByteArray) =
+    private suspend fun publishMessage(topic: String, referenceId: Uuid, content: ByteArray) =
         kafkaPublisher.publishScope {
             publishCatching(toProducerRecord(topic, referenceId, content))
         }
             .onSuccess { log.info("Published message with reference id $referenceId to: $topic") }
             .onFailure { log.error("Failed to publish message with reference id: $referenceId") }
 
-    private fun toProducerRecord(topic: String, referenceId: UUID, content: ByteArray) =
+    private fun toProducerRecord(topic: String, referenceId: Uuid, content: ByteArray) =
         ProducerRecord(
             topic,
             referenceId.toString(),
