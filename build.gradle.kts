@@ -53,9 +53,7 @@ tasks {
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().all {
     kotlinOptions {
         jvmTarget = "21"
-        options.freeCompilerArgs.add(
-            "-opt-in=kotlin.uuid.ExperimentalUuidApi,arrow.core.raise.ExperimentalRaiseAccumulateApi"
-        )
+        options.freeCompilerArgs.add("-opt-in=kotlin.uuid.ExperimentalUuidApi")
     }
 }
 
