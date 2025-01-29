@@ -4,8 +4,8 @@ import arrow.core.raise.Raise
 import arrow.core.raise.catch
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.withContext
-import no.nav.emottak.PayloadAlreadyExist
-import no.nav.emottak.PayloadDoesNotExist
+import no.nav.emottak.PayloadAlreadyExists
+import no.nav.emottak.PayloadNotFound
 import no.nav.emottak.model.Payload
 import no.nav.emottak.queries.PayloadDatabase
 import org.postgresql.util.PSQLException
@@ -16,19 +16,19 @@ import kotlin.uuid.Uuid
 class PayloadRepository(payloadDatabase: PayloadDatabase) {
     private val payloadQueries = payloadDatabase.payloadQueries
 
-    suspend fun Raise<PayloadAlreadyExist>.insert(payloads: List<Payload>): List<Pair<String, String>> =
+    suspend fun Raise<PayloadAlreadyExists>.insert(payloads: List<Payload>): List<Pair<String, String>> =
         withContext(IO) { payloads.map { payload -> insertPayload(payload) } }
 
-    suspend fun Raise<PayloadDoesNotExist>.retrieve(referenceId: Uuid): List<Payload> =
+    suspend fun Raise<PayloadNotFound>.retrieve(referenceId: Uuid): List<Payload> =
         withContext(IO) { retrievePayloads(referenceId) }
 
-    suspend fun Raise<PayloadDoesNotExist>.retrieve(referenceId: Uuid, contentId: String): Payload =
+    suspend fun Raise<PayloadNotFound>.retrieve(referenceId: Uuid, contentId: String): Payload =
         withContext(IO) { retrievePayload(referenceId, contentId) }
 
-    private fun Raise<PayloadDoesNotExist>.retrievePayloads(referenceId: Uuid): List<Payload> {
+    private fun Raise<PayloadNotFound>.retrievePayloads(referenceId: Uuid): List<Payload> {
         val payloads = payloadQueries.retrievePayloads(referenceId.toString()).executeAsList()
         return when (payloads.isEmpty()) {
-            true -> raise(PayloadDoesNotExist(referenceId.toString()))
+            true -> raise(PayloadNotFound(referenceId.toString()))
             else -> payloads.map {
                 Payload(
                     Uuid.parse(it.reference_id),
@@ -40,9 +40,9 @@ class PayloadRepository(payloadDatabase: PayloadDatabase) {
         }
     }
 
-    private fun Raise<PayloadDoesNotExist>.retrievePayload(referenceId: Uuid, contentId: String) =
+    private fun Raise<PayloadNotFound>.retrievePayload(referenceId: Uuid, contentId: String) =
         when (val payload = payloadQueries.retrievePayload(referenceId.toString(), contentId).executeAsOneOrNull()) {
-            null -> raise(PayloadDoesNotExist(referenceId.toString()))
+            null -> raise(PayloadNotFound(referenceId.toString()))
             else -> Payload(
                 Uuid.parse(payload.reference_id),
                 payload.content_id,
@@ -51,7 +51,7 @@ class PayloadRepository(payloadDatabase: PayloadDatabase) {
             )
         }
 
-    private fun Raise<PayloadAlreadyExist>.insertPayload(payload: Payload): Pair<String, String> =
+    private fun Raise<PayloadAlreadyExists>.insertPayload(payload: Payload): Pair<String, String> =
         catch({
             val inserted = payloadQueries.insertPayload(
                 reference_id = payload.referenceId.toString(),
@@ -68,7 +68,7 @@ class PayloadRepository(payloadDatabase: PayloadDatabase) {
         }) { e: SQLException ->
             if (e is PSQLException && UNIQUE_VIOLATION.state == e.sqlState) {
                 raise(
-                    PayloadAlreadyExist(
+                    PayloadAlreadyExists(
                         payload.referenceId.toString(),
                         payload.contentId
                     )

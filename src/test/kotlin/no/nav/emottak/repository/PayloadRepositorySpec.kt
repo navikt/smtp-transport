@@ -7,8 +7,8 @@ import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
-import no.nav.emottak.PayloadAlreadyExist
-import no.nav.emottak.PayloadDoesNotExist
+import no.nav.emottak.PayloadAlreadyExists
+import no.nav.emottak.PayloadNotFound
 import no.nav.emottak.model.Payload
 import no.nav.emottak.payloadDatabase
 import no.nav.emottak.runMigrations
@@ -95,7 +95,7 @@ class PayloadRepositorySpec : StringSpec(
             val nonExistingReferenceId = Uuid.random()
             with(repository) {
                 either { retrieve(nonExistingReferenceId) } shouldBe Left(
-                    PayloadDoesNotExist(nonExistingReferenceId.toString())
+                    PayloadNotFound(nonExistingReferenceId.toString())
                 )
             }
         }
@@ -104,7 +104,7 @@ class PayloadRepositorySpec : StringSpec(
             val nonExistingReferenceId = Uuid.random()
             with(repository) {
                 either { retrieve(nonExistingReferenceId) } shouldBe Left(
-                    PayloadDoesNotExist(nonExistingReferenceId.toString())
+                    PayloadNotFound(nonExistingReferenceId.toString())
                 )
             }
         }
@@ -115,7 +115,7 @@ class PayloadRepositorySpec : StringSpec(
 
             with(repository) {
                 either { insert(payloads) } shouldBe Left(
-                    PayloadAlreadyExist(
+                    PayloadAlreadyExists(
                         referenceId.toString(),
                         "duplicate-content-id"
                     )

@@ -2,11 +2,13 @@ package no.nav.emottak
 
 sealed interface PayloadError
 
-data class PayloadAlreadyExist(val referenceId: String, val contentId: String) : PayloadError
-data class PayloadDoesNotExist(val referenceId: String) : PayloadError
+sealed interface CreatePayloadError : PayloadError
 
-sealed interface PayloadRequestError : PayloadError
+data class PayloadAlreadyExists(val referenceId: String, val contentId: String) : CreatePayloadError
 
-data object ReferenceIdMissing : PayloadRequestError
-data object EmptyReferenceId : PayloadRequestError
-data class InvalidReferenceId(val referenceId: String) : PayloadRequestError
+sealed interface RetrievePayloadError : PayloadError
+
+data object ReferenceIdMissing : RetrievePayloadError
+data object ReferenceIdEmpty : RetrievePayloadError
+data class InvalidReferenceId(val referenceId: String) : RetrievePayloadError
+data class PayloadNotFound(val referenceId: String) : RetrievePayloadError

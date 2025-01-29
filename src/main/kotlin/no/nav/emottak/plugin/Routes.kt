@@ -20,10 +20,10 @@ import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 import io.micrometer.prometheus.PrometheusMeterRegistry
-import no.nav.emottak.EmptyReferenceId
 import no.nav.emottak.InvalidReferenceId
-import no.nav.emottak.PayloadDoesNotExist
 import no.nav.emottak.PayloadError
+import no.nav.emottak.PayloadNotFound
+import no.nav.emottak.ReferenceIdEmpty
 import no.nav.emottak.ReferenceIdMissing
 import no.nav.emottak.config
 import no.nav.emottak.model.Payload
@@ -75,8 +75,8 @@ private suspend fun Raise<PayloadError>.retrievePayload(
 private fun Raise<ReferenceIdMissing>.referenceId(call: ApplicationCall): String =
     ensureNotNull(call.parameters[REFERENCE_ID]) { ReferenceIdMissing }
 
-private fun Raise<EmptyReferenceId>.notEmpty(referenceId: String): String {
-    ensure(referenceId.isNotBlank()) { EmptyReferenceId }
+private fun Raise<ReferenceIdEmpty>.notEmpty(referenceId: String): String {
+    ensure(referenceId.isNotBlank()) { ReferenceIdEmpty }
     return referenceId
 }
 
@@ -89,13 +89,13 @@ private fun String.isValidUuid(): Boolean = catch({ Uuid.parse(this); true }) { 
 
 private fun PayloadError.toContent(): TextContent =
     when (this) {
-        is PayloadDoesNotExist ->
+        is PayloadNotFound ->
             TextContent("Payload does not exist for reference id (${this.referenceId})", NotFound)
 
         ReferenceIdMissing ->
             TextContent("Reference id missing", BadRequest)
 
-        EmptyReferenceId ->
+        ReferenceIdEmpty ->
             TextContent("Empty reference id", BadRequest)
 
         is InvalidReferenceId ->
