@@ -13,6 +13,7 @@ spec:
   azure:
     application:
       enabled: true
+      allowAllUsers: true
   webproxy: true
   image: {{image}}
   liveness:
