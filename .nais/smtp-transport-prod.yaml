@@ -5,6 +5,8 @@ metadata:
   namespace: "team-emottak"
   labels:
     "team": "team-emottak"
+  annotations:
+    texas.nais.io/enabled: "true"
 spec:
   azure:
     application:
