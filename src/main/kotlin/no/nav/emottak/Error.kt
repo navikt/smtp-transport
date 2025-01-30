@@ -19,7 +19,7 @@ data object ReferenceIdEmpty : RetrievePayloadError
 data class InvalidReferenceId(val referenceId: String) : RetrievePayloadError
 data class PayloadNotFound(val referenceId: String) : RetrievePayloadError
 
-fun PayloadError.toContent(): TextContent =
+fun RetrievePayloadError.toContent(): TextContent =
     when (this) {
         ReferenceIdMissing ->
             TextContent("Reference id missing", BadRequest)
@@ -32,8 +32,6 @@ fun PayloadError.toContent(): TextContent =
 
         is PayloadNotFound ->
             TextContent("Payload not found for reference id (${this.referenceId})", NotFound)
-
-        else -> TextContent("Unknown error $this", BadRequest)
     }
 
 private fun TextContent(

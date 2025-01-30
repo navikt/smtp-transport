@@ -15,9 +15,9 @@ import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import io.micrometer.prometheus.PrometheusMeterRegistry
 import no.nav.emottak.InvalidReferenceId
-import no.nav.emottak.PayloadError
 import no.nav.emottak.ReferenceIdEmpty
 import no.nav.emottak.ReferenceIdMissing
+import no.nav.emottak.RetrievePayloadError
 import no.nav.emottak.config
 import no.nav.emottak.model.Payload
 import no.nav.emottak.repository.PayloadRepository
@@ -60,12 +60,12 @@ fun Route.externalRoutes(payloadRepository: PayloadRepository) {
             recover({
                 val payload = retrievePayload(call, payloadRepository)
                 call.respond(payload)
-            }) { e: PayloadError -> call.respond(e.toContent()) }
+            }) { e: RetrievePayloadError -> call.respond(e.toContent()) }
         }
     }
 }
 
-private suspend fun Raise<PayloadError>.retrievePayload(
+private suspend fun Raise<RetrievePayloadError>.retrievePayload(
     request: ApplicationCall,
     payloadRepository: PayloadRepository
 ): List<Payload> = with(payloadRepository) {
