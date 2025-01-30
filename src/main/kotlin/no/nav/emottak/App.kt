@@ -27,20 +27,17 @@ fun main() = SuspendApp {
         resourceScope {
             val deps = initDependencies()
             deps.migrationService.migrate()
+
+            val mailPublisher = MailPublisher(deps.kafkaPublisher)
             val payloadRepository = PayloadRepository(deps.payloadDatabase)
+            val mailProcessor = MailProcessor(deps.store, mailPublisher, payloadRepository)
 
             server(
                 Netty,
                 port = 8080,
                 preWait = 5.seconds,
-                module = smtpTransportModule(
-                    deps.meterRegistry,
-                    payloadRepository
-                )
+                module = smtpTransportModule(deps.meterRegistry, payloadRepository)
             )
-
-            val mailPublisher = MailPublisher(deps.kafkaPublisher)
-            val mailProcessor = MailProcessor(deps.store, mailPublisher, payloadRepository)
 
             scheduleProcessMessages(mailProcessor)
 
