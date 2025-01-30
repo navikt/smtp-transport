@@ -33,10 +33,7 @@ class MailPublisherSpec : KafkaSpec(
         "Publish payload message - message is received" {
             resourceScope {
                 turbineScope {
-                    val publisher = MailPublisher(
-                        config.kafka,
-                        kafkaPublisher(config.kafka)
-                    )
+                    val publisher = MailPublisher(kafkaPublisher(config.kafka))
 
                     val referenceId = Uuid.random()
                     val content = "payload".toByteArray()
@@ -60,10 +57,7 @@ class MailPublisherSpec : KafkaSpec(
         "Publish signal message - message is received" {
             resourceScope {
                 turbineScope {
-                    val publisher = MailPublisher(
-                        config.kafka,
-                        kafkaPublisher(config.kafka)
-                    )
+                    val publisher = MailPublisher(kafkaPublisher(config.kafka))
 
                     val referenceId = Uuid.random()
                     val content = "signal".toByteArray()

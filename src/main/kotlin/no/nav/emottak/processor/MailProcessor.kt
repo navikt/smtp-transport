@@ -1,6 +1,7 @@
 package no.nav.emottak.processor
 
 import arrow.core.raise.fold
+import jakarta.mail.Store
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -9,8 +10,7 @@ import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import no.nav.emottak.Dependencies
-import no.nav.emottak.configuration.Config
+import no.nav.emottak.config
 import no.nav.emottak.log
 import no.nav.emottak.model.PayloadMessage
 import no.nav.emottak.model.SignalMessage
@@ -23,8 +23,7 @@ import no.nav.emottak.util.toSignalMessage
 import kotlin.uuid.Uuid
 
 class MailProcessor(
-    private val config: Config,
-    private val deps: Dependencies,
+    private val store: Store,
     private val mailPublisher: MailPublisher,
     private val payloadRepository: PayloadRepository
 ) {
@@ -36,7 +35,7 @@ class MailProcessor(
     }
 
     private fun readMessages(): Flow<EmailMsg> =
-        MailReader(config.mail, deps.store, false).use { reader ->
+        MailReader(config().mail, store, false).use { reader ->
             val messageCount = reader.count()
 
             if (messageCount > 0) {

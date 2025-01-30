@@ -1,7 +1,7 @@
 package no.nav.emottak.publisher
 
 import io.github.nomisRev.kafka.publisher.KafkaPublisher
-import no.nav.emottak.configuration.Kafka
+import no.nav.emottak.config
 import no.nav.emottak.log
 import no.nav.emottak.model.PayloadMessage
 import no.nav.emottak.model.SignalMessage
@@ -9,9 +9,10 @@ import org.apache.kafka.clients.producer.ProducerRecord
 import kotlin.uuid.Uuid
 
 class MailPublisher(
-    private val kafka: Kafka,
     private val kafkaPublisher: KafkaPublisher<String, ByteArray>
 ) {
+    private val kafka = config().kafka
+
     suspend fun publishPayloadMessage(message: PayloadMessage) =
         publishMessage(kafka.payloadTopic, message.messageId, message.envelope)
 

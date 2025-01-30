@@ -10,7 +10,6 @@ import io.ktor.server.netty.Netty
 import io.ktor.utils.io.CancellationException
 import io.micrometer.prometheus.PrometheusMeterRegistry
 import kotlinx.coroutines.awaitCancellation
-import no.nav.emottak.configuration.Job
 import no.nav.emottak.plugin.configureAuthentication
 import no.nav.emottak.plugin.configureContentNegotiation
 import no.nav.emottak.plugin.configureMetrics
@@ -24,7 +23,6 @@ import kotlin.time.Duration.Companion.seconds
 internal val log = LoggerFactory.getLogger("no.nav.emottak.smtp")
 
 fun main() = SuspendApp {
-    log.info("smtp-transport starting")
     result {
         resourceScope {
             val deps = initDependencies(config())
@@ -41,10 +39,10 @@ fun main() = SuspendApp {
                 )
             )
 
-            val mailPublisher = MailPublisher(config().kafka, deps.kafkaPublisher)
-            val mailProcessor = MailProcessor(config(), deps, mailPublisher, payloadRepository)
+            val mailPublisher = MailPublisher(deps.kafkaPublisher)
+            val mailProcessor = MailProcessor(deps.store, mailPublisher, payloadRepository)
 
-            scheduleProcessMessages(config().job, mailProcessor)
+            scheduleProcessMessages(mailProcessor)
 
             awaitCancellation()
         }
@@ -69,9 +67,9 @@ fun smtpTransportModule(
     }
 }
 
-private suspend fun scheduleProcessMessages(job: Job, mailProcessor: MailProcessor) =
+private suspend fun scheduleProcessMessages(mailProcessor: MailProcessor) =
     Schedule
-        .spaced<Unit>(job.fixedInterval)
+        .spaced<Unit>(config().job.fixedInterval)
         .repeat(mailProcessor::processMessages)
 
 private fun logError(t: Throwable) = log.error("Shutdown smtp-transport due to: ${t.stackTraceToString()}")
