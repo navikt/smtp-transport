@@ -65,6 +65,7 @@ spec:
       rules:
         - application: ebms-provider
         - application: azure-token-generator
+        - application: tokenx-token-generator
           namespace: aura
           cluster: dev-gcp
   env:
