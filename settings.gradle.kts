@@ -20,7 +20,7 @@ dependencyResolutionManagement {
             version("jakarta-mail", "2.1.2")
             version("eclipse-angus", "2.0.2")
             version("hoplite", "2.8.2")
-            version("kotlin-kafka", "0.4.0")
+            version("kotlin-kafka", "0.4.1")
             version("sqldelight", "2.0.2")
             version("postgres", "42.7.4")
             version("vault-jdbc", "1.3.10")
