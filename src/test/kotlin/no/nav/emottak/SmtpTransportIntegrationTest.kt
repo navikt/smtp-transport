@@ -67,7 +67,7 @@ class SmtpTransportIntegrationTest {
                 json()
             }
         }
-        val httpResponse: HttpResponse = httpClient.get("/payload/99819a74-3f1d-453b-b1d3-735d900cfc5d") {
+        val httpResponse: HttpResponse = httpClient.get("/api/payloads/99819a74-3f1d-453b-b1d3-735d900cfc5d") {
             headers {
                 append(HttpHeaders.Authorization, "Bearer ${getToken().serialize()}")
             }
@@ -92,7 +92,7 @@ class SmtpTransportIntegrationTest {
                 json()
             }
         }
-        val httpResponse: HttpResponse = httpClient.get("/payload/df68056e-5cba-4351-9085-c37b925b8ddd") {
+        val httpResponse: HttpResponse = httpClient.get("/api/payloads/df68056e-5cba-4351-9085-c37b925b8ddd") {
             headers {
                 append(HttpHeaders.Authorization, "Bearer ${getToken().serialize()}")
             }
@@ -123,7 +123,7 @@ class SmtpTransportIntegrationTest {
                 json()
             }
         }
-        val httpResponse: HttpResponse = httpClient.get("/payload/f7aeef95-afca-4355-b6f7-1692e58c61cc") {
+        val httpResponse: HttpResponse = httpClient.get("/api/payloads/f7aeef95-afca-4355-b6f7-1692e58c61cc") {
             headers {
                 append(HttpHeaders.Authorization, "Bearer ${getToken().serialize()}")
             }
@@ -138,7 +138,7 @@ class SmtpTransportIntegrationTest {
                 json()
             }
         }
-        val httpResponse: HttpResponse = httpClient.get("/payload/ugyldig-reference-id") {
+        val httpResponse: HttpResponse = httpClient.get("/api/payloads/ugyldig-reference-id") {
             headers {
                 append(HttpHeaders.Authorization, "Bearer ${getToken().serialize()}")
             }
