@@ -5,7 +5,7 @@ import arrow.core.memoize
 import arrow.fx.coroutines.ExitCase
 import arrow.fx.coroutines.ResourceScope
 import arrow.fx.coroutines.autoCloseable
-import arrow.fx.coroutines.parZip
+import arrow.fx.coroutines.await.awaitAll
 import com.bettercloud.vault.api.database.DatabaseCredential
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
@@ -17,7 +17,6 @@ import jakarta.mail.Authenticator
 import jakarta.mail.PasswordAuthentication
 import jakarta.mail.Session
 import jakarta.mail.Store
-import no.nav.emottak.configuration.Config
 import no.nav.emottak.configuration.Database
 import no.nav.emottak.configuration.Kafka
 import no.nav.emottak.configuration.Smtp
@@ -109,20 +108,21 @@ internal val session: (Smtp) -> Session = { smtp: Smtp ->
 }
     .memoize()
 
-suspend fun ResourceScope.initDependencies(config: Config) =
-    parZip(
-        { store(config.smtp) },
-        { kafkaPublisher(config.kafka) },
-        { jdbcDriver(hikari(config.database)) },
-        { migrationService(config.database) },
-        { metricsRegistry() }
-    ) { store, kafkaPublisher, jdbcDriver, migrationService, metricsRegistry ->
-        Dependencies(
-            store,
-            session(config.smtp),
-            kafkaPublisher,
-            PayloadDatabase(jdbcDriver),
-            migrationService,
-            metricsRegistry
-        )
-    }
+suspend fun ResourceScope.initDependencies(): Dependencies = awaitAll {
+    val config = config()
+
+    val store = async { store(config.smtp) }
+    val kafkaPublisher = async { kafkaPublisher(config.kafka) }
+    val jdbcDriver = async { (jdbcDriver(hikari(config.database))) }
+    val migrationService = async { migrationService(config.database) }
+    val metricsRegistry = async { metricsRegistry() }
+
+    Dependencies(
+        store.await(),
+        session(config.smtp),
+        kafkaPublisher.await(),
+        PayloadDatabase(jdbcDriver.await()),
+        migrationService.await(),
+        metricsRegistry.await()
+    )
+}

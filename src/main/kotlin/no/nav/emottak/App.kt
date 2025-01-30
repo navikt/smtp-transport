@@ -25,7 +25,7 @@ internal val log = LoggerFactory.getLogger("no.nav.emottak.smtp")
 fun main() = SuspendApp {
     result {
         resourceScope {
-            val deps = initDependencies(config())
+            val deps = initDependencies()
             deps.migrationService.migrate()
             val payloadRepository = PayloadRepository(deps.payloadDatabase)
 

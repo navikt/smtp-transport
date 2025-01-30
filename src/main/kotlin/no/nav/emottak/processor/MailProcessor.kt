@@ -1,5 +1,6 @@
 package no.nav.emottak.processor
 
+import arrow.autoCloseScope
 import arrow.core.raise.fold
 import jakarta.mail.Store
 import kotlinx.coroutines.Dispatchers
@@ -34,20 +35,20 @@ class MailProcessor(
             .launchIn(this)
     }
 
-    private fun readMessages(): Flow<EmailMsg> =
-        MailReader(config().mail, store, false).use { reader ->
-            val messageCount = reader.count()
+    private fun readMessages(): Flow<EmailMsg> = autoCloseScope {
+        val mailReader = install(MailReader(config().mail, store, false))
+        val messageCount = mailReader.count()
 
-            if (messageCount > 0) {
-                log.info("Starting to read $messageCount messages from inbox")
-                reader.readMailBatches(messageCount)
-                    .asFlow()
-                    .also { log.info("Finished reading all messages from inbox") }
-            } else {
-                log.info("No messages found in inbox")
-                emptyFlow()
-            }
+        if (messageCount > 0) {
+            log.info("Starting to read $messageCount messages from inbox")
+            mailReader.readMailBatches(messageCount)
+                .asFlow()
+                .also { log.info("Finished reading all messages from inbox") }
+        } else {
+            log.info("No messages found in inbox")
+            emptyFlow()
         }
+    }
 
     private suspend fun processMessage(emailMsg: EmailMsg) {
         val messageId = Uuid.random()
