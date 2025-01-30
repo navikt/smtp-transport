@@ -8,6 +8,8 @@ metadata:
   annotations:
     texas.nais.io/enabled: "true"
 spec:
+  tokenx:
+    enabled: true
   azure:
     application:
       enabled: true
