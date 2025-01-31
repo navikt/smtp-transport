@@ -21,10 +21,10 @@ data class PayloadNotFound(val referenceId: String) : RetrievePayloadError
 
 fun RetrievePayloadError.toContent(): TextContent =
     when (this) {
-        ReferenceIdMissing ->
+        is ReferenceIdMissing ->
             TextContent("Reference id missing", BadRequest)
 
-        ReferenceIdEmpty ->
+        is ReferenceIdEmpty ->
             TextContent("Empty reference id", BadRequest)
 
         is InvalidReferenceId ->
