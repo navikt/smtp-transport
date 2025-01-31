@@ -17,7 +17,8 @@ data class Config(
     val ebms: Ebms,
     val kafka: Kafka,
     val smtp: Smtp,
-    val database: Database
+    val database: Database,
+    val azureAuth: AzureAuth
 )
 
 fun Config.withKafka(update: Kafka.() -> Kafka) = copy(kafka = kafka.update())
@@ -172,3 +173,42 @@ fun Database.toProperties() = Properties()
         put("connectionTimeout", connectionTimeout.value)
         put("idleTimeout", idleConnectionTimeout.value)
     }
+
+@JvmInline
+value class AzureAdAuth(val value: String)
+
+@JvmInline
+value class AppName(val value: String)
+
+@JvmInline
+value class AzureMockPort(val value: Int)
+
+@JvmInline
+value class NaisClusterName(val value: String)
+
+@JvmInline
+value class AzureAppTenantId(val value: String)
+
+@JvmInline
+value class AzureOpenIdConfigTokenEndpoint(val value: String)
+
+@JvmInline
+value class AzureWellKnownUrl(val value: String)
+
+@JvmInline
+value class AppScope(val value: String)
+
+@JvmInline
+value class AzureAppClientId(val value: String)
+
+data class AzureAuth(
+    var azureAdAuth: AzureAdAuth,
+    var appName: AppName,
+    var azureMockPort: AzureMockPort,
+    var naisClusterName: NaisClusterName,
+    var azureAppTenantId: AzureAppTenantId,
+    var azureOpenIdConfigTokenEndpoint: AzureOpenIdConfigTokenEndpoint,
+    var azureWellKnownUrl: AzureWellKnownUrl,
+    var appScope: AppScope,
+    var azureAppClientId: AzureAppClientId
+)

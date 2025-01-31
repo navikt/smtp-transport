@@ -13,19 +13,19 @@ import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 import io.micrometer.prometheus.PrometheusMeterRegistry
-import no.nav.emottak.AZURE_AD_AUTH
 import no.nav.emottak.PayloadRequestValidationError
+import no.nav.emottak.config
 import no.nav.emottak.log
 import no.nav.emottak.repository.PayloadRepository
 import no.nav.emottak.repository.PayloadRequest
 
 private const val REFERENCE_ID = "referenceId"
 
-fun Application.configureRoutes(registry: PrometheusMeterRegistry, db: PayloadRepository) {
+fun Application.configureRoutes(registry: PrometheusMeterRegistry, payloadRepository: PayloadRepository) {
     routing {
         registerHealthEndpoints(registry)
-        authenticate(AZURE_AD_AUTH) {
-            getPayloads(db)
+        authenticate(config().azureAuth.azureAdAuth.value) {
+            getPayloads(payloadRepository)
         }
     }
 }
@@ -46,7 +46,7 @@ fun Route.getPayloads(payloadRepository: PayloadRepository): Route = get("/paylo
     val request: Either<NonEmptyList<PayloadRequestValidationError>, PayloadRequest> = PayloadRequest(call.parameters[REFERENCE_ID])
     when (request) {
         is Either.Left -> { // Valideringsfeil:
-            val msg = request.value.joinToString()
+            val msg = request.value.joinToString(" ")
             log.warn("Validation failed:\n$msg")
             call.respond(HttpStatusCode.BadRequest, msg)
         }

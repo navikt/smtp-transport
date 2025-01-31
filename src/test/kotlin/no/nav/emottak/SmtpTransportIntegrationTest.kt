@@ -30,7 +30,7 @@ class SmtpTransportIntegrationTest : StringSpec(
 
         beforeSpec {
             println("=== Initializing MockOAuth2Server ===")
-            mockOAuth2Server = MockOAuth2Server().also { it.start(port = 3344) }
+            mockOAuth2Server = MockOAuth2Server().also { it.start(port = config().azureAuth.azureMockPort.value) }
 
             println("=== Initializing Database ===")
             payloadRepository = PayloadRepository(payloadDatabase())
@@ -145,9 +145,9 @@ private fun <T> smtpTransportTestApp(
 
 private fun getToken(
     mockOAuth2Server: MockOAuth2Server,
-    audience: String = AuthConfig.getScope()
+    audience: String = config().azureAuth.appScope.value
 ): SignedJWT = mockOAuth2Server.issueToken(
-    issuerId = AZURE_AD_AUTH,
+    issuerId = config().azureAuth.azureAdAuth.value,
     audience = audience,
     subject = "testUser"
 )

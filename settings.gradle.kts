@@ -19,7 +19,7 @@ dependencyResolutionManagement {
             version("token-validation-ktor", "4.1.4")
             version("jakarta-mail", "2.1.2")
             version("eclipse-angus", "2.0.2")
-            version("hoplite", "2.8.2")
+            version("hoplite", "2.9.0")
             version("kotlin-kafka", "0.4.0")
             version("sqldelight", "2.0.2")
             version("postgres", "42.7.4")
