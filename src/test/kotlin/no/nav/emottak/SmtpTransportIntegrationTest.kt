@@ -147,7 +147,7 @@ class SmtpTransportIntegrationTest {
         assertEquals("Invalid reference id (ugyldig-reference-id)", httpResponse.bodyAsText())
     }
 
-    private fun getToken(audience: String = config.azureAuth.appScope.value): SignedJWT = mockOAuth2Server.issueToken(
+    private fun getToken(audience: String = "test-aud"): SignedJWT = mockOAuth2Server.issueToken(
         issuerId = config.azureAuth.azureAdAuth.value,
         audience = audience,
         subject = "testUser"

@@ -11,7 +11,7 @@ class AuthConfig {
             IssuerConfig(
                 name = config.azureAuth.azureAdAuth.value,
                 discoveryUrl = config.azureAuth.azureWellKnownUrl.value,
-                acceptedAudience = listOf(config.azureAuth.appScope.value)
+                acceptedAudience = listOf(config.azureAuth.azureAppClientId.value)
             )
         )
     }

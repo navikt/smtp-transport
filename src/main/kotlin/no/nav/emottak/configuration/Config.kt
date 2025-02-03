@@ -189,10 +189,14 @@ value class AzureAdAuth(val value: String)
 @JvmInline
 value class AzureWellKnownUrl(val value: String)
 
+@JvmInline
+value class AzureApplicationId(val value: String)
+
 data class AzureAuth(
     val clusterName: ClusterName,
     val appName: AppName,
     val appScope: AppScope,
     val azureAdAuth: AzureAdAuth,
-    val azureWellKnownUrl: AzureWellKnownUrl
+    val azureWellKnownUrl: AzureWellKnownUrl,
+    val azureAppClientId: AzureApplicationId
 )
