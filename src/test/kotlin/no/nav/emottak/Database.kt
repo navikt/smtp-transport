@@ -15,7 +15,6 @@ private const val MIGRATIONS_PATH = "filesystem:./build/generated/migrations"
 private const val TEST_DATA_PATH = "filesystem:./src/test/resources/testDb"
 
 fun Spec.payloadDatabase() = PayloadDatabase(jdbcDriver())
-fun stopContainer() = container().stop()
 
 fun runMigrations(): MigrateResult {
     val container = container()

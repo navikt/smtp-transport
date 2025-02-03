@@ -23,7 +23,7 @@ import no.nav.emottak.repository.PayloadRepository
 import no.nav.security.mock.oauth2.MockOAuth2Server
 
 // Krever kotest-plugin installert i IntelliJ for å kjøre
-class SmtpTransportIntegrationTest : StringSpec(
+class SmtpTransportIntegrationSpec : StringSpec(
     {
         lateinit var mockOAuth2Server: MockOAuth2Server
         lateinit var payloadRepository: PayloadRepository
@@ -40,12 +40,9 @@ class SmtpTransportIntegrationTest : StringSpec(
         afterSpec {
             println("=== Stopping MockOAuth2Server ===")
             mockOAuth2Server.shutdown()
-
-            println("=== Stopping Database ===")
-            stopContainer()
         }
 
-        "Hent payload - ett treff" {
+        "Get payloads - One payload" {
             smtpTransportTestApp(payloadRepository) {
                 val httpClient = createClient {
                     install(ContentNegotiation) {
@@ -60,15 +57,15 @@ class SmtpTransportIntegrationTest : StringSpec(
                 httpResponse.status shouldBe HttpStatusCode.OK
                 val payloads: List<Payload> = httpResponse.body()
                 payloads.size shouldBe 1
-
-                payloads[0].referenceId.toString() shouldBe "99819a74-3f1d-453b-b1d3-735d900cfc5d"
-                payloads[0].contentId shouldBe "f7aeef95-afca-4355-b6f7-1692e58c61cc"
-                payloads[0].contentType shouldBe "text/xml"
-                payloads[0].content.decodeToString() shouldBe "<?xml version=\"1.0\" encoding=\"utf-8\"?><dummy>xml 1</dummy>"
+                val payload = payloads.first()
+                payload.referenceId.toString() shouldBe "99819a74-3f1d-453b-b1d3-735d900cfc5d"
+                payload.contentId shouldBe "f7aeef95-afca-4355-b6f7-1692e58c61cc"
+                payload.contentType shouldBe "text/xml"
+                payload.content.decodeToString() shouldBe "<?xml version=\"1.0\" encoding=\"utf-8\"?><dummy>xml 1</dummy>"
             }
         }
 
-        "Hent payload - flere treff" {
+        "Get payloads - Several payloads" {
             smtpTransportTestApp(payloadRepository) {
                 val httpClient = createClient {
                     install(ContentNegotiation) {
@@ -83,22 +80,23 @@ class SmtpTransportIntegrationTest : StringSpec(
                 httpResponse.status shouldBe HttpStatusCode.OK
                 val payloads: List<Payload> = httpResponse.body()
                 payloads.size shouldBe 2
-
-                payloads[0].referenceId.toString() shouldBe "df68056e-5cba-4351-9085-c37b925b8ddd"
+                val firstPayload = payloads.first()
+                val lastPayload = payloads.last()
+                firstPayload.referenceId.toString() shouldBe "df68056e-5cba-4351-9085-c37b925b8ddd"
                 assert(listOf("tKV9FS_cSMy7IsQ41SHIUQ", "test").contains(payloads[0].contentId))
                 assert(listOf("tKV9FS_cSMy7IsQ41SHIUQ", "test").contains(payloads[1].contentId))
-                payloads[1].contentId shouldNotBe payloads[0].contentId
-                payloads[0].contentType shouldBe "text/xml"
-                payloads[1].contentType shouldBe "text/xml"
-                payloads[0].content.decodeToString() shouldBeIn listOf(
+                lastPayload.contentId shouldNotBe payloads[0].contentId
+                firstPayload.contentType shouldBe "text/xml"
+                lastPayload.contentType shouldBe "text/xml"
+                firstPayload.content.decodeToString() shouldBeIn listOf(
                     "<?xml version=\"1.0\" encoding=\"utf-8\"?><dummy>xml 2</dummy>",
                     "<?xml version=\"1.0\" encoding=\"utf-8\"?><dummy>xml 3</dummy>"
                 )
-                payloads[1].content.decodeToString() shouldNotBe payloads[0].content.decodeToString()
+                lastPayload.content.decodeToString() shouldNotBe payloads[0].content.decodeToString()
             }
         }
 
-        "Hent payload - ingen treff" {
+        "Get payloads - Non found" {
             smtpTransportTestApp(payloadRepository) {
                 val httpClient = createClient {
                     install(ContentNegotiation) {
@@ -114,14 +112,14 @@ class SmtpTransportIntegrationTest : StringSpec(
             }
         }
 
-        "Hent payload - ugyldig id" {
+        "Get payload - Invalid reference id" {
             smtpTransportTestApp(payloadRepository) {
                 val httpClient = createClient {
                     install(ContentNegotiation) {
                         json()
                     }
                 }
-                val httpResponse: HttpResponse = httpClient.get("/api/payloads/ugyldig-reference-id") {
+                val httpResponse: HttpResponse = httpClient.get("/api/payloads/invalid-reference-id") {
                     headers {
                         append(HttpHeaders.Authorization, "Bearer ${getToken(mockOAuth2Server).serialize()}")
                     }
