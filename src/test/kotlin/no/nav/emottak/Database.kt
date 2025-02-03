@@ -14,7 +14,8 @@ import org.testcontainers.containers.PostgreSQLContainer
 private const val MIGRATIONS_PATH = "filesystem:./build/generated/migrations"
 private const val TEST_DATA_PATH = "filesystem:./src/test/resources/testDb"
 
-fun Spec.payloadDatabase() = PayloadDatabase(jdbcDriver())
+private var payloadDatabase: PayloadDatabase? = null
+fun Spec.payloadDatabase() = payloadDatabase ?: PayloadDatabase(jdbcDriver()).also { payloadDatabase = it }
 
 fun runMigrations(): MigrateResult {
     val container = container()
