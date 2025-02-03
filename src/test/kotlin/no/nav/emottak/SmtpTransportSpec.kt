@@ -23,7 +23,7 @@ import no.nav.emottak.repository.PayloadRepository
 import no.nav.security.mock.oauth2.MockOAuth2Server
 
 // Krever kotest-plugin installert i IntelliJ for å kjøre
-class SmtpTransportIntegrationSpec : StringSpec(
+class SmtpTransportSpec : StringSpec(
     {
         lateinit var mockOAuth2Server: MockOAuth2Server
         lateinit var payloadRepository: PayloadRepository
@@ -125,7 +125,7 @@ class SmtpTransportIntegrationSpec : StringSpec(
                     }
                 }
                 httpResponse.status shouldBe HttpStatusCode.BadRequest
-                httpResponse.bodyAsText() shouldBe "Invalid reference id (ugyldig-reference-id)"
+                httpResponse.bodyAsText() shouldBe "Invalid reference id (invalid-reference-id)"
             }
         }
     }
