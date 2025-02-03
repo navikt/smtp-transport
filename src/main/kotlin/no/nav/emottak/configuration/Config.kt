@@ -181,6 +181,9 @@ value class ClusterName(val value: String)
 value class AppName(val value: String)
 
 @JvmInline
+value class AzureAd(val value: String)
+
+@JvmInline
 value class AppScope(val value: String)
 
 @JvmInline
@@ -195,6 +198,8 @@ value class AzureApplicationId(val value: String)
 data class AzureAuth(
     val clusterName: ClusterName,
     val appName: AppName,
+    val mockPort: Port,
+    val azureAd: AzureAd,
     val appScope: AppScope,
     val azureAdAuth: AzureAdAuth,
     val azureWellKnownUrl: AzureWellKnownUrl,
