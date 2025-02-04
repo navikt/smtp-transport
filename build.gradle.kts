@@ -1,8 +1,10 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     application
     kotlin("jvm") version "2.1.10"
     kotlin("plugin.serialization") version "2.1.10"
-    id("io.ktor.plugin") version "2.3.4"
+    id("io.ktor.plugin") version "3.0.3"
     id("app.cash.sqldelight") version "2.0.2"
     id("org.jlleitschuh.gradle.ktlint") version "11.6.1"
     id("com.gradleup.shadow") version "8.3.6"
@@ -51,11 +53,9 @@ tasks {
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().all {
-    kotlinOptions {
-        jvmTarget = "21"
-        options.freeCompilerArgs.add(
-            "-opt-in=kotlin.uuid.ExperimentalUuidApi,arrow.fx.coroutines.await.ExperimentalAwaitAllApi"
-        )
+    compilerOptions {
+        jvmTarget = JvmTarget.JVM_21
+        freeCompilerArgs = listOf("-opt-in=kotlin.uuid.ExperimentalUuidApi,arrow.fx.coroutines.await.ExperimentalAwaitAllApi")
     }
 }
 
