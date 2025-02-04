@@ -11,6 +11,7 @@ import io.ktor.utils.io.CancellationException
 import io.micrometer.prometheus.PrometheusMeterRegistry
 import kotlinx.coroutines.awaitCancellation
 import no.nav.emottak.plugin.configureAuthentication
+import no.nav.emottak.plugin.configureCallLogging
 import no.nav.emottak.plugin.configureContentNegotiation
 import no.nav.emottak.plugin.configureMetrics
 import no.nav.emottak.plugin.configureRoutes
@@ -52,7 +53,7 @@ fun main() = SuspendApp {
         }
 }
 
-fun smtpTransportModule(
+internal fun smtpTransportModule(
     meterRegistry: PrometheusMeterRegistry,
     payloadRepository: PayloadRepository
 ): Application.() -> Unit {
@@ -61,6 +62,7 @@ fun smtpTransportModule(
         configureContentNegotiation()
         configureAuthentication()
         configureRoutes(meterRegistry, payloadRepository)
+        configureCallLogging()
     }
 }
 
