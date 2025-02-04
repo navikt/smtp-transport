@@ -198,7 +198,7 @@ value class AzureApplicationId(val value: String)
 data class AzureAuth(
     val clusterName: ClusterName,
     val appName: AppName,
-    val mockPort: Port,
+    val port: Port,
     val azureAd: AzureAd,
     val appScope: AppScope,
     val azureAdAuth: AzureAdAuth,

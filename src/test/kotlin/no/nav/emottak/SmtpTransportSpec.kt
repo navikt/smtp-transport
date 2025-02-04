@@ -30,7 +30,7 @@ class SmtpTransportSpec : StringSpec(
 
         beforeSpec {
             println("=== Initializing MockOAuth2Server ===")
-            mockOAuth2Server = MockOAuth2Server().also { it.start(port = config().azureAuth.mockPort.value) }
+            mockOAuth2Server = MockOAuth2Server().also { it.start(port = config().azureAuth.port.value) }
 
             println("=== Initializing Database ===")
             payloadRepository = PayloadRepository(payloadDatabase())
