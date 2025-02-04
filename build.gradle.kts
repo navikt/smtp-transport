@@ -5,7 +5,7 @@ plugins {
     id("io.ktor.plugin") version "2.3.4"
     id("app.cash.sqldelight") version "2.0.2"
     id("org.jlleitschuh.gradle.ktlint") version "11.6.1"
-    id("com.github.johnrengelman.shadow") version "7.0.0"
+    id("com.gradleup.shadow") version "8.3.6"
 }
 
 sqldelight {
