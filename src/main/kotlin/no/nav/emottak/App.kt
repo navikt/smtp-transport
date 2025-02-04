@@ -23,7 +23,6 @@ import kotlin.time.Duration.Companion.seconds
 internal val log = LoggerFactory.getLogger("no.nav.emottak.smtp")
 
 fun main() = SuspendApp {
-    log.info("Azure config: ${config().azureAuth}")
     result {
         resourceScope {
             val deps = initDependencies()
