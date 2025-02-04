@@ -141,7 +141,7 @@ private fun <T> smtpTransportTestApp(
 
 private fun getToken(
     mockOAuth2Server: MockOAuth2Server,
-    audience: String = "test-aud"
+    audience: String = config().azureAuth.azureAppClientId.value
 ): SignedJWT = mockOAuth2Server.issueToken(
     issuerId = config().azureAuth.azureAdAuth.value,
     audience = audience,
