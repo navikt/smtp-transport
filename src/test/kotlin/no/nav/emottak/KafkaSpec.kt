@@ -17,8 +17,8 @@ import org.apache.kafka.common.serialization.StringDeserializer
 import org.testcontainers.containers.KafkaContainer
 import org.testcontainers.utility.DockerImageName
 import java.util.Properties
-import java.util.UUID
 import kotlin.time.Duration.Companion.seconds
+import kotlin.uuid.Uuid
 
 abstract class KafkaSpec(body: KafkaSpec.() -> Unit = {}) : StringSpec() {
     init {
@@ -53,7 +53,7 @@ abstract class KafkaSpec(body: KafkaSpec.() -> Unit = {}) : StringSpec() {
 
     private fun adminProperties(): Properties = Properties().apply {
         put(BOOTSTRAP_SERVERS_CONFIG, container.bootstrapServers)
-        put(CLIENT_ID_CONFIG, "test-kafka-admin-client-${UUID.randomUUID()}")
+        put(CLIENT_ID_CONFIG, "test-kafka-admin-client-${Uuid.random()}")
         put(REQUEST_TIMEOUT_MS_CONFIG, "10000")
         put(CONNECTIONS_MAX_IDLE_MS_CONFIG, "10000")
     }

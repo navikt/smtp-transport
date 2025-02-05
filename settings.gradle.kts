@@ -78,7 +78,7 @@ dependencyResolutionManagement {
         }
 
         create("testLibs") {
-            version("arrow", "1.2.4")
+            version("arrow", "2.0.0")
             version("testPostgres", "1.18.0")
             version("ktor-server-test", "3.0.3")
             version("kotest", "5.9.1")
@@ -88,6 +88,7 @@ dependencyResolutionManagement {
             version("greenmail", "2.1.0-alpha-3")
             version("postgres", "42.7.4")
             version("turbine", "1.2.0")
+
             library("greenmail", "com.icegreen", "greenmail").versionRef("greenmail")
             library("greenmail-junit5", "com.icegreen", "greenmail-junit5").versionRef("greenmail")
 
