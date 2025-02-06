@@ -44,9 +44,9 @@ fun main() = SuspendApp {
                 module = smtpTransportModule(deps.meterRegistry, payloadRepository)
             )
 
-            scheduleProcessMessages(mailProcessor)
-
             messageProcessor.processSignalMessages()
+
+            scheduleProcessMessages(mailProcessor)
 
             awaitCancellation()
         }
