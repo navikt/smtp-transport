@@ -9,9 +9,7 @@ import io.ktor.server.application.Application
 import io.ktor.server.netty.Netty
 import io.ktor.utils.io.CancellationException
 import io.micrometer.prometheus.PrometheusMeterRegistry
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.awaitCancellation
-import kotlinx.coroutines.launch
 import no.nav.emottak.plugin.configureAuthentication
 import no.nav.emottak.plugin.configureCallLogging
 import no.nav.emottak.plugin.configureContentNegotiation
@@ -46,9 +44,9 @@ fun main() = SuspendApp {
                 module = smtpTransportModule(deps.meterRegistry, payloadRepository)
             )
 
-            launchMessageProcessor(messageProcessor)
+            messageProcessor.processSignalMessages(this@SuspendApp)
 
-            launchMailProcessor(mailProcessor)
+            scheduleProcessMailMessages(mailProcessor)
 
             awaitCancellation()
         }
@@ -74,13 +72,7 @@ internal fun smtpTransportModule(
     }
 }
 
-private fun CoroutineScope.launchMessageProcessor(messageProcessor: MessageProcessor) =
-    launch { messageProcessor.processSignalMessages() }
-
-private fun CoroutineScope.launchMailProcessor(mailProcessor: MailProcessor) =
-    launch { scheduleProcessMessages(mailProcessor) }
-
-private suspend fun scheduleProcessMessages(mailProcessor: MailProcessor) =
+private suspend fun scheduleProcessMailMessages(mailProcessor: MailProcessor) =
     Schedule
         .spaced<Unit>(config().job.fixedInterval)
         .repeat(mailProcessor::processMessages)
