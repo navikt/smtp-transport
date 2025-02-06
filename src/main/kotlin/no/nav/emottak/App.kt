@@ -17,6 +17,7 @@ import no.nav.emottak.plugin.configureMetrics
 import no.nav.emottak.plugin.configureRoutes
 import no.nav.emottak.processor.MailProcessor
 import no.nav.emottak.publisher.MailPublisher
+import no.nav.emottak.receiver.SignalReceiver
 import no.nav.emottak.repository.PayloadRepository
 import org.slf4j.LoggerFactory
 import kotlin.time.Duration.Companion.seconds
@@ -30,6 +31,7 @@ fun main() = SuspendApp {
             deps.migrationService.migrate()
 
             val mailPublisher = MailPublisher(deps.kafkaPublisher)
+            val signalReceiver = SignalReceiver(deps.kafkaReceiver)
             val payloadRepository = PayloadRepository(deps.payloadDatabase)
             val mailProcessor = MailProcessor(deps.store, mailPublisher, payloadRepository)
 
@@ -41,6 +43,8 @@ fun main() = SuspendApp {
             )
 
             scheduleProcessMessages(mailProcessor)
+
+            signalReceiver.receiveSignalMessages()
 
             awaitCancellation()
         }

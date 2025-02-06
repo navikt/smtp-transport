@@ -11,6 +11,8 @@ import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.github.nomisRev.kafka.publisher.KafkaPublisher
 import io.github.nomisRev.kafka.publisher.PublisherSettings
+import io.github.nomisRev.kafka.receiver.KafkaReceiver
+import io.github.nomisRev.kafka.receiver.ReceiverSettings
 import io.micrometer.prometheus.PrometheusConfig.DEFAULT
 import io.micrometer.prometheus.PrometheusMeterRegistry
 import jakarta.mail.Authenticator
@@ -24,7 +26,9 @@ import no.nav.emottak.configuration.toProperties
 import no.nav.emottak.queries.PayloadDatabase
 import no.nav.vault.jdbc.hikaricp.HikariCPVaultUtil.createHikariDataSourceWithVaultIntegration
 import no.nav.vault.jdbc.hikaricp.VaultUtil
+import org.apache.kafka.common.serialization.ByteArrayDeserializer
 import org.apache.kafka.common.serialization.ByteArraySerializer
+import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.kafka.common.serialization.StringSerializer
 import org.flywaydb.core.Flyway
 import javax.sql.DataSource
@@ -33,6 +37,7 @@ data class Dependencies(
     val store: Store,
     val session: Session,
     val kafkaPublisher: KafkaPublisher<String, ByteArray>,
+    val kafkaReceiver: KafkaReceiver<String, ByteArray>,
     val payloadDatabase: PayloadDatabase,
     val migrationService: Flyway,
     val meterRegistry: PrometheusMeterRegistry
@@ -95,6 +100,15 @@ private fun kafkaPublisherSettings(kafka: Kafka): PublisherSettings<String, Byte
         properties = kafka.toProperties()
     )
 
+private fun kafkaReceiverSettings(kafka: Kafka): ReceiverSettings<String, ByteArray> =
+    ReceiverSettings(
+        bootstrapServers = kafka.bootstrapServers,
+        keyDeserializer = StringDeserializer(),
+        valueDeserializer = ByteArrayDeserializer(),
+        groupId = kafka.groupId,
+        properties = kafka.toProperties()
+    )
+
 internal val session: (Smtp) -> Session = { smtp: Smtp ->
     Session.getInstance(
         smtp.toProperties(),
@@ -113,6 +127,7 @@ suspend fun ResourceScope.initDependencies(): Dependencies = awaitAll {
 
     val store = async { store(config.smtp) }
     val kafkaPublisher = async { kafkaPublisher(config.kafka) }
+    val kafkaReceiver = async { KafkaReceiver(kafkaReceiverSettings(config.kafka)) }
     val jdbcDriver = async { (jdbcDriver(hikari(config.database))) }
     val migrationService = async { migrationService(config.database) }
     val metricsRegistry = async { metricsRegistry() }
@@ -121,6 +136,7 @@ suspend fun ResourceScope.initDependencies(): Dependencies = awaitAll {
         store.await(),
         session(config.smtp),
         kafkaPublisher.await(),
+        kafkaReceiver.await(),
         PayloadDatabase(jdbcDriver.await()),
         migrationService.await(),
         metricsRegistry.await()

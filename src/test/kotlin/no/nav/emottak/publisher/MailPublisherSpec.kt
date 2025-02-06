@@ -42,7 +42,7 @@ class MailPublisherSpec : KafkaSpec(
                     publisher.publishPayloadMessage(payloadMessage)
 
                     val receiver = KafkaReceiver(receiverSettings())
-                    val consumer = receiver.receive(config.kafka.payloadTopic)
+                    val consumer = receiver.receive(config.kafka.payloadInTopic)
                         .map { Pair(it.key(), it.value()) }
 
                     consumer.test {
@@ -66,7 +66,7 @@ class MailPublisherSpec : KafkaSpec(
                     publisher.publishSignalMessage(signalMessage)
 
                     val receiver = KafkaReceiver(receiverSettings())
-                    val consumer = receiver.receive(config.kafka.signalTopic)
+                    val consumer = receiver.receive(config.kafka.signalInTopic)
                         .map { Pair(it.key(), it.value()) }
 
                     consumer.test {
