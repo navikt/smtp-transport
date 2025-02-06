@@ -16,6 +16,7 @@ import no.nav.emottak.plugin.configureContentNegotiation
 import no.nav.emottak.plugin.configureMetrics
 import no.nav.emottak.plugin.configureRoutes
 import no.nav.emottak.processor.MailProcessor
+import no.nav.emottak.processor.MessageProcessor
 import no.nav.emottak.publisher.MailPublisher
 import no.nav.emottak.receiver.SignalReceiver
 import no.nav.emottak.repository.PayloadRepository
@@ -34,6 +35,7 @@ fun main() = SuspendApp {
             val signalReceiver = SignalReceiver(deps.kafkaReceiver)
             val payloadRepository = PayloadRepository(deps.payloadDatabase)
             val mailProcessor = MailProcessor(deps.store, mailPublisher, payloadRepository)
+            val messageProcessor = MessageProcessor(signalReceiver)
 
             server(
                 Netty,
@@ -44,7 +46,7 @@ fun main() = SuspendApp {
 
             scheduleProcessMessages(mailProcessor)
 
-            signalReceiver.receiveSignalMessages()
+            messageProcessor.processSignalMessages()
 
             awaitCancellation()
         }

@@ -72,6 +72,9 @@ internal suspend fun ResourceScope.kafkaPublisher(kafka: Kafka): KafkaPublisher<
         p.close().also { log.info("Closed kafka publisher") }
     }
 
+internal fun kafkaReceiver(kafka: Kafka): KafkaReceiver<String, ByteArray> =
+    KafkaReceiver(kafkaReceiverSettings(kafka))
+
 private fun migrationService(database: Database): Flyway {
     val adminCredentials = getVaultAdminCredentials(database)
     val user = adminCredentials.username
@@ -127,7 +130,7 @@ suspend fun ResourceScope.initDependencies(): Dependencies = awaitAll {
 
     val store = async { store(config.smtp) }
     val kafkaPublisher = async { kafkaPublisher(config.kafka) }
-    val kafkaReceiver = async { KafkaReceiver(kafkaReceiverSettings(config.kafka)) }
+    val kafkaReceiver = async { kafkaReceiver(config.kafka) }
     val jdbcDriver = async { (jdbcDriver(hikari(config.database))) }
     val migrationService = async { migrationService(config.database) }
     val metricsRegistry = async { metricsRegistry() }
