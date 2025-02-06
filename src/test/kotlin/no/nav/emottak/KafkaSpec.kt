@@ -2,6 +2,7 @@ package no.nav.emottak
 
 import io.github.nomisRev.kafka.Admin
 import io.github.nomisRev.kafka.AdminSettings
+import io.github.nomisRev.kafka.publisher.PublisherSettings
 import io.github.nomisRev.kafka.receiver.AutoOffsetReset
 import io.github.nomisRev.kafka.receiver.ReceiverSettings
 import io.kotest.core.extensions.install
@@ -13,7 +14,9 @@ import org.apache.kafka.clients.admin.AdminClientConfig.CLIENT_ID_CONFIG
 import org.apache.kafka.clients.admin.AdminClientConfig.CONNECTIONS_MAX_IDLE_MS_CONFIG
 import org.apache.kafka.clients.admin.AdminClientConfig.REQUEST_TIMEOUT_MS_CONFIG
 import org.apache.kafka.common.serialization.ByteArrayDeserializer
+import org.apache.kafka.common.serialization.ByteArraySerializer
 import org.apache.kafka.common.serialization.StringDeserializer
+import org.apache.kafka.common.serialization.StringSerializer
 import org.testcontainers.containers.KafkaContainer
 import org.testcontainers.utility.DockerImageName
 import java.util.Properties
@@ -62,11 +65,18 @@ abstract class KafkaSpec(body: KafkaSpec.() -> Unit = {}) : StringSpec() {
 
     private inline fun <A> admin(body: Admin.() -> A): A = Admin(adminSettings()).use(body)
 
+    fun publisherSettings(): PublisherSettings<String, ByteArray> =
+        PublisherSettings(
+            bootstrapServers = container.bootstrapServers,
+            keySerializer = StringSerializer(),
+            valueSerializer = ByteArraySerializer()
+        )
+
     fun receiverSettings(): ReceiverSettings<String, ByteArray> =
         ReceiverSettings(
             bootstrapServers = container.bootstrapServers,
-            StringDeserializer(),
-            ByteArrayDeserializer(),
+            keyDeserializer = StringDeserializer(),
+            valueDeserializer = ByteArrayDeserializer(),
             groupId = "test-group-id",
             autoOffsetReset = AutoOffsetReset.Earliest,
             pollTimeout = consumerPollingTimeout

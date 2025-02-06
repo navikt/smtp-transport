@@ -14,7 +14,6 @@ import kotlin.time.Duration
 data class Config(
     val job: Job,
     val mail: Mail,
-    val ebms: Ebms,
     val kafka: Kafka,
     val smtp: Smtp,
     val database: Database,
@@ -23,14 +22,9 @@ data class Config(
 
 fun Config.withKafka(update: Kafka.() -> Kafka) = copy(kafka = kafka.update())
 
-data class Job(
-    val initialDelay: Duration,
-    val fixedInterval: Duration
-)
+data class Job(val fixedInterval: Duration)
 
 data class Mail(val inboxLimit: Int)
-
-data class Ebms(val providerUrl: String)
 
 @JvmInline
 value class SecurityProtocol(val value: String)
@@ -56,8 +50,10 @@ data class Kafka(
     val truststoreType: TruststoreType,
     val truststoreLocation: TruststoreLocation,
     val truststorePassword: Masked,
-    val payloadTopic: String,
-    val signalTopic: String,
+    val payloadInTopic: String,
+    val signalInTopic: String,
+    val payloadOutTopic: String,
+    val signalOutTopic: String,
     val groupId: String
 )
 
@@ -127,9 +123,6 @@ fun Smtp.toProperties() = Properties()
 
 @JvmInline
 value class Url(val value: String)
-
-@JvmInline
-value class Driver(val value: String)
 
 @JvmInline
 value class MinimumIdleConnections(val value: Int)

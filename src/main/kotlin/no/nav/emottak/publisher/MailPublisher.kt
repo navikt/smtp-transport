@@ -14,10 +14,10 @@ class MailPublisher(
     private val kafka = config().kafka
 
     suspend fun publishPayloadMessage(message: PayloadMessage) =
-        publishMessage(kafka.payloadTopic, message.messageId, message.envelope)
+        publishMessage(kafka.payloadInTopic, message.messageId, message.envelope)
 
     suspend fun publishSignalMessage(message: SignalMessage) =
-        publishMessage(kafka.signalTopic, message.messageId, message.envelope)
+        publishMessage(kafka.signalInTopic, message.messageId, message.envelope)
 
     private suspend fun publishMessage(topic: String, referenceId: Uuid, content: ByteArray) =
         kafkaPublisher.publishScope {
