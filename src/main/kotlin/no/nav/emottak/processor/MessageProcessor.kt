@@ -17,9 +17,7 @@ class MessageProcessor(
     private val payloadReceiver: PayloadReceiver,
     private val signalReceiver: SignalReceiver
 ) {
-    fun processPayloadAndSignalMessages(scope: CoroutineScope) = process(scope)
-
-    private fun process(scope: CoroutineScope) =
+    fun processPayloadAndSignalMessages(scope: CoroutineScope) =
         merge(
             payloadReceiver.receivePayloadMessages(),
             signalReceiver.receiveSignalMessages()
