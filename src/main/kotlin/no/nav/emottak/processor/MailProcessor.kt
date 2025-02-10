@@ -3,8 +3,8 @@ package no.nav.emottak.processor
 import arrow.autoCloseScope
 import arrow.core.raise.fold
 import jakarta.mail.Store
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.emptyFlow
@@ -28,12 +28,11 @@ class MailProcessor(
     private val mailPublisher: MailPublisher,
     private val payloadRepository: PayloadRepository
 ) {
-    suspend fun processMessages() = coroutineScope {
+    fun processMessages(scope: CoroutineScope) =
         readMessages()
             .onEach(::processMessage)
             .flowOn(Dispatchers.IO)
-            .launchIn(this)
-    }
+            .launchIn(scope)
 
     private fun readMessages(): Flow<EmailMsg> = autoCloseScope {
         val mailReader = install(MailReader(config().mail, store, false))
@@ -61,10 +60,9 @@ class MailProcessor(
     private suspend fun publishPayloadMessage(payloadMessage: PayloadMessage) {
         with(payloadRepository) {
             fold(
-                block = { insert(payloadMessage.payloads) },
-                recover = { log.error("Could not insert payloads: ${payloadMessage.payloads.map { it }}") },
-                transform = { mailPublisher.publishPayloadMessage(payloadMessage) }
-            )
+                { insert(payloadMessage.payloads) },
+                { log.error("Could not insert payloads: ${payloadMessage.payloads.map { it }}") }
+            ) { mailPublisher.publishPayloadMessage(payloadMessage) }
         }
     }
 
