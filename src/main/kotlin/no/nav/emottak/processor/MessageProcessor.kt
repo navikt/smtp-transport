@@ -28,8 +28,16 @@ class MessageProcessor(
 
     private fun processMessage(message: Message) {
         when (message) {
-            is PayloadMessage -> log.info("Processed payload message with reference id: ${message.messageId}")
-            is SignalMessage -> log.info("Processed signal message with reference id: ${message.messageId}")
+            is PayloadMessage -> processPayloadMessage(message)
+            is SignalMessage -> processSignalMessage(message)
         }
+    }
+
+    private fun processPayloadMessage(message: PayloadMessage) {
+        log.info("Processed payload message with reference id: ${message.messageId}")
+    }
+
+    private fun processSignalMessage(message: SignalMessage) {
+        log.info("Processed signal message with reference id: ${message.messageId}")
     }
 }
