@@ -3,6 +3,7 @@ package no.nav.emottak
 import arrow.continuations.SuspendApp
 import arrow.continuations.ktor.server
 import arrow.core.raise.result
+import arrow.fx.coroutines.ResourceScope
 import arrow.fx.coroutines.resourceScope
 import arrow.resilience.Schedule
 import io.ktor.server.application.Application
@@ -18,9 +19,12 @@ import no.nav.emottak.plugin.configureRoutes
 import no.nav.emottak.processor.MailProcessor
 import no.nav.emottak.processor.MessageProcessor
 import no.nav.emottak.publisher.MailPublisher
+import no.nav.emottak.receiver.PayloadReceiver
 import no.nav.emottak.receiver.SignalReceiver
 import no.nav.emottak.repository.PayloadRepository
+import no.nav.emottak.util.coroutineScope
 import org.slf4j.LoggerFactory
+import kotlin.coroutines.coroutineContext
 import kotlin.time.Duration.Companion.seconds
 
 internal val log = LoggerFactory.getLogger("no.nav.emottak.smtp")
@@ -32,10 +36,11 @@ fun main() = SuspendApp {
             deps.migrationService.migrate()
 
             val mailPublisher = MailPublisher(deps.kafkaPublisher)
+            val payloadReceiver = PayloadReceiver(deps.kafkaReceiver)
             val signalReceiver = SignalReceiver(deps.kafkaReceiver)
             val payloadRepository = PayloadRepository(deps.payloadDatabase)
             val mailProcessor = MailProcessor(deps.store, mailPublisher, payloadRepository)
-            val messageProcessor = MessageProcessor(signalReceiver)
+            val messageProcessor = MessageProcessor(payloadReceiver, signalReceiver)
 
             server(
                 Netty,
@@ -44,7 +49,8 @@ fun main() = SuspendApp {
                 module = smtpTransportModule(deps.meterRegistry, payloadRepository)
             )
 
-            messageProcessor.processSignalMessages(this@SuspendApp)
+            val scope = coroutineScope(coroutineContext)
+            messageProcessor.processPayloadAndSignalMessages(scope)
 
             scheduleProcessMailMessages(mailProcessor)
 
@@ -72,9 +78,11 @@ internal fun smtpTransportModule(
     }
 }
 
-private suspend fun scheduleProcessMailMessages(mailProcessor: MailProcessor) =
-    Schedule
+private suspend fun ResourceScope.scheduleProcessMailMessages(processor: MailProcessor): Long {
+    val scope = coroutineScope(coroutineContext)
+    return Schedule
         .spaced<Unit>(config().job.fixedInterval)
-        .repeat(mailProcessor::processMessages)
+        .repeat { processor.processMessages(scope) }
+}
 
 private fun logError(t: Throwable) = log.error("Shutdown smtp-transport due to: ${t.stackTraceToString()}")
