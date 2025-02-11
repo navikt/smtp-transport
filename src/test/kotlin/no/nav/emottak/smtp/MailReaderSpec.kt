@@ -46,23 +46,25 @@ class MailReaderSpec : StringSpec({
             val session = session(config.smtp)
 
             val reader = MailReader(config.mail, store, false)
-            val messages = reader.readMailBatches(3)
+            val messages = reader.readMailBatches(4)
 
-            val exampleMessage = MimeMessage(session, classLoader.getResourceAsStream((EXAMPLE)))
+            val exampleMessage = MimeMessage(session, classLoader.getResourceAsStream(EXAMPLE))
+            println("Example message: $exampleMessage")
             val expectedFirstMessage = reader.mapEmailMsg(exampleMessage)
 
             val firstMessage = messages.first()
             // firstMessage.headers shouldBe expectedFirstMessage.headers - doesn't run in GHA
             // firstMessage.parts.first() shouldMatchBytes expectedFirstMessage.parts.first() - doesn't run in GHA
 
-            val acknowledgmentMessage = MimeMessage(session, classLoader.getResourceAsStream((REQUEST)))
+            val acknowledgmentMessage = MimeMessage(session, classLoader.getResourceAsStream(REQUEST))
+            println("Acknowledgment message: $acknowledgmentMessage")
             val expectedLastMessage = reader.mapEmailMsg(acknowledgmentMessage)
 
             val lastMessage = messages.last()
             // lastMessage.headers shouldBe expectedLastMessage.headers - doesn't run in GHA
             // lastMessage.parts.first() shouldMatchBytes expectedLastMessage.parts.first() - doesn't run in GHA
 
-            messages.size shouldBe 3
+            messages.size shouldBe 4
             reader.readMailBatches(3).size shouldBe 0
         }
     }
@@ -74,20 +76,48 @@ class MailReaderSpec : StringSpec({
             val inboxLimit100 = config.mail.copy(inboxLimit = 100)
             val reader = MailReader(inboxLimit100, store, false)
 
-            reader.readMailBatches(3).size shouldBe 3
-            reader.readMailBatches(3).size shouldBe 0
+            reader.readMailBatches(4).size shouldBe 4
+            reader.readMailBatches(4).size shouldBe 0
             reader.close()
 
-            MailReader(inboxLimit100, store).count() shouldBe 3
+            MailReader(inboxLimit100, store).count() shouldBe 4
 
             val inboxLimitNegative1 = config.mail.copy(inboxLimit = -1)
             val reader2 = MailReader(inboxLimitNegative1, store, false)
 
-            reader2.readMailBatches(3).size shouldBe 3
-            reader2.readMailBatches(3).size shouldBe 0
+            reader2.readMailBatches(4).size shouldBe 4
+            reader2.readMailBatches(4).size shouldBe 0
             reader2.close()
 
             MailReader(inboxLimitNegative1, store).count() shouldBe 0
+        }
+    }
+
+    "MailReader reads inbox with messages and filters on multipart messages" {
+        resourceScope {
+            val store = store(config.smtp)
+            val session = session(config.smtp)
+
+            val reader = MailReader(config.mail, store, false)
+            val messages = reader.readMailBatches(4)
+
+            val multipartMessages = messages.filter { it.multipart }.sortedBy { it.headers.size }
+            multipartMessages.size shouldBe 2
+
+            val requestMessage = MimeMessage(session, classLoader.getResourceAsStream(REQUEST))
+            val mappedRequestMessage = reader.mapEmailMsg(requestMessage)
+
+            val exampleMessage = MimeMessage(session, classLoader.getResourceAsStream(EXAMPLE))
+            val mappedExampleMessage = reader.mapEmailMsg(exampleMessage)
+
+            val firstMultipartMessage = multipartMessages.first()
+            val lastMultipartMessage = multipartMessages.last()
+
+            firstMultipartMessage.headers.size shouldBeEqual mappedRequestMessage.headers.size
+            firstMultipartMessage.parts.size shouldBeEqual mappedRequestMessage.parts.size
+
+            lastMultipartMessage.headers.size shouldBeEqual mappedExampleMessage.headers.size
+            lastMultipartMessage.parts.size shouldBeEqual mappedExampleMessage.parts.size
         }
     }
 })

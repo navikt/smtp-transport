@@ -121,20 +121,28 @@ class MailReader(
         )
 
     internal fun mapEmailMsg(message: MimeMessage): EmailMsg {
-        val messageContent = message.content
-        val multiPartMessage = messageContent is MimeMultipart
-        val bodyparts: List<Part> = when (multiPartMessage) {
-            true -> createMimeBodyParts(messageContent as MimeMultipart)
+        val multipartMessage = isMultipartMessage(message)
+        val bodyparts: List<Part> = when (multipartMessage) {
+            true -> createMimeBodyParts(message.content as MimeMultipart)
             else -> createEmptyMimeBodyParts(message)
         }
         return EmailMsg(
-            multiPartMessage,
+            multipartMessage,
             message.allHeaders
                 .toList()
                 .groupBy({ it.name }, { it.value })
                 .mapValues { it.value.joinToString(",") },
             bodyparts
         )
+    }
+
+    private fun isMultipartMessage(message: MimeMessage): Boolean {
+        val acknowledgement = "Acknowledgment"
+        val subject = message.subject
+        return when (message.content) {
+            is MimeMultipart -> !subject.contains(acknowledgement, ignoreCase = true)
+            else -> return false
+        }
     }
 
     private fun createEmptyMimeBodyParts(message: MimeMessage) = listOf(
