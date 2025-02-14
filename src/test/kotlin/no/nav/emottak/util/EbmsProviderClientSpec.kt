@@ -24,7 +24,7 @@ class EbmsProviderClientSpec : StringSpec({
     val config = config().ebmsProvider
 
     "Get payloads - retrieve list of single payload" {
-        val fakeEngine = getFakeEngine(jsonResponse(), HttpStatusCode.OK)
+        val fakeEngine = getFakeEngine(HttpStatusCode.OK, jsonResponse())
         val client = EbmsProviderClient(httpClient(fakeEngine, config))
 
         val uuid = Uuid.parse("a86bd780-c345-4be3-876b-fefc4b7a8777")
@@ -42,7 +42,7 @@ class EbmsProviderClientSpec : StringSpec({
     }
 
     "Get payloads - fail with payload not found" {
-        val fakeEngine = getFakeEngine("", HttpStatusCode.NotFound)
+        val fakeEngine = getFakeEngine(HttpStatusCode.NotFound)
         val client = EbmsProviderClient(httpClient(fakeEngine, config))
         val referenceId = Uuid.random()
 
@@ -53,7 +53,7 @@ class EbmsProviderClientSpec : StringSpec({
     }
 
     "Get payloads - fail with invalid reference id" {
-        val fakeEngine = getFakeEngine("", HttpStatusCode.BadRequest)
+        val fakeEngine = getFakeEngine(HttpStatusCode.BadRequest)
         val client = EbmsProviderClient(httpClient(fakeEngine, config))
         val referenceId = Uuid.random()
 
@@ -64,7 +64,7 @@ class EbmsProviderClientSpec : StringSpec({
     }
 
     "Get payloads - fail with unauthorized" {
-        val fakeEngine = getFakeEngine("", HttpStatusCode.Unauthorized)
+        val fakeEngine = getFakeEngine(HttpStatusCode.Unauthorized)
         val client = EbmsProviderClient(httpClient(fakeEngine, config))
         val referenceId = Uuid.random()
 
@@ -75,7 +75,7 @@ class EbmsProviderClientSpec : StringSpec({
     }
 
     "Get payloads - fail with unknown error" {
-        val fakeEngine = getFakeEngine("unknown error", HttpStatusCode.InternalServerError)
+        val fakeEngine = getFakeEngine(HttpStatusCode.InternalServerError, "unknown error")
         val client = EbmsProviderClient(httpClient(fakeEngine, config))
         val referenceId = Uuid.random()
 
@@ -86,7 +86,7 @@ class EbmsProviderClientSpec : StringSpec({
     }
 })
 
-private fun getFakeEngine(content: String, status: HttpStatusCode): MockEngine =
+private fun getFakeEngine(status: HttpStatusCode, content: String = ""): MockEngine =
     MockEngine { _ ->
         respond(
             content = content,

@@ -3,6 +3,7 @@ package no.nav.emottak.receiver
 import app.cash.turbine.test
 import app.cash.turbine.turbineScope
 import io.github.nomisRev.kafka.publisher.KafkaPublisher
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
@@ -60,6 +61,13 @@ class PayloadReceiverSpec : KafkaSpec(
                     val payloadMessage = awaitItem()
                     payloadMessage.messageId shouldBe referenceId
                     payloadMessage.envelope shouldBe content
+                    payloadMessage.payloads shouldHaveSize 1
+
+                    val payload = payloadMessage.payloads.first()
+                    payload.referenceId shouldBe referenceId
+                    payload.contentId shouldBe "content"
+                    payload.contentType shouldBe "contentType"
+                    payload.content contentEquals "data".toByteArray()
                 }
             }
         }
