@@ -7,6 +7,8 @@ import io.ktor.http.HttpStatusCode.Companion.NotFound
 import io.ktor.http.content.TextContent
 
 sealed interface PayloadError
+data object UnauthorizedError : PayloadError
+data class UnknownError(val reason: String) : PayloadError
 
 sealed interface CreatePayloadError : PayloadError
 

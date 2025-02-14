@@ -13,6 +13,13 @@ import io.github.nomisRev.kafka.publisher.KafkaPublisher
 import io.github.nomisRev.kafka.publisher.PublisherSettings
 import io.github.nomisRev.kafka.receiver.KafkaReceiver
 import io.github.nomisRev.kafka.receiver.ReceiverSettings
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.HttpClientEngine
+import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.defaultRequest
+import io.ktor.http.path
+import io.ktor.serialization.kotlinx.json.json
 import io.micrometer.prometheus.PrometheusConfig.DEFAULT
 import io.micrometer.prometheus.PrometheusMeterRegistry
 import jakarta.mail.Authenticator
@@ -20,6 +27,7 @@ import jakarta.mail.PasswordAuthentication
 import jakarta.mail.Session
 import jakarta.mail.Store
 import no.nav.emottak.configuration.Database
+import no.nav.emottak.configuration.EbmsProvider
 import no.nav.emottak.configuration.Kafka
 import no.nav.emottak.configuration.Smtp
 import no.nav.emottak.configuration.toProperties
@@ -39,6 +47,7 @@ data class Dependencies(
     val kafkaPublisher: KafkaPublisher<String, ByteArray>,
     val kafkaReceiver: KafkaReceiver<String, ByteArray>,
     val payloadDatabase: PayloadDatabase,
+    val httpClient: HttpClient,
     val migrationService: Flyway,
     val meterRegistry: PrometheusMeterRegistry
 )
@@ -74,6 +83,20 @@ internal suspend fun ResourceScope.kafkaPublisher(kafka: Kafka): KafkaPublisher<
 
 internal fun kafkaReceiver(kafka: Kafka): KafkaReceiver<String, ByteArray> =
     KafkaReceiver(kafkaReceiverSettings(kafka))
+
+internal suspend fun ResourceScope.httpClientEngine(): HttpClientEngine =
+    install({ CIO.create() }) { c, _: ExitCase -> c.close().also { log.info("Closed http client engine") } }
+
+internal fun httpClient(clientEngine: HttpClientEngine, ebmsProvider: EbmsProvider): HttpClient =
+    HttpClient(clientEngine) {
+        install(ContentNegotiation) { json() }
+        defaultRequest {
+            url {
+                host = ebmsProvider.baseUrl
+                path(ebmsProvider.apiUrl)
+            }
+        }
+    }
 
 private fun migrationService(database: Database): Flyway {
     val adminCredentials = getVaultAdminCredentials(database)
@@ -134,6 +157,7 @@ suspend fun ResourceScope.initDependencies(): Dependencies = awaitAll {
     val jdbcDriver = async { (jdbcDriver(hikari(config.database))) }
     val migrationService = async { migrationService(config.database) }
     val metricsRegistry = async { metricsRegistry() }
+    val httpClient = async { httpClient(httpClientEngine(), config.ebmsProvider) }
 
     Dependencies(
         store.await(),
@@ -141,6 +165,7 @@ suspend fun ResourceScope.initDependencies(): Dependencies = awaitAll {
         kafkaPublisher.await(),
         kafkaReceiver.await(),
         PayloadDatabase(jdbcDriver.await()),
+        httpClient.await(),
         migrationService.await(),
         metricsRegistry.await()
     )

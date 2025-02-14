@@ -80,6 +80,7 @@ dependencyResolutionManagement {
         create("testLibs") {
             version("arrow", "2.0.0")
             version("testPostgres", "1.18.0")
+            version("ktor", "3.0.3")
             version("ktor-server-test", "3.0.3")
             version("kotest", "5.9.1")
             version("mock-oauth2", "2.1.2")
@@ -93,6 +94,7 @@ dependencyResolutionManagement {
             library("greenmail-junit5", "com.icegreen", "greenmail-junit5").versionRef("greenmail")
 
             library("ktor-server-test-host", "io.ktor", "ktor-server-test-host").versionRef("ktor-server-test")
+            library("ktor-client-mock", "io.ktor", "ktor-client-mock").versionRef("ktor")
             library("mock-oauth2-server", "no.nav.security", "mock-oauth2-server").versionRef("mock-oauth2")
 
             library("kotest-runner-junit5", "io.kotest", "kotest-runner-junit5").versionRef("kotest")
