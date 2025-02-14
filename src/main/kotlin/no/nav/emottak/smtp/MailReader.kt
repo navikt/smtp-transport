@@ -141,9 +141,7 @@ class MailReader(
         val subject = message.subject
         return when (message.content) {
             is MimeMultipart ->
-                subject.isNullOrBlank()
-                    .also { log.warn("Message with null subject: ${logMimeMultipartMessage(message)}") } ||
-                    !subject.contains(acknowledgement, ignoreCase = true)
+                subject.isNullOrBlank() || !subject.contains(acknowledgement, ignoreCase = true)
 
             else -> return false
         }
