@@ -93,6 +93,7 @@ dependencies {
     testImplementation(testLibs.kotest.extensions.testcontainers)
     testImplementation(testLibs.kotest.extensions.testcontainers.kafka)
     testImplementation(testLibs.ktor.server.test.host)
+    testImplementation(testLibs.ktor.client.mock)
     testImplementation(testLibs.mock.oauth2.server)
     testImplementation(testLibs.postgresql)
     testImplementation(testLibs.testcontainers)
