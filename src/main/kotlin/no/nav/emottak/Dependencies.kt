@@ -14,10 +14,17 @@ import io.github.nomisRev.kafka.publisher.PublisherSettings
 import io.github.nomisRev.kafka.receiver.KafkaReceiver
 import io.github.nomisRev.kafka.receiver.ReceiverSettings
 import io.ktor.client.HttpClient
+import io.ktor.client.call.body
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.auth.Auth
+import io.ktor.client.plugins.auth.providers.BearerTokens
+import io.ktor.client.plugins.auth.providers.bearer
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
+import io.ktor.client.request.forms.submitForm
+import io.ktor.client.statement.HttpResponse
+import io.ktor.http.parameters
 import io.ktor.http.path
 import io.ktor.serialization.kotlinx.json.json
 import io.micrometer.prometheus.PrometheusConfig.DEFAULT
@@ -26,11 +33,13 @@ import jakarta.mail.Authenticator
 import jakarta.mail.PasswordAuthentication
 import jakarta.mail.Session
 import jakarta.mail.Store
+import no.nav.emottak.configuration.AzureAuth
+import no.nav.emottak.configuration.Config
 import no.nav.emottak.configuration.Database
-import no.nav.emottak.configuration.EbmsProvider
 import no.nav.emottak.configuration.Kafka
 import no.nav.emottak.configuration.Smtp
 import no.nav.emottak.configuration.toProperties
+import no.nav.emottak.model.TokenInfo
 import no.nav.emottak.queries.PayloadDatabase
 import no.nav.vault.jdbc.hikaricp.HikariCPVaultUtil.createHikariDataSourceWithVaultIntegration
 import no.nav.vault.jdbc.hikaricp.VaultUtil
@@ -84,19 +93,50 @@ internal suspend fun ResourceScope.kafkaPublisher(kafka: Kafka): KafkaPublisher<
 internal fun kafkaReceiver(kafka: Kafka): KafkaReceiver<String, ByteArray> =
     KafkaReceiver(kafkaReceiverSettings(kafka))
 
+internal suspend fun ResourceScope.httpTokenClientEngine(): HttpClientEngine =
+    install({ CIO.create() }) { c, _: ExitCase -> c.close().also { log.info("Closed http token client engine") } }
+
 internal suspend fun ResourceScope.httpClientEngine(): HttpClientEngine =
     install({ CIO.create() }) { c, _: ExitCase -> c.close().also { log.info("Closed http client engine") } }
 
-internal fun httpClient(clientEngine: HttpClientEngine, ebmsProvider: EbmsProvider): HttpClient =
+internal fun tokenHttpClient(clientEngine: HttpClientEngine): HttpClient =
+    HttpClient(clientEngine) { install(ContentNegotiation) { json() } }
+
+internal fun httpClient(
+    clientEngine: HttpClientEngine,
+    tokenClientEngine: HttpClientEngine,
+    config: Config
+): HttpClient =
     HttpClient(clientEngine) {
+        val tokenClient = tokenHttpClient(tokenClientEngine)
         install(ContentNegotiation) { json() }
+        install(Auth) {
+            bearer {
+                refreshTokens {
+                    val tokenInfo: TokenInfo = submitForm(tokenClient, config.azureAuth).body()
+                    BearerTokens(tokenInfo.accessToken, null)
+                }
+                sendWithoutRequest { true }
+            }
+        }
         defaultRequest {
             url {
-                host = ebmsProvider.baseUrl
-                path(ebmsProvider.apiUrl)
+                host = config.ebmsProvider.baseUrl
+                path(config.ebmsProvider.apiUrl)
             }
         }
     }
+
+private suspend fun submitForm(tokenClient: HttpClient, config: AzureAuth): HttpResponse =
+    tokenClient.submitForm(
+        url = config.azureTokenEndpoint.value,
+        formParameters = parameters {
+            append("client_id", config.azureAppClientId.value)
+            append("client_secret", config.azureAppClientSecret.value)
+            append("grant_type", "client_credentials")
+            append("scope", config.appScope.value)
+        }
+    )
 
 private fun migrationService(database: Database): Flyway {
     val adminCredentials = getVaultAdminCredentials(database)
@@ -157,7 +197,7 @@ suspend fun ResourceScope.initDependencies(): Dependencies = awaitAll {
     val jdbcDriver = async { (jdbcDriver(hikari(config.database))) }
     val migrationService = async { migrationService(config.database) }
     val metricsRegistry = async { metricsRegistry() }
-    val httpClient = async { httpClient(httpClientEngine(), config.ebmsProvider) }
+    val httpClient = async { httpClient(httpClientEngine(), httpTokenClientEngine(), config) }
 
     Dependencies(
         store.await(),

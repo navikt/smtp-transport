@@ -21,11 +21,11 @@ import kotlin.uuid.Uuid
 
 class EbmsProviderClientSpec : StringSpec({
 
-    val config = config().ebmsProvider
+    val config = config()
 
     "Get payloads - retrieve list of single payload" {
         val fakeEngine = getFakeEngine(HttpStatusCode.OK, jsonResponse())
-        val client = EbmsProviderClient(httpClient(fakeEngine, config))
+        val client = EbmsProviderClient(httpClient(fakeEngine, fakeEngine, config))
 
         val uuid = Uuid.parse("a86bd780-c345-4be3-876b-fefc4b7a8777")
 
@@ -43,7 +43,7 @@ class EbmsProviderClientSpec : StringSpec({
 
     "Get payloads - fail with payload not found" {
         val fakeEngine = getFakeEngine(HttpStatusCode.NotFound)
-        val client = EbmsProviderClient(httpClient(fakeEngine, config))
+        val client = EbmsProviderClient(httpClient(fakeEngine, fakeEngine, config))
         val referenceId = Uuid.random()
 
         with(client) {
@@ -54,7 +54,7 @@ class EbmsProviderClientSpec : StringSpec({
 
     "Get payloads - fail with invalid reference id" {
         val fakeEngine = getFakeEngine(HttpStatusCode.BadRequest)
-        val client = EbmsProviderClient(httpClient(fakeEngine, config))
+        val client = EbmsProviderClient(httpClient(fakeEngine, fakeEngine, config))
         val referenceId = Uuid.random()
 
         with(client) {
@@ -65,7 +65,8 @@ class EbmsProviderClientSpec : StringSpec({
 
     "Get payloads - fail with unauthorized" {
         val fakeEngine = getFakeEngine(HttpStatusCode.Unauthorized)
-        val client = EbmsProviderClient(httpClient(fakeEngine, config))
+        val fakeTokenEngine = getFakeEngine(HttpStatusCode.OK, jsonTokenResponse())
+        val client = EbmsProviderClient(httpClient(fakeEngine, fakeTokenEngine, config))
         val referenceId = Uuid.random()
 
         with(client) {
@@ -76,7 +77,7 @@ class EbmsProviderClientSpec : StringSpec({
 
     "Get payloads - fail with unknown error" {
         val fakeEngine = getFakeEngine(HttpStatusCode.InternalServerError, "unknown error")
-        val client = EbmsProviderClient(httpClient(fakeEngine, config))
+        val client = EbmsProviderClient(httpClient(fakeEngine, fakeEngine, config))
         val referenceId = Uuid.random()
 
         with(client) {
@@ -107,5 +108,15 @@ private fun jsonResponse(): String =
                     "content": [100, 97, 116, 97]
                 }
             ]
+    """
+        .trimIndent()
+
+private fun jsonTokenResponse(): String =
+    """
+            {
+                "access_token": "token",
+                "expires_in": 0,
+                "token_type": "Bearer"
+            }
     """
         .trimIndent()

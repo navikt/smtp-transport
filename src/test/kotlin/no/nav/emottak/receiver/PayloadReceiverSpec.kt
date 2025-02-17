@@ -52,7 +52,9 @@ class PayloadReceiverSpec : KafkaSpec(
                     )
                 }
 
-                val httpClient = httpClient(getFakeEngine(referenceId), config.ebmsProvider)
+                val clientEngine = getFakeEngine(jsonResponse(referenceId))
+                val tokenClientEngine = getFakeEngine(jsonTokenResponse())
+                val httpClient = httpClient(clientEngine, tokenClientEngine, config)
                 val ebmsProviderClient = EbmsProviderClient(httpClient)
                 val receiver = PayloadReceiver(kafkaReceiver(config.kafka), ebmsProviderClient)
                 val payloadMessages = receiver.receivePayloadMessages()
@@ -74,10 +76,10 @@ class PayloadReceiverSpec : KafkaSpec(
     }
 )
 
-private fun getFakeEngine(referenceId: Uuid): MockEngine =
+private fun getFakeEngine(content: String = ""): MockEngine =
     MockEngine { _ ->
         respond(
-            content = jsonResponse(referenceId),
+            content = content,
             status = HttpStatusCode.OK,
             headers = headers {
                 append(HttpHeaders.ContentType, "application/json")
@@ -95,5 +97,15 @@ private fun jsonResponse(referenceId: Uuid): String =
                     "content": [100, 97, 116, 97]
                 }
             ]
+    """
+        .trimIndent()
+
+private fun jsonTokenResponse(): String =
+    """
+            {
+                "access_token": "token",
+                "expires_in": 0,
+                "token_type": "Bearer"
+            }
     """
         .trimIndent()
