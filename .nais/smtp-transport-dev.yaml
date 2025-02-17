@@ -64,6 +64,9 @@ spec:
       - kvPath: /serviceuser/data/dev/srvtokt
         mountPath: /secret/serviceuser
   accessPolicy:
+    outbound:
+      rules:
+        - application: ebms-provider
     inbound:
       rules:
         - application: ebms-provider
