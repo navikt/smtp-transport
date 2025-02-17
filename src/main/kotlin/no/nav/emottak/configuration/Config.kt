@@ -183,6 +183,9 @@ value class AzureAd(val value: String)
 value class AppScope(val value: String)
 
 @JvmInline
+value class AzureHttpProxy(val value: String)
+
+@JvmInline
 value class AzureAdAuth(val value: String)
 
 @JvmInline
@@ -203,6 +206,7 @@ data class AzureAuth(
     val port: Port,
     val azureAd: AzureAd,
     val appScope: AppScope,
+    val azureHttpProxy: AzureHttpProxy,
     val azureAdAuth: AzureAdAuth,
     val azureWellKnownUrl: AzureWellKnownUrl,
     val azureTokenEndpoint: AzureTokenEndpoint,

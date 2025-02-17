@@ -49,6 +49,10 @@ import org.apache.kafka.common.serialization.ByteArraySerializer
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.kafka.common.serialization.StringSerializer
 import org.flywaydb.core.Flyway
+import java.net.InetSocketAddress
+import java.net.Proxy
+import java.net.Proxy.Type.HTTP
+import java.net.URI
 import javax.sql.DataSource
 
 data class Dependencies(
@@ -100,8 +104,14 @@ internal suspend fun ResourceScope.httpTokenClientEngine(): HttpClientEngine =
 internal suspend fun ResourceScope.httpClientEngine(): HttpClientEngine =
     install({ CIO.create() }) { c, _: ExitCase -> c.close().also { log.info("Closed http client engine") } }
 
-internal fun tokenHttpClient(clientEngine: HttpClientEngine): HttpClient =
-    HttpClient(clientEngine) { install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) } }
+internal fun tokenHttpClient(clientEngine: HttpClientEngine, config: AzureAuth): HttpClient =
+    HttpClient(clientEngine) {
+        install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
+        engine {
+            val uri = URI(config.azureHttpProxy.value)
+            proxy = Proxy(HTTP, InetSocketAddress(uri.host, uri.port))
+        }
+    }
 
 internal fun httpClient(
     clientEngine: HttpClientEngine,
@@ -109,7 +119,7 @@ internal fun httpClient(
     config: Config
 ): HttpClient =
     HttpClient(clientEngine) {
-        val tokenClient = tokenHttpClient(tokenClientEngine)
+        val tokenClient = tokenHttpClient(tokenClientEngine, config.azureAuth)
         install(ContentNegotiation) { json() }
         install(Auth) {
             bearer {
