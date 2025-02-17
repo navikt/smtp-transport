@@ -33,6 +33,7 @@ import jakarta.mail.Authenticator
 import jakarta.mail.PasswordAuthentication
 import jakarta.mail.Session
 import jakarta.mail.Store
+import kotlinx.serialization.json.Json
 import no.nav.emottak.configuration.AzureAuth
 import no.nav.emottak.configuration.Config
 import no.nav.emottak.configuration.Database
@@ -100,7 +101,7 @@ internal suspend fun ResourceScope.httpClientEngine(): HttpClientEngine =
     install({ CIO.create() }) { c, _: ExitCase -> c.close().also { log.info("Closed http client engine") } }
 
 internal fun tokenHttpClient(clientEngine: HttpClientEngine): HttpClient =
-    HttpClient(clientEngine) { install(ContentNegotiation) { json() } }
+    HttpClient(clientEngine) { install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) } }
 
 internal fun httpClient(
     clientEngine: HttpClientEngine,
