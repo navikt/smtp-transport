@@ -22,6 +22,7 @@ import no.nav.emottak.publisher.MailPublisher
 import no.nav.emottak.receiver.PayloadReceiver
 import no.nav.emottak.receiver.SignalReceiver
 import no.nav.emottak.repository.PayloadRepository
+import no.nav.emottak.util.EbmsProviderClient
 import no.nav.emottak.util.coroutineScope
 import org.slf4j.LoggerFactory
 import kotlin.coroutines.coroutineContext
@@ -36,7 +37,8 @@ fun main() = SuspendApp {
             deps.migrationService.migrate()
 
             val mailPublisher = MailPublisher(deps.kafkaPublisher)
-            val payloadReceiver = PayloadReceiver(deps.kafkaReceiver)
+            val ebmsProviderClient = EbmsProviderClient(deps.httpClient)
+            val payloadReceiver = PayloadReceiver(deps.kafkaReceiver, ebmsProviderClient)
             val signalReceiver = SignalReceiver(deps.kafkaReceiver)
             val payloadRepository = PayloadRepository(deps.payloadDatabase)
             val mailProcessor = MailProcessor(deps.store, mailPublisher, payloadRepository)

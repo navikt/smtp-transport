@@ -17,7 +17,8 @@ data class Config(
     val kafka: Kafka,
     val smtp: Smtp,
     val database: Database,
-    val azureAuth: AzureAuth
+    val azureAuth: AzureAuth,
+    val ebmsProvider: EbmsProvider
 )
 
 fun Config.withKafka(update: Kafka.() -> Kafka) = copy(kafka = kafka.update())
@@ -25,6 +26,8 @@ fun Config.withKafka(update: Kafka.() -> Kafka) = copy(kafka = kafka.update())
 data class Job(val fixedInterval: Duration)
 
 data class Mail(val inboxLimit: Int)
+
+data class EbmsProvider(val baseUrl: String, val apiUrl: String)
 
 @JvmInline
 value class SecurityProtocol(val value: String)
