@@ -35,7 +35,7 @@ class PayloadReceiver(
     private suspend fun getPayloads(uuid: Uuid): List<Payload> =
         with(ebmsProviderClient) {
             recover({
-                getPayloads(uuid).also { log.info("Retrieved payloads for reference id $uuid: $it") }
+                getPayloads(uuid).also { log.info("Retrieved ${it.size} payload(s) for reference id: $uuid") }
             }) { e: PayloadError -> emptyList<Payload>().also { log.error("$e") } }
         }
 }
