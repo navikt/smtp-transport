@@ -202,10 +202,12 @@ value class AzureApplicationSecret(val value: String)
 
 data class AzureAuth(
     val clusterName: ClusterName,
-    val appName: AppName,
+    val smtpTransportName: AppName,
+    val ebmsProviderName: AppName,
     val port: Port,
     val azureAd: AzureAd,
-    val appScope: AppScope,
+    val smtpTransportScope: AppScope,
+    val ebmsProviderScope: AppScope,
     val azureHttpProxy: AzureHttpProxy,
     val azureAdAuth: AzureAdAuth,
     val azureWellKnownUrl: AzureWellKnownUrl,

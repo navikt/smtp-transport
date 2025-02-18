@@ -145,7 +145,7 @@ private suspend fun submitForm(tokenClient: HttpClient, config: AzureAuth): Http
             append("client_id", config.azureAppClientId.value)
             append("client_secret", config.azureAppClientSecret.value)
             append("grant_type", "client_credentials")
-            append("scope", config.appScope.value)
+            append("scope", config.ebmsProviderScope.value)
         }
     )
 
