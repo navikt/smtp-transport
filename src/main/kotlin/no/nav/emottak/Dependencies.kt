@@ -98,48 +98,51 @@ internal suspend fun ResourceScope.kafkaPublisher(kafka: Kafka): KafkaPublisher<
 internal fun kafkaReceiver(kafka: Kafka): KafkaReceiver<String, ByteArray> =
     KafkaReceiver(kafkaReceiverSettings(kafka))
 
-internal suspend fun ResourceScope.httpTokenClientEngine(): HttpClientEngine =
-    install({ CIO.create() }) { c, _: ExitCase -> c.close().also { log.info("Closed http token client engine") } }
-
 internal suspend fun ResourceScope.httpClientEngine(): HttpClientEngine =
-    install({ CIO.create() }) { c, _: ExitCase -> c.close().also { log.info("Closed http client engine") } }
+    install({ CIO.create() }) { e, _: ExitCase -> e.close().also { log.info("Closed http client engine") } }
 
-internal fun tokenHttpClient(clientEngine: HttpClientEngine, config: AzureAuth): HttpClient =
-    HttpClient(clientEngine) {
-        install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
-        engine {
-            val uri = URI(config.azureHttpProxy.value)
-            proxy = Proxy(HTTP, InetSocketAddress(uri.host, uri.port))
+internal suspend fun ResourceScope.httpTokenClientEngine(): HttpClientEngine =
+    install({ CIO.create() }) { e, _: ExitCase -> e.close().also { log.info("Closed http token client engine") } }
+
+internal suspend fun ResourceScope.httpTokenClient(clientEngine: HttpClientEngine, config: AzureAuth): HttpClient =
+    install({
+        HttpClient(clientEngine) {
+            install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
+            engine {
+                val uri = URI(config.azureHttpProxy.value)
+                proxy = Proxy(HTTP, InetSocketAddress(uri.host, uri.port))
+            }
         }
-    }
+    }) { c, _: ExitCase -> c.close().also { log.info("Closed http token client") } }
 
-internal fun httpClient(
+internal suspend fun ResourceScope.httpClient(
     clientEngine: HttpClientEngine,
-    tokenClientEngine: HttpClientEngine,
+    httpTokenClient: HttpClient,
     config: Config
 ): HttpClient =
-    HttpClient(clientEngine) {
-        val tokenClient = tokenHttpClient(tokenClientEngine, config.azureAuth)
-        install(ContentNegotiation) { json() }
-        install(Auth) {
-            bearer {
-                refreshTokens {
-                    val tokenInfo: TokenInfo = submitForm(tokenClient, config.azureAuth).body()
-                    BearerTokens(tokenInfo.accessToken, null)
+    install({
+        HttpClient(clientEngine) {
+            install(ContentNegotiation) { json() }
+            install(Auth) {
+                bearer {
+                    refreshTokens {
+                        val tokenInfo: TokenInfo = submitForm(httpTokenClient, config.azureAuth).body()
+                        BearerTokens(tokenInfo.accessToken, null)
+                    }
+                    sendWithoutRequest { true }
                 }
-                sendWithoutRequest { true }
+            }
+            defaultRequest {
+                url {
+                    host = config.ebmsProvider.baseUrl
+                    path(config.ebmsProvider.apiUrl)
+                }
             }
         }
-        defaultRequest {
-            url {
-                host = config.ebmsProvider.baseUrl
-                path(config.ebmsProvider.apiUrl)
-            }
-        }
-    }
+    }) { c, _: ExitCase -> c.close().also { log.info("Closed http client") } }
 
-private suspend fun submitForm(tokenClient: HttpClient, config: AzureAuth): HttpResponse =
-    tokenClient.submitForm(
+private suspend fun submitForm(httpTokenClient: HttpClient, config: AzureAuth): HttpResponse =
+    httpTokenClient.submitForm(
         url = config.azureTokenEndpoint.value,
         formParameters = parameters {
             append("client_id", config.azureAppClientId.value)
@@ -208,7 +211,10 @@ suspend fun ResourceScope.initDependencies(): Dependencies = awaitAll {
     val jdbcDriver = async { (jdbcDriver(hikari(config.database))) }
     val migrationService = async { migrationService(config.database) }
     val metricsRegistry = async { metricsRegistry() }
-    val httpClient = async { httpClient(httpClientEngine(), httpTokenClientEngine(), config) }
+    val httpClientEngine = async { httpClientEngine() }
+    val httpTokenClientEngine = async { httpTokenClientEngine() }
+    val httpTokenClient = async { httpTokenClient(httpTokenClientEngine.await(), config.azureAuth) }
+    val httpClient = async { httpClient(httpClientEngine.await(), httpTokenClient.await(), config) }
 
     Dependencies(
         store.await(),
