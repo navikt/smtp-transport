@@ -17,6 +17,7 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.auth.Auth
 import io.ktor.client.plugins.auth.providers.BearerTokens
 import io.ktor.client.plugins.auth.providers.bearer
@@ -107,6 +108,7 @@ internal suspend fun ResourceScope.httpTokenClientEngine(): HttpClientEngine =
 internal suspend fun ResourceScope.httpTokenClient(clientEngine: HttpClientEngine, config: AzureAuth): HttpClient =
     install({
         HttpClient(clientEngine) {
+            install(HttpTimeout) { connectTimeoutMillis = 2000 }
             install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
             engine {
                 val uri = URI(config.azureHttpProxy.value)
@@ -122,6 +124,7 @@ internal suspend fun ResourceScope.httpClient(
 ): HttpClient =
     install({
         HttpClient(clientEngine) {
+            install(HttpTimeout) { connectTimeoutMillis = 3000 }
             install(ContentNegotiation) { json() }
             install(Auth) {
                 bearer {
