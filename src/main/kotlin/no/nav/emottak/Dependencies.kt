@@ -106,43 +106,48 @@ internal suspend fun ResourceScope.httpTokenClientEngine(): HttpClientEngine =
     install({ CIO.create() }) { e, _: ExitCase -> e.close().also { log.info("Closed http token client engine") } }
 
 internal suspend fun ResourceScope.httpTokenClient(clientEngine: HttpClientEngine, config: AzureAuth): HttpClient =
-    install({
-        HttpClient(clientEngine) {
-            install(HttpTimeout) { connectTimeoutMillis = 2000 }
-            install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
-            engine {
-                val uri = URI(config.azureHttpProxy.value)
-                proxy = Proxy(HTTP, InetSocketAddress(uri.host, uri.port))
-            }
-        }
-    }) { c, _: ExitCase -> c.close().also { log.info("Closed http token client") } }
+    install({ no.nav.emottak.httpTokenClient(clientEngine, config) }) { c, _: ExitCase ->
+        c.close().also { log.info("Closed http token client") }
+    }
 
 internal suspend fun ResourceScope.httpClient(
     clientEngine: HttpClientEngine,
     httpTokenClient: HttpClient,
     config: Config
-): HttpClient =
-    install({
-        HttpClient(clientEngine) {
-            install(HttpTimeout) { connectTimeoutMillis = 3000 }
-            install(ContentNegotiation) { json() }
-            install(Auth) {
-                bearer {
-                    refreshTokens {
-                        val tokenInfo: TokenInfo = submitForm(httpTokenClient, config.azureAuth).body()
-                        BearerTokens(tokenInfo.accessToken, null)
-                    }
-                    sendWithoutRequest { true }
+): HttpClient = install({ no.nav.emottak.httpClient(clientEngine, httpTokenClient, config) }) { c, _: ExitCase ->
+    c.close().also { log.info("Closed http client") }
+}
+
+private fun httpTokenClient(clientEngine: HttpClientEngine, config: AzureAuth): HttpClient =
+    HttpClient(clientEngine) {
+        install(HttpTimeout) { connectTimeoutMillis = 2000 }
+        install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
+        engine {
+            val uri = URI(config.azureHttpProxy.value)
+            proxy = Proxy(HTTP, InetSocketAddress(uri.host, uri.port))
+        }
+    }
+
+private fun httpClient(clientEngine: HttpClientEngine, httpTokenClient: HttpClient, config: Config): HttpClient =
+    HttpClient(clientEngine) {
+        install(HttpTimeout) { connectTimeoutMillis = 3000 }
+        install(ContentNegotiation) { json() }
+        install(Auth) {
+            bearer {
+                refreshTokens {
+                    val tokenInfo: TokenInfo = submitForm(httpTokenClient, config.azureAuth).body()
+                    BearerTokens(tokenInfo.accessToken, null)
                 }
-            }
-            defaultRequest {
-                url {
-                    host = config.ebmsProvider.baseUrl
-                    path(config.ebmsProvider.apiUrl)
-                }
+                sendWithoutRequest { true }
             }
         }
-    }) { c, _: ExitCase -> c.close().also { log.info("Closed http client") } }
+        defaultRequest {
+            url {
+                host = config.ebmsProvider.baseUrl
+                path(config.ebmsProvider.apiUrl)
+            }
+        }
+    }
 
 private suspend fun submitForm(httpTokenClient: HttpClient, config: AzureAuth): HttpResponse =
     httpTokenClient.submitForm(
