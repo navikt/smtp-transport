@@ -1,6 +1,7 @@
 package no.nav.emottak.util
 
 import arrow.core.raise.either
+import arrow.fx.coroutines.resourceScope
 import io.kotest.assertions.arrow.core.shouldBeLeft
 import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.core.spec.style.StringSpec
@@ -17,6 +18,7 @@ import no.nav.emottak.UnauthorizedError
 import no.nav.emottak.UnknownError
 import no.nav.emottak.config
 import no.nav.emottak.httpClient
+import no.nav.emottak.httpTokenClient
 import kotlin.uuid.Uuid
 
 class EbmsProviderClientSpec : StringSpec({
@@ -24,65 +26,105 @@ class EbmsProviderClientSpec : StringSpec({
     val config = config()
 
     "Get payloads - retrieve list of single payload" {
-        val fakeEngine = getFakeEngine(HttpStatusCode.OK, jsonResponse())
-        val client = EbmsProviderClient(httpClient(fakeEngine, fakeEngine, config))
+        resourceScope {
+            val fakeEngine = getFakeEngine(HttpStatusCode.OK, jsonResponse())
+            val client = EbmsProviderClient(
+                httpClient(
+                    fakeEngine,
+                    httpTokenClient(fakeEngine, config.azureAuth),
+                    config
+                )
+            )
 
-        val uuid = Uuid.parse("a86bd780-c345-4be3-876b-fefc4b7a8777")
+            val uuid = Uuid.parse("a86bd780-c345-4be3-876b-fefc4b7a8777")
 
-        with(client) {
-            val payloads = either { getPayloads(uuid) }.shouldBeRight()
-            payloads shouldHaveSize 1
+            with(client) {
+                val payloads = either { getPayloads(uuid) }.shouldBeRight()
+                payloads shouldHaveSize 1
 
-            val payload = payloads.first()
-            payload.referenceId shouldBe uuid
-            payload.contentId shouldBe "content"
-            payload.contentType shouldBe "contentType"
-            payload.content contentEquals "data".toByteArray()
+                val payload = payloads.first()
+                payload.referenceId shouldBe uuid
+                payload.contentId shouldBe "content"
+                payload.contentType shouldBe "contentType"
+                payload.content contentEquals "data".toByteArray()
+            }
         }
     }
 
     "Get payloads - fail with payload not found" {
-        val fakeEngine = getFakeEngine(HttpStatusCode.NotFound)
-        val client = EbmsProviderClient(httpClient(fakeEngine, fakeEngine, config))
-        val referenceId = Uuid.random()
+        resourceScope {
+            val fakeEngine = getFakeEngine(HttpStatusCode.NotFound)
+            val client = EbmsProviderClient(
+                httpClient(
+                    fakeEngine,
+                    httpTokenClient(fakeEngine, config.azureAuth),
+                    config
+                )
+            )
+            val referenceId = Uuid.random()
 
-        with(client) {
-            either { getPayloads(referenceId) } shouldBeLeft
-                PayloadNotFound(referenceId.toString())
+            with(client) {
+                either { getPayloads(referenceId) } shouldBeLeft
+                    PayloadNotFound(referenceId.toString())
+            }
         }
     }
 
     "Get payloads - fail with invalid reference id" {
-        val fakeEngine = getFakeEngine(HttpStatusCode.BadRequest)
-        val client = EbmsProviderClient(httpClient(fakeEngine, fakeEngine, config))
-        val referenceId = Uuid.random()
+        resourceScope {
+            val fakeEngine = getFakeEngine(HttpStatusCode.BadRequest)
+            val client = EbmsProviderClient(
+                httpClient(
+                    fakeEngine,
+                    httpTokenClient(fakeEngine, config.azureAuth),
+                    config
+                )
+            )
+            val referenceId = Uuid.random()
 
-        with(client) {
-            either { getPayloads(referenceId) } shouldBeLeft
-                InvalidReferenceId(referenceId.toString())
+            with(client) {
+                either { getPayloads(referenceId) } shouldBeLeft
+                    InvalidReferenceId(referenceId.toString())
+            }
         }
     }
 
     "Get payloads - fail with unauthorized" {
-        val fakeEngine = getFakeEngine(HttpStatusCode.Unauthorized)
-        val fakeTokenEngine = getFakeEngine(HttpStatusCode.OK, jsonTokenResponse())
-        val client = EbmsProviderClient(httpClient(fakeEngine, fakeTokenEngine, config))
-        val referenceId = Uuid.random()
+        resourceScope {
+            val fakeEngine = getFakeEngine(HttpStatusCode.Unauthorized)
+            val fakeTokenEngine = getFakeEngine(HttpStatusCode.OK, jsonTokenResponse())
+            val client = EbmsProviderClient(
+                httpClient(
+                    fakeEngine,
+                    httpTokenClient(fakeTokenEngine, config.azureAuth),
+                    config
+                )
+            )
+            val referenceId = Uuid.random()
 
-        with(client) {
-            either { getPayloads(referenceId) } shouldBeLeft
-                UnauthorizedError
+            with(client) {
+                either { getPayloads(referenceId) } shouldBeLeft
+                    UnauthorizedError
+            }
         }
     }
 
     "Get payloads - fail with unknown error" {
-        val fakeEngine = getFakeEngine(HttpStatusCode.InternalServerError, "unknown error")
-        val client = EbmsProviderClient(httpClient(fakeEngine, fakeEngine, config))
-        val referenceId = Uuid.random()
+        resourceScope {
+            val fakeEngine = getFakeEngine(HttpStatusCode.InternalServerError, "unknown error")
+            val client = EbmsProviderClient(
+                httpClient(
+                    fakeEngine,
+                    httpTokenClient(fakeEngine, config.azureAuth),
+                    config
+                )
+            )
+            val referenceId = Uuid.random()
 
-        with(client) {
-            either { getPayloads(referenceId) } shouldBeLeft
-                UnknownError("unknown error")
+            with(client) {
+                either { getPayloads(referenceId) } shouldBeLeft
+                    UnknownError("unknown error")
+            }
         }
     }
 })
