@@ -26,7 +26,6 @@ import no.nav.emottak.util.EbmsProviderClient
 import no.nav.emottak.util.coroutineScope
 import org.slf4j.LoggerFactory
 import kotlin.coroutines.coroutineContext
-import kotlin.time.Duration.Companion.seconds
 
 internal val log = LoggerFactory.getLogger("no.nav.emottak.smtp")
 
@@ -44,10 +43,12 @@ fun main() = SuspendApp {
             val mailProcessor = MailProcessor(deps.store, mailPublisher, payloadRepository)
             val messageProcessor = MessageProcessor(payloadReceiver, signalReceiver)
 
+            val server = config().server
+
             server(
                 Netty,
-                port = 8080,
-                preWait = 5.seconds,
+                port = server.port.value,
+                preWait = server.preWait,
                 module = smtpTransportModule(deps.meterRegistry, payloadRepository)
             )
 

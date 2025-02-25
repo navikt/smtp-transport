@@ -67,8 +67,6 @@ data class Dependencies(
     val meterRegistry: PrometheusMeterRegistry
 )
 
-private const val MIGRATIONS_PATH = "filesystem:/app/migrations"
-
 internal suspend fun ResourceScope.metricsRegistry(): PrometheusMeterRegistry =
     install({ PrometheusMeterRegistry(DEFAULT) }) { p, _: ExitCase ->
         p.close().also { log.info("Closed prometheus registry") }
@@ -105,7 +103,7 @@ internal suspend fun ResourceScope.httpClientEngine(): HttpClientEngine =
 internal suspend fun ResourceScope.httpTokenClientEngine(): HttpClientEngine =
     install({ CIO.create() }) { e, _: ExitCase -> e.close().also { log.info("Closed http token client engine") } }
 
-internal suspend fun ResourceScope.httpTokenClient(clientEngine: HttpClientEngine, config: AzureAuth): HttpClient =
+internal suspend fun ResourceScope.httpTokenClient(clientEngine: HttpClientEngine, config: Config): HttpClient =
     install({ no.nav.emottak.httpTokenClient(clientEngine, config) }) { c, _: ExitCase ->
         c.close().also { log.info("Closed http token client") }
     }
@@ -118,19 +116,19 @@ internal suspend fun ResourceScope.httpClient(
     c.close().also { log.info("Closed http client") }
 }
 
-private fun httpTokenClient(clientEngine: HttpClientEngine, config: AzureAuth): HttpClient =
+private fun httpTokenClient(clientEngine: HttpClientEngine, config: Config): HttpClient =
     HttpClient(clientEngine) {
-        install(HttpTimeout) { connectTimeoutMillis = 2000 }
+        install(HttpTimeout) { connectTimeoutMillis = config.httpTokenClient.connectionTimeout.value }
         install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
         engine {
-            val uri = URI(config.azureHttpProxy.value)
+            val uri = URI(config.azureAuth.azureHttpProxy.value)
             proxy = Proxy(HTTP, InetSocketAddress(uri.host, uri.port))
         }
     }
 
 private fun httpClient(clientEngine: HttpClientEngine, httpTokenClient: HttpClient, config: Config): HttpClient =
     HttpClient(clientEngine) {
-        install(HttpTimeout) { connectTimeoutMillis = 3000 }
+        install(HttpTimeout) { connectTimeoutMillis = config.httpClient.connectionTimeout.value }
         install(ContentNegotiation) { json() }
         install(Auth) {
             bearer {
@@ -155,7 +153,7 @@ private suspend fun submitForm(httpTokenClient: HttpClient, config: AzureAuth): 
         formParameters = parameters {
             append("client_id", config.azureAppClientId.value)
             append("client_secret", config.azureAppClientSecret.value)
-            append("grant_type", "client_credentials")
+            append("grant_type", config.azureGrantType.value)
             append("scope", config.ebmsProviderScope.value)
         }
     )
@@ -168,7 +166,7 @@ private fun migrationService(database: Database): Flyway {
         .configure()
         .dataSource(database.url.value, user, password)
         .initSql("SET ROLE \"${database.adminRole.value}\"")
-        .locations(MIGRATIONS_PATH)
+        .locations(database.migrationsPath.value)
         .loggers("slf4j")
         .load()
 }
@@ -221,7 +219,7 @@ suspend fun ResourceScope.initDependencies(): Dependencies = awaitAll {
     val metricsRegistry = async { metricsRegistry() }
     val httpClientEngine = async { httpClientEngine() }
     val httpTokenClientEngine = async { httpTokenClientEngine() }
-    val httpTokenClient = async { httpTokenClient(httpTokenClientEngine.await(), config.azureAuth) }
+    val httpTokenClient = async { httpTokenClient(httpTokenClientEngine.await(), config) }
     val httpClient = async { httpClient(httpClientEngine.await(), httpTokenClient.await(), config) }
 
     Dependencies(

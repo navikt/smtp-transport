@@ -57,7 +57,7 @@ class PayloadReceiverSpec : KafkaSpec(
 
                     val clientEngine = getFakeEngine(jsonResponse(referenceId))
                     val tokenClientEngine = getFakeEngine(jsonTokenResponse())
-                    val httpTokenClient = httpTokenClient(tokenClientEngine, config.azureAuth)
+                    val httpTokenClient = httpTokenClient(tokenClientEngine, config)
                     val httpClient = httpClient(clientEngine, httpTokenClient, config)
                     val ebmsProviderClient = EbmsProviderClient(httpClient)
                     val receiver = PayloadReceiver(kafkaReceiver(config.kafka), ebmsProviderClient)

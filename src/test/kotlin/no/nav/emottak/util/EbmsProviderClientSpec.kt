@@ -31,7 +31,7 @@ class EbmsProviderClientSpec : StringSpec({
             val client = EbmsProviderClient(
                 httpClient(
                     fakeEngine,
-                    httpTokenClient(fakeEngine, config.azureAuth),
+                    httpTokenClient(fakeEngine, config),
                     config
                 )
             )
@@ -57,7 +57,7 @@ class EbmsProviderClientSpec : StringSpec({
             val client = EbmsProviderClient(
                 httpClient(
                     fakeEngine,
-                    httpTokenClient(fakeEngine, config.azureAuth),
+                    httpTokenClient(fakeEngine, config),
                     config
                 )
             )
@@ -76,7 +76,7 @@ class EbmsProviderClientSpec : StringSpec({
             val client = EbmsProviderClient(
                 httpClient(
                     fakeEngine,
-                    httpTokenClient(fakeEngine, config.azureAuth),
+                    httpTokenClient(fakeEngine, config),
                     config
                 )
             )
@@ -96,7 +96,7 @@ class EbmsProviderClientSpec : StringSpec({
             val client = EbmsProviderClient(
                 httpClient(
                     fakeEngine,
-                    httpTokenClient(fakeTokenEngine, config.azureAuth),
+                    httpTokenClient(fakeTokenEngine, config),
                     config
                 )
             )
@@ -115,7 +115,7 @@ class EbmsProviderClientSpec : StringSpec({
             val client = EbmsProviderClient(
                 httpClient(
                     fakeEngine,
-                    httpTokenClient(fakeEngine, config.azureAuth),
+                    httpTokenClient(fakeEngine, config),
                     config
                 )
             )
