@@ -18,6 +18,9 @@ data class Config(
     val smtp: Smtp,
     val database: Database,
     val azureAuth: AzureAuth,
+    val server: Server,
+    val httpClient: HttpClient,
+    val httpTokenClient: HttpClient,
     val ebmsProvider: EbmsProvider
 )
 
@@ -27,7 +30,14 @@ data class Job(val fixedInterval: Duration)
 
 data class Mail(val inboxLimit: Int)
 
+data class Server(val port: Port, val preWait: Duration)
+
 data class EbmsProvider(val baseUrl: String, val apiUrl: String)
+
+@JvmInline
+value class Timeout(val value: Long)
+
+data class HttpClient(val connectionTimeout: Timeout)
 
 @JvmInline
 value class SecurityProtocol(val value: String)
@@ -146,6 +156,9 @@ value class IdleConnectionTimeout(val value: Int)
 value class MountPath(val value: String)
 
 @JvmInline
+value class MigrationsPath(val value: String)
+
+@JvmInline
 value class Role(val value: String)
 
 data class Database(
@@ -157,7 +170,8 @@ data class Database(
     val idleConnectionTimeout: IdleConnectionTimeout,
     val mountPath: MountPath,
     val userRole: Role,
-    val adminRole: Role
+    val adminRole: Role,
+    val migrationsPath: MigrationsPath
 )
 
 fun Database.toProperties() = Properties()
@@ -174,9 +188,6 @@ fun Database.toProperties() = Properties()
 value class ClusterName(val value: String)
 
 @JvmInline
-value class AppName(val value: String)
-
-@JvmInline
 value class AzureAd(val value: String)
 
 @JvmInline
@@ -187,6 +198,9 @@ value class AzureHttpProxy(val value: String)
 
 @JvmInline
 value class AzureAdAuth(val value: String)
+
+@JvmInline
+value class AzureGrantType(val value: String)
 
 @JvmInline
 value class AzureWellKnownUrl(val value: String)
@@ -202,14 +216,13 @@ value class AzureApplicationSecret(val value: String)
 
 data class AzureAuth(
     val clusterName: ClusterName,
-    val smtpTransportName: AppName,
-    val ebmsProviderName: AppName,
     val port: Port,
     val azureAd: AzureAd,
     val smtpTransportScope: AppScope,
     val ebmsProviderScope: AppScope,
     val azureHttpProxy: AzureHttpProxy,
     val azureAdAuth: AzureAdAuth,
+    val azureGrantType: AzureGrantType,
     val azureWellKnownUrl: AzureWellKnownUrl,
     val azureTokenEndpoint: AzureTokenEndpoint,
     val azureAppClientId: AzureApplicationId,
