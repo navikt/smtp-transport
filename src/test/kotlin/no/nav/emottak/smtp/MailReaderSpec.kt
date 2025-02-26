@@ -50,8 +50,8 @@ class MailReaderSpec : StringSpec({
             val multipartMessages = messages.filter { it.multipart }.sortedBy { it.headers.size }
             multipartMessages.size shouldBe 2
 
-            val acknowledgmentMessage = MimeMessage(session, classLoader.getResourceAsStream(REQUEST))
-            val expectedFirstMessage = reader.mapEmailMsg(acknowledgmentMessage)
+            val requestMessage = MimeMessage(session, classLoader.getResourceAsStream(REQUEST))
+            val expectedFirstMessage = reader.mapEmailMsg(requestMessage)
 
             val firstMultipartMessage = multipartMessages.first()
             firstMultipartMessage.headers shouldBe expectedFirstMessage.headers
