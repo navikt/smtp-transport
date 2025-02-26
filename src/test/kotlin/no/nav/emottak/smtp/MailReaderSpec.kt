@@ -47,22 +47,22 @@ class MailReaderSpec : StringSpec({
 
             val reader = MailReader(config.mail, store, false)
             val messages = reader.readMailBatches(4)
+            val multipartMessages = messages.filter { it.multipart }.sortedBy { it.headers.size }
+            multipartMessages.size shouldBe 2
+
+            val requestMessage = MimeMessage(session, classLoader.getResourceAsStream(REQUEST))
+            val expectedFirstMessage = reader.mapEmailMsg(requestMessage)
+
+            val firstMultipartMessage = multipartMessages.first()
+            firstMultipartMessage.headers shouldBe expectedFirstMessage.headers
+            firstMultipartMessage.parts.first() shouldMatchBytes expectedFirstMessage.parts.first()
 
             val exampleMessage = MimeMessage(session, classLoader.getResourceAsStream(EXAMPLE))
-            println("Example message: $exampleMessage")
-            val expectedFirstMessage = reader.mapEmailMsg(exampleMessage)
+            val expectedLastMessage = reader.mapEmailMsg(exampleMessage)
 
-            val firstMessage = messages.first()
-            // firstMessage.headers shouldBe expectedFirstMessage.headers - doesn't run in GHA
-            // firstMessage.parts.first() shouldMatchBytes expectedFirstMessage.parts.first() - doesn't run in GHA
-
-            val acknowledgmentMessage = MimeMessage(session, classLoader.getResourceAsStream(REQUEST))
-            println("Acknowledgment message: $acknowledgmentMessage")
-            val expectedLastMessage = reader.mapEmailMsg(acknowledgmentMessage)
-
-            val lastMessage = messages.last()
-            // lastMessage.headers shouldBe expectedLastMessage.headers - doesn't run in GHA
-            // lastMessage.parts.first() shouldMatchBytes expectedLastMessage.parts.first() - doesn't run in GHA
+            val lastMultipartMessage = multipartMessages.last()
+            lastMultipartMessage.headers shouldBe expectedLastMessage.headers
+            lastMultipartMessage.parts.first() shouldMatchBytes expectedLastMessage.parts.first()
 
             messages.size shouldBe 4
             reader.readMailBatches(3).size shouldBe 0
