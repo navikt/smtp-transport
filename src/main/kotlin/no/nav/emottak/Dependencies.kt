@@ -11,6 +11,7 @@ import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.github.nomisRev.kafka.publisher.KafkaPublisher
 import io.github.nomisRev.kafka.publisher.PublisherSettings
+import io.github.nomisRev.kafka.receiver.AutoOffsetReset
 import io.github.nomisRev.kafka.receiver.KafkaReceiver
 import io.github.nomisRev.kafka.receiver.ReceiverSettings
 import io.ktor.client.HttpClient
@@ -94,8 +95,11 @@ internal suspend fun ResourceScope.kafkaPublisher(kafka: Kafka): KafkaPublisher<
         p.close().also { log.info("Closed kafka publisher") }
     }
 
-internal fun kafkaReceiver(kafka: Kafka): KafkaReceiver<String, ByteArray> =
-    KafkaReceiver(kafkaReceiverSettings(kafka))
+internal fun kafkaReceiver(
+    kafka: Kafka,
+    autoOffsetReset: AutoOffsetReset = AutoOffsetReset.Latest
+): KafkaReceiver<String, ByteArray> =
+    KafkaReceiver(kafkaReceiverSettings(kafka, autoOffsetReset))
 
 internal suspend fun ResourceScope.httpClientEngine(): HttpClientEngine =
     install({ CIO.create() }) { e, _: ExitCase -> e.close().also { log.info("Closed http client engine") } }
@@ -186,13 +190,14 @@ private fun kafkaPublisherSettings(kafka: Kafka): PublisherSettings<String, Byte
         properties = kafka.toProperties()
     )
 
-private fun kafkaReceiverSettings(kafka: Kafka): ReceiverSettings<String, ByteArray> =
+private fun kafkaReceiverSettings(kafka: Kafka, autoOffsetReset: AutoOffsetReset): ReceiverSettings<String, ByteArray> =
     ReceiverSettings(
         bootstrapServers = kafka.bootstrapServers,
         keyDeserializer = StringDeserializer(),
         valueDeserializer = ByteArrayDeserializer(),
         groupId = kafka.groupId,
-        properties = kafka.toProperties()
+        properties = kafka.toProperties(),
+        autoOffsetReset = autoOffsetReset
     )
 
 internal val session: (Smtp) -> Session = { smtp: Smtp ->

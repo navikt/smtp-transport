@@ -4,6 +4,7 @@ import app.cash.turbine.test
 import app.cash.turbine.turbineScope
 import arrow.fx.coroutines.resourceScope
 import io.github.nomisRev.kafka.publisher.KafkaPublisher
+import io.github.nomisRev.kafka.receiver.AutoOffsetReset
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.ktor.client.engine.mock.MockEngine
@@ -60,7 +61,10 @@ class PayloadReceiverSpec : KafkaSpec(
                     val httpTokenClient = httpTokenClient(tokenClientEngine, config)
                     val httpClient = httpClient(clientEngine, httpTokenClient, config)
                     val ebmsProviderClient = EbmsProviderClient(httpClient)
-                    val receiver = PayloadReceiver(kafkaReceiver(config.kafka), ebmsProviderClient)
+                    val receiver = PayloadReceiver(
+                        kafkaReceiver(config.kafka, AutoOffsetReset.Earliest),
+                        ebmsProviderClient
+                    )
                     val payloadMessages = receiver.receivePayloadMessages()
 
                     payloadMessages.test {

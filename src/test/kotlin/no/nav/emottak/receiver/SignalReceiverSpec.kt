@@ -3,6 +3,7 @@ package no.nav.emottak.receiver
 import app.cash.turbine.test
 import app.cash.turbine.turbineScope
 import io.github.nomisRev.kafka.publisher.KafkaPublisher
+import io.github.nomisRev.kafka.receiver.AutoOffsetReset
 import io.kotest.matchers.shouldBe
 import no.nav.emottak.KafkaSpec
 import no.nav.emottak.config
@@ -44,7 +45,7 @@ class SignalReceiverSpec : KafkaSpec(
                     )
                 }
 
-                val receiver = SignalReceiver(kafkaReceiver(config.kafka))
+                val receiver = SignalReceiver(kafkaReceiver(config.kafka, AutoOffsetReset.Earliest))
                 val signalMessages = receiver.receiveSignalMessages()
 
                 signalMessages.test {
