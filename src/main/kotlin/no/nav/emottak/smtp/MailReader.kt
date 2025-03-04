@@ -12,6 +12,7 @@ import net.logstash.logback.marker.LogstashMarker
 import net.logstash.logback.marker.Markers
 import no.nav.emottak.configuration.Mail
 import no.nav.emottak.log
+import kotlin.text.RegexOption.IGNORE_CASE
 
 data class EmailMsg(
     val multipart: Boolean,
@@ -137,14 +138,8 @@ class MailReader(
     }
 
     private fun isMultipartMessage(message: MimeMessage): Boolean {
-        val acknowledgement = "Acknowledgment"
-        val subject = message.subject
-        return when (message.content) {
-            is MimeMultipart ->
-                subject.isNullOrBlank() || !subject.contains(acknowledgement, ignoreCase = true)
-
-            else -> return false
-        }
+        return message.content is MimeMultipart &&
+            message.subject?.contains(Regex("acknowledg(e)?ment", IGNORE_CASE)) != true
     }
 
     private fun createEmptyMimeBodyParts(message: MimeMessage) = listOf(
