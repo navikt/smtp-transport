@@ -69,7 +69,7 @@ class MailReader(
     private fun expunge(): Boolean = (expunge || count() > mail.inboxLimit)
 
     private fun processMimeMessage(mimeMessage: MimeMessage) {
-        log.info("Reading emails startIndex $start")
+        log.debug("Reading emails startIndex $start")
         when (mimeMessage.content) {
             is MimeMultipart -> logMimeMultipartMessage(mimeMessage)
             else -> logMimeMessage(mimeMessage)
@@ -82,7 +82,7 @@ class MailReader(
             ?.toList()
             ?.firstOrNull()
         val headerMarker = createHeaderMarker(headerXMailer)
-        log.info(headerMarker, "From: <${mimeMessage.from[0]}> Subject: <${mimeMessage.subject}>")
+        log.debug(headerMarker, "From: <{}> Subject: <{}>", mimeMessage.from[0], mimeMessage.subject)
         mimeMessage.setFlag(DELETED, expunge())
     }
 
@@ -90,7 +90,7 @@ class MailReader(
         val mimeHeaders = getMimeMessageHeaders(mimeMessage)
         val mimeMessageAsString = String(mimeMessage.inputStream.readAllBytes())
 
-        log.info("Incoming single part request with headers $mimeHeaders and body $mimeMessageAsString")
+        log.debug("Incoming single part request with headers {} and body {}", mimeHeaders, mimeMessageAsString)
     }
 
     private fun logMimeMultipartMessage(mimeMessage: MimeMessage) {
@@ -100,7 +100,12 @@ class MailReader(
                 val messageHeaders = getMimeMessageHeaders(mimeMessage)
                 val bodyPartHeaders = getBodyPartHeaders(it)
                 val bodyAsString = String(it.inputStream.readAllBytes())
-                log.info("Incoming multipart request with headers $messageHeaders body part headers $bodyPartHeaders and body $bodyAsString")
+                log.debug(
+                    "Incoming multipart request with headers {} body part headers {} and body {}",
+                    messageHeaders,
+                    bodyPartHeaders,
+                    bodyAsString
+                )
             }
     }
 

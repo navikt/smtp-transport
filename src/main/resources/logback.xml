@@ -14,7 +14,7 @@
     </appender>
 
     <logger name="no.nav" level="INFO"/>
-    <logger name="io.ktor" level="DEBUG"/>
+    <logger name="io.ktor" level="INFO"/>
 
     <root level="INFO">
         <appender-ref ref="stdout_json"/>
