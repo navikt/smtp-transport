@@ -8,9 +8,12 @@ import kotlinx.coroutines.flow.map
 import no.nav.emottak.PayloadError
 import no.nav.emottak.config
 import no.nav.emottak.log
+import no.nav.emottak.model.MailMetadata
+import no.nav.emottak.model.MailRoutingPayloadMessage
 import no.nav.emottak.model.Payload
 import no.nav.emottak.model.PayloadMessage
 import no.nav.emottak.util.EbmsProviderClient
+import no.nav.emottak.util.getHeaderValueAsString
 import kotlin.uuid.Uuid
 
 class PayloadReceiver(
@@ -19,17 +22,22 @@ class PayloadReceiver(
 ) {
     private val kafka = config().kafka
 
-    fun receivePayloadMessages(): Flow<PayloadMessage> = kafkaReceiver
+    fun receiveMailRoutingMessages(): Flow<MailRoutingPayloadMessage> = kafkaReceiver
         .receive(kafka.payloadOutTopic)
-        .map(::toPayloadMessage)
+        .map(::toMailRoutingMessage)
 
-    private suspend fun toPayloadMessage(record: ReceiverRecord<String, ByteArray>): PayloadMessage {
+    private suspend fun toMailRoutingMessage(record: ReceiverRecord<String, ByteArray>): MailRoutingPayloadMessage {
+        val mailAddresses = record.getHeaderValueAsString("mailAddresses")
+        val mailMetadata = MailMetadata(mailAddresses)
+
         val referenceId = Uuid.parse(record.key())
-        return PayloadMessage(
+        val payloadMessage = PayloadMessage(
             referenceId,
             record.value(),
             getPayloads(referenceId)
         )
+
+        return MailRoutingPayloadMessage(mailMetadata, payloadMessage)
     }
 
     private suspend fun getPayloads(uuid: Uuid): List<Payload> =

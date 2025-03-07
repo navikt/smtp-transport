@@ -1,20 +1,73 @@
 package no.nav.emottak.smtp
 
+import arrow.core.raise.catch
 import jakarta.mail.Message.RecipientType.TO
 import jakarta.mail.Session
 import jakarta.mail.Transport
 import jakarta.mail.internet.InternetAddress
+import jakarta.mail.internet.MimeBodyPart
 import jakarta.mail.internet.MimeMessage
+import jakarta.mail.internet.MimeMultipart
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import no.nav.emottak.log
+import no.nav.emottak.model.MailMetadata
+import no.nav.emottak.model.PayloadMessage
+import no.nav.emottak.model.SignalMessage
 
 class MailSender(private val session: Session) {
 
-    fun sendMessage() {
-        val msg = MimeMessage(session)
-        msg.setFrom(InternetAddress("send@test.test"))
-        msg.addRecipient(TO, InternetAddress("test@test.test"))
-        msg.subject = "Email sent to GreenMail via plain JavaMail"
-        msg.setText("Fetch me via POP3")
+    suspend fun sendSignalMessage(metadata: MailMetadata, signalMessage: SignalMessage) =
+        sendMessage(
+            metadata,
+            createMimeMessage(metadata, signalMessage),
+            "signal"
+        )
 
-        Transport.send(msg)
-    }
+    suspend fun sendPayloadMessage(metadata: MailMetadata, payloadMessage: PayloadMessage) =
+        sendMessage(
+            metadata,
+            createMimeMultipartMessage(metadata, payloadMessage),
+            "payload"
+        )
+
+    private suspend fun sendMessage(metadata: MailMetadata, message: MimeMessage, messageType: String) =
+        withContext(Dispatchers.IO) {
+            catch({ Transport.send(message) }) { e: Exception ->
+                log.error("Failed to send $messageType message: ${e.stackTraceToString()}")
+            }
+        }
+
+    private fun createMimeMessage(metadata: MailMetadata, signalMessage: SignalMessage): MimeMessage =
+        MimeMessage(session).apply {
+            setFrom(InternetAddress("smtp-transport@nav.no"))
+            addRecipient(TO, InternetAddress("kristian.frohlich@nav.no"))
+            setHeader("Content-Type", "application/soap+xml")
+            setText(String(signalMessage.envelope))
+        }
+
+    private fun createMimeMultipartMessage(metadata: MailMetadata, payloadMessage: PayloadMessage): MimeMessage =
+        MimeMessage(session).apply {
+            setFrom(InternetAddress("smtp-transport@nav.no"))
+            addRecipient(TO, InternetAddress("kristian.frohlich@nav.no"))
+            setHeader("Content-Type", "application/soap+xml")
+
+            setContent(
+                MimeMultipart().apply {
+                    addBodyPart(createTextPart(payloadMessage))
+                    createPayloadParts(payloadMessage).forEach(::addBodyPart)
+                }
+            )
+        }
+
+    private fun createTextPart(payloadMessage: PayloadMessage): MimeBodyPart =
+        MimeBodyPart().apply { setText(String(payloadMessage.envelope)) }
+
+    private fun createPayloadParts(payloadMessage: PayloadMessage): List<MimeBodyPart> =
+        payloadMessage.payloads.map { payload ->
+            MimeBodyPart().apply {
+                setContent(String(payload.content), payload.contentType)
+                contentID = payload.contentId
+            }
+        }
 }
