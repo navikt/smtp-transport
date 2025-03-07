@@ -65,10 +65,11 @@ class PayloadReceiverSpec : KafkaSpec(
                         kafkaReceiver(config.kafka, AutoOffsetReset.Earliest),
                         ebmsProviderClient
                     )
-                    val payloadMessages = receiver.receivePayloadMessages()
+                    val mailRoutingMessages = receiver.receiveMailRoutingMessages()
 
-                    payloadMessages.test {
-                        val payloadMessage = awaitItem()
+                    mailRoutingMessages.test {
+                        val mailRoutingMessage = awaitItem()
+                        val payloadMessage = mailRoutingMessage.payloadMessage
                         payloadMessage.messageId shouldBe referenceId
                         payloadMessage.envelope shouldBe content
                         payloadMessage.payloads shouldHaveSize 1

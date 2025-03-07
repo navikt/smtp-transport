@@ -22,6 +22,7 @@ import no.nav.emottak.publisher.MailPublisher
 import no.nav.emottak.receiver.PayloadReceiver
 import no.nav.emottak.receiver.SignalReceiver
 import no.nav.emottak.repository.PayloadRepository
+import no.nav.emottak.smtp.MailSender
 import no.nav.emottak.util.EbmsProviderClient
 import no.nav.emottak.util.coroutineScope
 import org.slf4j.LoggerFactory
@@ -41,7 +42,8 @@ fun main() = SuspendApp {
             val signalReceiver = SignalReceiver(deps.kafkaReceiver)
             val payloadRepository = PayloadRepository(deps.payloadDatabase)
             val mailProcessor = MailProcessor(deps.store, mailPublisher, payloadRepository)
-            val messageProcessor = MessageProcessor(payloadReceiver, signalReceiver)
+            val mailSender = MailSender(deps.session)
+            val messageProcessor = MessageProcessor(payloadReceiver, signalReceiver, mailSender)
 
             val server = config().server
 
@@ -53,7 +55,7 @@ fun main() = SuspendApp {
             )
 
             val scope = coroutineScope(coroutineContext)
-            messageProcessor.processPayloadAndSignalMessages(scope)
+            messageProcessor.processMailRoutingMessages(scope)
 
             scheduleProcessMailMessages(mailProcessor)
 

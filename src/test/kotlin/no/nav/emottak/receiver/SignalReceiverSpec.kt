@@ -46,10 +46,11 @@ class SignalReceiverSpec : KafkaSpec(
                 }
 
                 val receiver = SignalReceiver(kafkaReceiver(config.kafka, AutoOffsetReset.Earliest))
-                val signalMessages = receiver.receiveSignalMessages()
+                val mailRoutingMessages = receiver.receiveMailRoutingMessages()
 
-                signalMessages.test {
-                    val signalMessage = awaitItem()
+                mailRoutingMessages.test {
+                    val mailRoutingMessage = awaitItem()
+                    val signalMessage = mailRoutingMessage.signalMessage
                     signalMessage.messageId shouldBe referenceId
                     signalMessage.envelope shouldBe content
                 }
