@@ -78,7 +78,7 @@ spec:
     - name: SMTP_HOST
       value: "d32mxvl002.oera-t.local"
     - name: SMTP_PORT
-      value: "587"
+      value: "25"
     - name: SMTP_POP3_FACTORY_PORT
       value: "110"
     - name: SMTP_POP3_PORT
