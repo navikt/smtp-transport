@@ -5,7 +5,10 @@ import io.github.nomisRev.kafka.receiver.ReceiverRecord
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import no.nav.emottak.config
+import no.nav.emottak.model.MailMetadata
+import no.nav.emottak.model.MailRoutingSignalMessage
 import no.nav.emottak.model.SignalMessage
+import no.nav.emottak.util.getHeaderValueAsString
 import kotlin.uuid.Uuid
 
 class SignalReceiver(
@@ -13,13 +16,19 @@ class SignalReceiver(
 ) {
     private val kafka = config().kafka
 
-    fun receiveSignalMessages(): Flow<SignalMessage> = kafkaReceiver
+    fun receiveMailRoutingMessages(): Flow<MailRoutingSignalMessage> = kafkaReceiver
         .receive(kafka.signalOutTopic)
-        .map(::toSignalMessage)
+        .map(::toMailRoutingMessage)
 
-    private fun toSignalMessage(record: ReceiverRecord<String, ByteArray>) =
-        SignalMessage(
+    private fun toMailRoutingMessage(record: ReceiverRecord<String, ByteArray>): MailRoutingSignalMessage {
+        val mailAddresses = record.getHeaderValueAsString("mailAddresses")
+        val mailMetadata = MailMetadata(mailAddresses)
+
+        val signalMessage = SignalMessage(
             Uuid.parse(record.key()),
             record.value()
         )
+
+        return MailRoutingSignalMessage(mailMetadata, signalMessage)
+    }
 }

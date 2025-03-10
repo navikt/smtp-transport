@@ -5,25 +5,49 @@ import com.icegreen.greenmail.util.GreenMail
 import com.icegreen.greenmail.util.ServerSetupTest.SMTP_POP3
 import io.kotest.core.spec.style.StringSpec
 import no.nav.emottak.config
+import no.nav.emottak.model.MailMetadata
+import no.nav.emottak.model.Payload
+import no.nav.emottak.model.PayloadMessage
+import no.nav.emottak.model.SignalMessage
 import no.nav.emottak.session
+import kotlin.uuid.Uuid
 
 class MailSenderSpec : StringSpec({
+    lateinit var mailSender: MailSender
+    lateinit var greenMail: GreenMail
     val config = config()
 
-    "test send mail" {
+    beforeSpec {
+        val session = session(config.smtp)
+        greenMail = GreenMail(SMTP_POP3).apply {
+            start()
+            setUser(config.smtp.username.value, config.smtp.username.value, config.smtp.password.value)
+        }
+        mailSender = MailSender(session)
+    }
+
+    "send signal message" {
         resourceScope {
-            val session = session(config.smtp)
+            val metadata = MailMetadata("signal")
+            val message = SignalMessage(Uuid.random(), getEnvelope().toByteArray())
 
-            val greenMail = GreenMail(SMTP_POP3)
-            greenMail.start()
-
-            val smtp = config.smtp
-            greenMail.setUser(smtp.username.value, smtp.username.value, smtp.password.value)
-
-            val mailSender = MailSender(session)
-            mailSender.sendMessage()
-
-            greenMail.stop()
+            mailSender.sendSignalMessage(metadata, message)
         }
     }
+
+    "send payload message" {
+        resourceScope {
+            val metadata = MailMetadata("payload")
+            val message = PayloadMessage(Uuid.random(), getEnvelope().toByteArray(), listOf(getPayload()))
+
+            mailSender.sendPayloadMessage(metadata, message)
+        }
+    }
+
+    afterSpec { greenMail.stop() }
 })
+
+private fun getEnvelope() =
+    """<?xml version="1.0" encoding="UTF-8"?><soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope"><soap:Body><message>Hello</message></soap:Body></soap:Envelope>"""
+
+private fun getPayload() = Payload(Uuid.random(), "content", "text/plain", "content".toByteArray())
