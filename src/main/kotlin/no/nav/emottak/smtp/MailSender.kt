@@ -2,6 +2,7 @@ package no.nav.emottak.smtp
 
 import arrow.core.raise.catch
 import jakarta.mail.Message.RecipientType.TO
+import jakarta.mail.MessagingException
 import jakarta.mail.Session
 import jakarta.mail.Transport
 import jakarta.mail.internet.InternetAddress
@@ -12,6 +13,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import no.nav.emottak.log
 import no.nav.emottak.model.MailMetadata
+import no.nav.emottak.model.MessageType
+import no.nav.emottak.model.MessageType.PAYLOAD
+import no.nav.emottak.model.MessageType.SIGNAL
 import no.nav.emottak.model.PayloadMessage
 import no.nav.emottak.model.SignalMessage
 
@@ -21,19 +25,19 @@ class MailSender(private val session: Session) {
         sendMessage(
             metadata,
             createMimeMessage(metadata, signalMessage),
-            "signal"
+            SIGNAL
         )
 
     suspend fun sendPayloadMessage(metadata: MailMetadata, payloadMessage: PayloadMessage) =
         sendMessage(
             metadata,
             createMimeMultipartMessage(metadata, payloadMessage),
-            "payload"
+            PAYLOAD
         )
 
-    private suspend fun sendMessage(metadata: MailMetadata, message: MimeMessage, messageType: String) =
+    private suspend fun sendMessage(metadata: MailMetadata, message: MimeMessage, messageType: MessageType) =
         withContext(Dispatchers.IO) {
-            catch({ Transport.send(message) }) { e: Exception ->
+            catch({ Transport.send(message) }) { e: MessagingException ->
                 log.error("Failed to send $messageType message: ${e.stackTraceToString()}")
             }
         }
