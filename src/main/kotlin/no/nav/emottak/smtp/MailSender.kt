@@ -46,26 +46,24 @@ class MailSender(private val session: Session) {
         MimeMessage(session).apply {
             setFrom(InternetAddress("smtp-transport@nav.no"))
             addRecipient(TO, InternetAddress("kristian.frohlich@nav.no"))
-            setHeader("Content-Type", "application/soap+xml")
-            setText(String(signalMessage.envelope))
+            setContent(signalMessage.envelope, "application/soap+xml; charset=UTF-8")
         }
 
     private fun createMimeMultipartMessage(metadata: MailMetadata, payloadMessage: PayloadMessage): MimeMessage =
         MimeMessage(session).apply {
             setFrom(InternetAddress("smtp-transport@nav.no"))
             addRecipient(TO, InternetAddress("kristian.frohlich@nav.no"))
-            setHeader("Content-Type", "application/soap+xml")
 
             setContent(
                 MimeMultipart().apply {
-                    addBodyPart(createTextPart(payloadMessage))
+                    addBodyPart(createContentPart(payloadMessage))
                     createPayloadParts(payloadMessage).forEach(::addBodyPart)
                 }
             )
         }
 
-    private fun createTextPart(payloadMessage: PayloadMessage): MimeBodyPart =
-        MimeBodyPart().apply { setText(String(payloadMessage.envelope)) }
+    private fun createContentPart(payloadMessage: PayloadMessage): MimeBodyPart =
+        MimeBodyPart().apply { setContent(payloadMessage.envelope, "application/soap+xml; charset=UTF-8") }
 
     private fun createPayloadParts(payloadMessage: PayloadMessage): List<MimeBodyPart> =
         payloadMessage.payloads.map { payload ->
