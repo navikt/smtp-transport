@@ -26,6 +26,9 @@ spec:
     - access: read
       application: ebms-provider
       team: team-emottak
+    - access: read
+      application: ebms-async
+      team: team-emottak
 
 ---
 
@@ -56,4 +59,7 @@ spec:
       team: team-emottak
     - access: read
       application: ebms-provider
+      team: team-emottak
+    - access: read
+      application: ebms-async
       team: team-emottak
