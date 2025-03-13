@@ -20,7 +20,7 @@ import no.nav.emottak.configuration.withKafka
 import no.nav.emottak.httpClient
 import no.nav.emottak.httpTokenClient
 import no.nav.emottak.kafkaReceiver
-import no.nav.emottak.util.EbmsProviderClient
+import no.nav.emottak.util.EbmsAsyncClient
 import org.apache.kafka.clients.producer.ProducerRecord
 import kotlin.uuid.Uuid
 
@@ -60,10 +60,10 @@ class PayloadReceiverSpec : KafkaSpec(
                     val tokenClientEngine = getFakeEngine(jsonTokenResponse())
                     val httpTokenClient = httpTokenClient(tokenClientEngine, config)
                     val httpClient = httpClient(clientEngine, httpTokenClient, config)
-                    val ebmsProviderClient = EbmsProviderClient(httpClient)
+                    val ebmsAsyncClient = EbmsAsyncClient(httpClient)
                     val receiver = PayloadReceiver(
                         kafkaReceiver(config.kafka, AutoOffsetReset.Earliest),
-                        ebmsProviderClient
+                        ebmsAsyncClient
                     )
                     val mailRoutingMessages = receiver.receiveMailRoutingMessages()
 

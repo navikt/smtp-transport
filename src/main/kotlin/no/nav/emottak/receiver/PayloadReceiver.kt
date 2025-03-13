@@ -12,13 +12,13 @@ import no.nav.emottak.model.MailMetadata
 import no.nav.emottak.model.MailRoutingPayloadMessage
 import no.nav.emottak.model.Payload
 import no.nav.emottak.model.PayloadMessage
-import no.nav.emottak.util.EbmsProviderClient
+import no.nav.emottak.util.EbmsAsyncClient
 import no.nav.emottak.util.getHeaderValueAsString
 import kotlin.uuid.Uuid
 
 class PayloadReceiver(
     private val kafkaReceiver: KafkaReceiver<String, ByteArray>,
-    private val ebmsProviderClient: EbmsProviderClient
+    private val ebmsAsyncClient: EbmsAsyncClient
 ) {
     private val kafka = config().kafka
 
@@ -41,7 +41,7 @@ class PayloadReceiver(
     }
 
     private suspend fun getPayloads(uuid: Uuid): List<Payload> =
-        with(ebmsProviderClient) {
+        with(ebmsAsyncClient) {
             recover({
                 getPayloads(uuid).also { log.info("Retrieved ${it.size} payload(s) for reference id: $uuid") }
             }) { e: PayloadError -> emptyList<Payload>().also { log.error("$e") } }

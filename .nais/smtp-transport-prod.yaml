@@ -59,9 +59,12 @@ spec:
       - kvPath: /serviceuser/data/prod/srvtokt
         mountPath: /secret/serviceuser
   accessPolicy:
+    outbound:
+      rules:
+        - application: ebms-async
     inbound:
       rules:
-        - application: ebms-provider
+        - application: ebms-async
   env:
     - name: SMTP_POP3_FACTORY_PORT
       value: "110"

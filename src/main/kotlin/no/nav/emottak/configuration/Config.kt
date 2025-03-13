@@ -21,7 +21,7 @@ data class Config(
     val server: Server,
     val httpClient: HttpClient,
     val httpTokenClient: HttpClient,
-    val ebmsProvider: EbmsProvider
+    val ebmsAsync: EbmsAsync
 )
 
 fun Config.withKafka(update: Kafka.() -> Kafka) = copy(kafka = kafka.update())
@@ -32,7 +32,7 @@ data class Mail(val inboxLimit: Int)
 
 data class Server(val port: Port, val preWait: Duration)
 
-data class EbmsProvider(val baseUrl: String, val apiUrl: String)
+data class EbmsAsync(val baseUrl: String, val apiUrl: String)
 
 @JvmInline
 value class Timeout(val value: Long)
@@ -219,7 +219,7 @@ data class AzureAuth(
     val port: Port,
     val azureAd: AzureAd,
     val smtpTransportScope: AppScope,
-    val ebmsProviderScope: AppScope,
+    val ebmsAsyncScope: AppScope,
     val azureHttpProxy: AzureHttpProxy,
     val azureAdAuth: AzureAdAuth,
     val azureGrantType: AzureGrantType,

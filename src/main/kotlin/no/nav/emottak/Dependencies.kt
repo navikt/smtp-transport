@@ -145,8 +145,8 @@ private fun httpClient(clientEngine: HttpClientEngine, httpTokenClient: HttpClie
         }
         defaultRequest {
             url {
-                host = config.ebmsProvider.baseUrl
-                path(config.ebmsProvider.apiUrl)
+                host = config.ebmsAsync.baseUrl
+                path(config.ebmsAsync.apiUrl)
             }
         }
     }
@@ -158,7 +158,7 @@ private suspend fun submitForm(httpTokenClient: HttpClient, config: AzureAuth): 
             append("client_id", config.azureAppClientId.value)
             append("client_secret", config.azureAppClientSecret.value)
             append("grant_type", config.azureGrantType.value)
-            append("scope", config.ebmsProviderScope.value)
+            append("scope", config.ebmsAsyncScope.value)
         }
     )
 
