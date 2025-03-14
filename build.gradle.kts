@@ -60,6 +60,7 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().all {
 }
 
 dependencies {
+    implementation("no.nav.emottak:emottak-utils:0.0.7")
     implementation(libs.arrow.core)
     implementation(libs.arrow.functions)
     implementation(libs.arrow.fx.coroutines)

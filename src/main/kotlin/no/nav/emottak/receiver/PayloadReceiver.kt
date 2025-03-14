@@ -20,7 +20,7 @@ class PayloadReceiver(
     private val kafkaReceiver: KafkaReceiver<String, ByteArray>,
     private val ebmsAsyncClient: EbmsAsyncClient
 ) {
-    private val kafka = config().kafka
+    private val kafka = config().kafkaTopics
 
     fun receiveMailRoutingMessages(): Flow<MailRoutingPayloadMessage> = kafkaReceiver
         .receive(kafka.payloadOutTopic)

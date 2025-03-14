@@ -14,7 +14,7 @@ import kotlin.uuid.Uuid
 class SignalReceiver(
     private val kafkaReceiver: KafkaReceiver<String, ByteArray>
 ) {
-    private val kafka = config().kafka
+    private val kafka = config().kafkaTopics
 
     fun receiveMailRoutingMessages(): Flow<MailRoutingSignalMessage> = kafkaReceiver
         .receive(kafka.signalOutTopic)

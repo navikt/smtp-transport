@@ -9,11 +9,11 @@ import kotlinx.coroutines.flow.map
 import no.nav.emottak.KafkaSpec
 import no.nav.emottak.config
 import no.nav.emottak.configuration.Config
-import no.nav.emottak.configuration.SecurityProtocol
 import no.nav.emottak.configuration.withKafka
 import no.nav.emottak.kafkaPublisher
 import no.nav.emottak.model.PayloadMessage
 import no.nav.emottak.model.SignalMessage
+import no.nav.emottak.utils.config.SecurityProtocol
 import kotlin.uuid.Uuid
 
 class MailPublisherSpec : KafkaSpec(
@@ -42,7 +42,7 @@ class MailPublisherSpec : KafkaSpec(
                     publisher.publishPayloadMessage(payloadMessage)
 
                     val receiver = KafkaReceiver(receiverSettings())
-                    val consumer = receiver.receive(config.kafka.payloadInTopic)
+                    val consumer = receiver.receive(config.kafkaTopics.payloadInTopic)
                         .map { Pair(it.key(), it.value()) }
 
                     consumer.test {
@@ -66,7 +66,7 @@ class MailPublisherSpec : KafkaSpec(
                     publisher.publishSignalMessage(signalMessage)
 
                     val receiver = KafkaReceiver(receiverSettings())
-                    val consumer = receiver.receive(config.kafka.signalInTopic)
+                    val consumer = receiver.receive(config.kafkaTopics.signalInTopic)
                         .map { Pair(it.key(), it.value()) }
 
                     consumer.test {
