@@ -14,7 +14,7 @@ import no.nav.emottak.UnknownError
 import no.nav.emottak.model.Payload
 import kotlin.uuid.Uuid
 
-class EbmsProviderClient(
+class EbmsAsyncClient(
     private val httpClient: HttpClient
 ) {
     suspend fun Raise<PayloadError>.getPayloads(referenceId: Uuid): List<Payload> {

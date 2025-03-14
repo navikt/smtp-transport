@@ -66,11 +66,9 @@ spec:
   accessPolicy:
     outbound:
       rules:
-        - application: ebms-provider
         - application: ebms-async
     inbound:
       rules:
-        - application: ebms-provider
         - application: ebms-async
         - application: azure-token-generator
         - application: tokenx-token-generator

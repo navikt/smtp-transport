@@ -21,14 +21,14 @@ import no.nav.emottak.httpClient
 import no.nav.emottak.httpTokenClient
 import kotlin.uuid.Uuid
 
-class EbmsProviderClientSpec : StringSpec({
+class EbmsAsyncClientSpec : StringSpec({
 
     val config = config()
 
     "Get payloads - retrieve list of single payload" {
         resourceScope {
             val fakeEngine = getFakeEngine(HttpStatusCode.OK, jsonResponse())
-            val client = EbmsProviderClient(
+            val client = EbmsAsyncClient(
                 httpClient(
                     fakeEngine,
                     httpTokenClient(fakeEngine, config),
@@ -54,7 +54,7 @@ class EbmsProviderClientSpec : StringSpec({
     "Get payloads - fail with payload not found" {
         resourceScope {
             val fakeEngine = getFakeEngine(HttpStatusCode.NotFound)
-            val client = EbmsProviderClient(
+            val client = EbmsAsyncClient(
                 httpClient(
                     fakeEngine,
                     httpTokenClient(fakeEngine, config),
@@ -73,7 +73,7 @@ class EbmsProviderClientSpec : StringSpec({
     "Get payloads - fail with invalid reference id" {
         resourceScope {
             val fakeEngine = getFakeEngine(HttpStatusCode.BadRequest)
-            val client = EbmsProviderClient(
+            val client = EbmsAsyncClient(
                 httpClient(
                     fakeEngine,
                     httpTokenClient(fakeEngine, config),
@@ -93,7 +93,7 @@ class EbmsProviderClientSpec : StringSpec({
         resourceScope {
             val fakeEngine = getFakeEngine(HttpStatusCode.Unauthorized)
             val fakeTokenEngine = getFakeEngine(HttpStatusCode.OK, jsonTokenResponse())
-            val client = EbmsProviderClient(
+            val client = EbmsAsyncClient(
                 httpClient(
                     fakeEngine,
                     httpTokenClient(fakeTokenEngine, config),
@@ -112,7 +112,7 @@ class EbmsProviderClientSpec : StringSpec({
     "Get payloads - fail with unknown error" {
         resourceScope {
             val fakeEngine = getFakeEngine(HttpStatusCode.InternalServerError, "unknown error")
-            val client = EbmsProviderClient(
+            val client = EbmsAsyncClient(
                 httpClient(
                     fakeEngine,
                     httpTokenClient(fakeEngine, config),
