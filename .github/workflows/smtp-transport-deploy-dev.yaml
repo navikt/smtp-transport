@@ -10,17 +10,17 @@ on:
 
 env:
   MODULE_NAME: "smtp-transport"
-  IMAGE_NAME: "ghcr.io/${{ github.repository }}:${{ github.sha }}"
   NAIS_MANIFEST: "smtp-transport-dev.yaml"
 
 jobs:
-  build:
-    name: "build"
-    runs-on: "ubuntu-20.04"
+  build-and-push:
+    name: "Build and push Docker container"
+    runs-on: "ubuntu-latest"
     permissions: 
         packages: write
         repository-projects: write
         contents: write
+        id-token: write
     steps:
       - uses: "actions/checkout@v4"
       - uses: "actions/setup-java@v4"
@@ -49,24 +49,20 @@ jobs:
             ORG_GRADLE_PROJECT_githubPassword: ${{ secrets.GITHUB_TOKEN }}
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: "Login to GitHub Packages Docker Registry"
-        uses: docker/login-action@v3
+      - name: Docker build and push
+        uses: nais/docker-build-push@v0
+        id: docker-build-push
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: "Build and push ${{ env.MODULE_NAME }} docker image"
-        run: | 
-          docker build --tag ${{ env.IMAGE_NAME }} -f Dockerfile . --pull 
-          docker push ${{ env.IMAGE_NAME }}
+          team: team-emottak # required
+          tag: ${{ github.sha }}
+          dockerfile: Dockerfile # optional, default Dockerfile
+    outputs:
+      image: ${{ steps.docker-build-push.outputs.image }}
 
   deploy:
     name: "Deploy to dev"
-    needs: "build"
-    runs-on: "ubuntu-20.04"
-    permissions: 
-        id-token: write
+    needs: "build-and-push"
+    runs-on: "ubuntu-latest"
     steps:
       - uses: "actions/checkout@v4"
       - name: "Deploy to DEV"
@@ -74,4 +70,4 @@ jobs:
         env:
           CLUSTER: "dev-fss"
           RESOURCE: ".nais/${{ env.NAIS_MANIFEST }}"
-          IMAGE: ${{env.IMAGE_NAME}}
+          IMAGE: ${{ needs.build.outputs.image }}
