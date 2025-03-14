@@ -15,12 +15,12 @@ import io.ktor.http.headers
 import no.nav.emottak.KafkaSpec
 import no.nav.emottak.config
 import no.nav.emottak.configuration.Config
-import no.nav.emottak.configuration.SecurityProtocol
 import no.nav.emottak.configuration.withKafka
 import no.nav.emottak.httpClient
 import no.nav.emottak.httpTokenClient
 import no.nav.emottak.kafkaReceiver
 import no.nav.emottak.util.EbmsAsyncClient
+import no.nav.emottak.utils.config.SecurityProtocol
 import org.apache.kafka.clients.producer.ProducerRecord
 import kotlin.uuid.Uuid
 
@@ -49,7 +49,7 @@ class PayloadReceiverSpec : KafkaSpec(
                     publisher.publishScope {
                         publish(
                             ProducerRecord(
-                                config.kafka.payloadOutTopic,
+                                config.kafkaTopics.payloadOutTopic,
                                 referenceId.toString(),
                                 content
                             )

@@ -39,11 +39,12 @@ import kotlinx.serialization.json.Json
 import no.nav.emottak.configuration.AzureAuth
 import no.nav.emottak.configuration.Config
 import no.nav.emottak.configuration.Database
-import no.nav.emottak.configuration.Kafka
 import no.nav.emottak.configuration.Smtp
 import no.nav.emottak.configuration.toProperties
 import no.nav.emottak.model.TokenInfo
 import no.nav.emottak.queries.PayloadDatabase
+import no.nav.emottak.utils.config.Kafka
+import no.nav.emottak.utils.config.toProperties
 import no.nav.vault.jdbc.hikaricp.HikariCPVaultUtil.createHikariDataSourceWithVaultIntegration
 import no.nav.vault.jdbc.hikaricp.VaultUtil
 import org.apache.kafka.common.serialization.ByteArrayDeserializer

@@ -11,7 +11,7 @@ import kotlin.uuid.Uuid
 class MailPublisher(
     private val kafkaPublisher: KafkaPublisher<String, ByteArray>
 ) {
-    private val kafka = config().kafka
+    private val kafka = config().kafkaTopics
 
     suspend fun publishPayloadMessage(message: PayloadMessage) =
         publishMessage(kafka.payloadInTopic, message.messageId, message.envelope)

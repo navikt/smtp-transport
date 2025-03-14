@@ -42,6 +42,16 @@ class SmtpTransportSpec : StringSpec(
             mockOAuth2Server.shutdown()
         }
 
+        "Verify Kafka Hoplite-config from both emottak-utils and this module" {
+            smtpTransportTestApp(payloadRepository) {
+                val kafka = config().kafka
+                kafka.securityProtocol.value shouldBe "SSL" // From emottak-utils
+                kafka.keystoreType.value shouldBe "PKCS12" // From emottak-utils
+                kafka.truststoreType.value shouldBe "JKS" // From emottak-utils
+                kafka.groupId shouldBe "smtp-transport" // From smtp-transport
+            }
+        }
+
         "Get payloads - One payload" {
             smtpTransportTestApp(payloadRepository) {
                 val httpClient = createClient {
