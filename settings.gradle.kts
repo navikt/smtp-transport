@@ -27,6 +27,7 @@ dependencyResolutionManagement {
             version("prometheus", "1.12.4")
             version("logback", "1.4.11")
             version("logstash", "7.4")
+            version("emottak-utils", "0.1.1")
 
             library("arrow-core", "io.arrow-kt", "arrow-core").versionRef("arrow")
             library("arrow-functions", "io.arrow-kt", "arrow-functions").versionRef("arrow")
@@ -71,6 +72,8 @@ dependencyResolutionManagement {
 
             library("jakarta-mail-api", "jakarta.mail", "jakarta.mail-api").versionRef("jakarta-mail")
             library("eclipse-angus", "org.eclipse.angus", "jakarta.mail").versionRef("eclipse-angus")
+
+            library("emottak-utils", "no.nav.emottak", "emottak-utils").versionRef("emottak-utils")
 
             bundle("prometheus", listOf("ktor-server-metrics-micrometer", "micrometer-registry-prometheus"))
             bundle("jakarta-mail", listOf("jakarta-mail-api", "eclipse-angus"))
