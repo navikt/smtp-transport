@@ -45,8 +45,8 @@ import no.nav.emottak.model.TokenInfo
 import no.nav.emottak.queries.PayloadDatabase
 import no.nav.emottak.utils.config.Kafka
 import no.nav.emottak.utils.config.toProperties
+import no.nav.emottak.utils.vault.VaultUtil
 import no.nav.vault.jdbc.hikaricp.HikariCPVaultUtil.createHikariDataSourceWithVaultIntegration
-import no.nav.vault.jdbc.hikaricp.VaultUtil
 import org.apache.kafka.common.serialization.ByteArrayDeserializer
 import org.apache.kafka.common.serialization.ByteArraySerializer
 import org.apache.kafka.common.serialization.StringDeserializer
@@ -178,8 +178,7 @@ private fun migrationService(database: Database): Flyway {
 
 private fun getVaultAdminCredentials(database: Database): DatabaseCredential =
     VaultUtil
-        .getInstance()
-        .client.database(database.mountPath.value)
+        .getClient().database(database.mountPath.value)
         .creds(database.adminRole.value)
         .credential
 
