@@ -12,11 +12,15 @@ import no.nav.emottak.PayloadNotFound
 import no.nav.emottak.model.Payload
 import no.nav.emottak.payloadDatabase
 import no.nav.emottak.runMigrations
+import no.nav.emottak.util.fakeEventLoggingService
 import kotlin.uuid.Uuid
 
 class PayloadRepositorySpec : StringSpec(
     {
-        val repository = PayloadRepository(payloadDatabase())
+        val repository = PayloadRepository(
+            payloadDatabase(),
+            fakeEventLoggingService()
+        )
 
         beforeSpec { runMigrations() }
 

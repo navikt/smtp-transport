@@ -19,6 +19,7 @@ import no.nav.emottak.publisher.MailPublisher
 import no.nav.emottak.repository.PayloadRepository
 import no.nav.emottak.smtp.EmailMsg
 import no.nav.emottak.smtp.MailReader
+import no.nav.emottak.util.ScopedEventLoggingService
 import no.nav.emottak.util.toPayloadMessage
 import no.nav.emottak.util.toSignalMessage
 import kotlin.uuid.Uuid
@@ -26,7 +27,8 @@ import kotlin.uuid.Uuid
 class MailProcessor(
     private val store: Store,
     private val mailPublisher: MailPublisher,
-    private val payloadRepository: PayloadRepository
+    private val payloadRepository: PayloadRepository,
+    private val eventLoggingService: ScopedEventLoggingService
 ) {
     fun processMessages(scope: CoroutineScope) =
         readMessages()
@@ -35,7 +37,7 @@ class MailProcessor(
             .launchIn(scope)
 
     private fun readMessages(): Flow<EmailMsg> = autoCloseScope {
-        val mailReader = install(MailReader(config().mail, store, false))
+        val mailReader = install(MailReader(config().mail, store, false, eventLoggingService))
         val messageCount = mailReader.count()
 
         if (messageCount > 0) {

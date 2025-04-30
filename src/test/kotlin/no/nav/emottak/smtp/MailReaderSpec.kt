@@ -10,6 +10,7 @@ import jakarta.mail.internet.MimeMessage
 import no.nav.emottak.config
 import no.nav.emottak.session
 import no.nav.emottak.store
+import no.nav.emottak.util.fakeEventLoggingService
 import java.nio.file.Path.of
 
 private const val REQUEST = "mails/test@test.test/INBOX/EgenAndelForespoersel.eml"
@@ -44,8 +45,9 @@ class MailReaderSpec : StringSpec({
         resourceScope {
             val store = store(config.smtp)
             val session = session(config.smtp)
+            val eventLoggingService = fakeEventLoggingService()
 
-            val reader = MailReader(config.mail, store, false)
+            val reader = MailReader(config.mail, store, false, eventLoggingService)
             val messages = reader.readMailBatches(4)
             val multipartMessages = messages.filter { it.multipart }.sortedBy { it.headers.size }
             multipartMessages.size shouldBe 2
@@ -72,24 +74,25 @@ class MailReaderSpec : StringSpec({
     "MailReader reads inbox with messages and prunes messages accordingly" {
         resourceScope {
             val store = store(config.smtp)
+            val eventLoggingService = fakeEventLoggingService()
 
             val inboxLimit100 = config.mail.copy(inboxLimit = 100)
-            val reader = MailReader(inboxLimit100, store, false)
+            val reader = MailReader(inboxLimit100, store, false, eventLoggingService)
 
             reader.readMailBatches(4).size shouldBe 4
             reader.readMailBatches(4).size shouldBe 0
             reader.close()
 
-            MailReader(inboxLimit100, store).count() shouldBe 4
+            MailReader(inboxLimit100, store, false, eventLoggingService).count() shouldBe 4
 
             val inboxLimitNegative1 = config.mail.copy(inboxLimit = -1)
-            val reader2 = MailReader(inboxLimitNegative1, store, false)
+            val reader2 = MailReader(inboxLimitNegative1, store, false, eventLoggingService)
 
             reader2.readMailBatches(4).size shouldBe 4
             reader2.readMailBatches(4).size shouldBe 0
             reader2.close()
 
-            MailReader(inboxLimitNegative1, store).count() shouldBe 0
+            MailReader(inboxLimitNegative1, store, false, eventLoggingService).count() shouldBe 0
         }
     }
 
@@ -97,8 +100,9 @@ class MailReaderSpec : StringSpec({
         resourceScope {
             val store = store(config.smtp)
             val session = session(config.smtp)
+            val eventLoggingService = fakeEventLoggingService()
 
-            val reader = MailReader(config.mail, store, false)
+            val reader = MailReader(config.mail, store, false, eventLoggingService)
             val messages = reader.readMailBatches(4)
 
             val multipartMessages = messages.filter { it.multipart }.sortedBy { it.headers.size }

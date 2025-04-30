@@ -4,6 +4,7 @@ import jakarta.mail.BodyPart
 import jakarta.mail.Flags.Flag.DELETED
 import jakarta.mail.Folder
 import jakarta.mail.Folder.READ_WRITE
+import jakarta.mail.MessagingException
 import jakarta.mail.Store
 import jakarta.mail.internet.MimeBodyPart
 import jakarta.mail.internet.MimeMessage
@@ -12,6 +13,9 @@ import net.logstash.logback.marker.LogstashMarker
 import net.logstash.logback.marker.Markers
 import no.nav.emottak.configuration.Mail
 import no.nav.emottak.log
+import no.nav.emottak.util.ScopedEventLoggingService
+import no.nav.emottak.utils.kafka.model.EventType.ERROR_WHILE_RECEIVING_MESSAGE_VIA_SMTP
+import no.nav.emottak.utils.kafka.model.EventType.MESSAGE_RECEIVED_VIA_SMTP
 import kotlin.text.RegexOption.IGNORE_CASE
 
 data class EmailMsg(
@@ -28,7 +32,8 @@ data class Part(
 class MailReader(
     private val mail: Mail,
     private val store: Store,
-    private val expunge: Boolean = true
+    private val expunge: Boolean = true,
+    private val eventLoggingService: ScopedEventLoggingService
 ) : AutoCloseable {
     private var start = 1
     private val inbox: Folder = getInbox()
@@ -52,7 +57,7 @@ class MailReader(
             return if (messageCount != 0) {
                 val endIndex = (batchSize + start - 1).takeIf { it < messageCount } ?: messageCount
                 val result = inbox.getMessages(start, endIndex)
-                    .map { it as MimeMessage }
+                    .map { message -> (message as MimeMessage).also { registerEvent(it) } }
                     .toList()
                     .onEach(::processMimeMessage)
                 start += batchSize // Update start index
@@ -61,6 +66,7 @@ class MailReader(
                 emptyList<EmailMsg>().also { log.info("No email messages found") }
             }
         } catch (e: Exception) {
+            if (e is MessagingException) registerEvent(e)
             log.error("Error connecting to mail server", e)
             throw e
         }
@@ -171,4 +177,16 @@ class MailReader(
             bodyPart.inputStream.readAllBytes()
         )
     }
+
+    private fun registerEvent(message: MimeMessage) = eventLoggingService
+        .registerEvent(
+            MESSAGE_RECEIVED_VIA_SMTP,
+            message
+        )
+
+    private fun registerEvent(error: MessagingException) = eventLoggingService
+        .registerEvent(
+            ERROR_WHILE_RECEIVING_MESSAGE_VIA_SMTP,
+            error
+        )
 }
