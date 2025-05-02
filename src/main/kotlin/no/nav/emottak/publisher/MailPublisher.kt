@@ -19,7 +19,6 @@ class MailPublisher(
 
     suspend fun publishPayloadMessage(message: PayloadMessage) =
         publishMessage(kafka.payloadInTopic, message.messageId, message.envelope)
-            .onSuccess { }
 
     suspend fun publishSignalMessage(message: SignalMessage) =
         publishMessage(kafka.signalInTopic, message.messageId, message.envelope)

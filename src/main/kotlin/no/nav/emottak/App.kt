@@ -43,9 +43,10 @@ fun main() = SuspendApp {
             val scope = coroutineScope(coroutineContext)
             val eventScope = coroutineScope(Dispatchers.IO)
 
+            val eventPublisherClient = EventPublisherClient(config().kafka)
             val eventLoggingService = eventLoggingService(
                 eventScope,
-                EventLoggingService(EventPublisherClient(config().kafka))
+                EventLoggingService(eventPublisherClient)
             )
 
             val mailPublisher = MailPublisher(deps.kafkaPublisher, eventLoggingService)
