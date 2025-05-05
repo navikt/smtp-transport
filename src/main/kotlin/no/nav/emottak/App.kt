@@ -10,6 +10,7 @@ import io.ktor.server.application.Application
 import io.ktor.server.netty.Netty
 import io.ktor.utils.io.CancellationException
 import io.micrometer.prometheus.PrometheusMeterRegistry
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.awaitCancellation
 import no.nav.emottak.plugin.configureAuthentication
 import no.nav.emottak.plugin.configureCallLogging
@@ -25,6 +26,9 @@ import no.nav.emottak.repository.PayloadRepository
 import no.nav.emottak.smtp.MailSender
 import no.nav.emottak.util.EbmsAsyncClient
 import no.nav.emottak.util.coroutineScope
+import no.nav.emottak.util.eventLoggingService
+import no.nav.emottak.utils.kafka.client.EventPublisherClient
+import no.nav.emottak.utils.kafka.service.EventLoggingService
 import org.slf4j.LoggerFactory
 import kotlin.coroutines.coroutineContext
 
@@ -36,13 +40,22 @@ fun main() = SuspendApp {
             val deps = initDependencies()
             deps.migrationService.migrate()
 
-            val mailPublisher = MailPublisher(deps.kafkaPublisher)
+            val scope = coroutineScope(coroutineContext)
+            val eventScope = coroutineScope(Dispatchers.IO)
+
+            val eventPublisherClient = EventPublisherClient(config().kafka)
+            val eventLoggingService = eventLoggingService(
+                eventScope,
+                EventLoggingService(eventPublisherClient)
+            )
+
+            val mailPublisher = MailPublisher(deps.kafkaPublisher, eventLoggingService)
             val ebmsAsyncClient = EbmsAsyncClient(deps.httpClient)
-            val payloadReceiver = PayloadReceiver(deps.kafkaReceiver, ebmsAsyncClient)
-            val signalReceiver = SignalReceiver(deps.kafkaReceiver)
-            val payloadRepository = PayloadRepository(deps.payloadDatabase)
-            val mailProcessor = MailProcessor(deps.store, mailPublisher, payloadRepository)
-            val mailSender = MailSender(deps.session)
+            val payloadReceiver = PayloadReceiver(deps.kafkaReceiver, ebmsAsyncClient, eventLoggingService)
+            val signalReceiver = SignalReceiver(deps.kafkaReceiver, eventLoggingService)
+            val payloadRepository = PayloadRepository(deps.payloadDatabase, eventLoggingService)
+            val mailProcessor = MailProcessor(deps.store, mailPublisher, payloadRepository, eventLoggingService)
+            val mailSender = MailSender(deps.session, eventLoggingService)
             val messageProcessor = MessageProcessor(payloadReceiver, signalReceiver, mailSender)
 
             val server = config().server
@@ -54,7 +67,6 @@ fun main() = SuspendApp {
                 module = smtpTransportModule(deps.meterRegistry, payloadRepository)
             )
 
-            val scope = coroutineScope(coroutineContext)
             messageProcessor.processMailRoutingMessages(scope)
 
             scheduleProcessMailMessages(mailProcessor)

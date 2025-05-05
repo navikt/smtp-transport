@@ -13,6 +13,7 @@ import no.nav.emottak.configuration.withKafka
 import no.nav.emottak.kafkaPublisher
 import no.nav.emottak.model.PayloadMessage
 import no.nav.emottak.model.SignalMessage
+import no.nav.emottak.util.fakeEventLoggingService
 import no.nav.emottak.utils.config.SecurityProtocol
 import kotlin.uuid.Uuid
 
@@ -33,7 +34,7 @@ class MailPublisherSpec : KafkaSpec(
         "Publish payload message - message is received" {
             resourceScope {
                 turbineScope {
-                    val publisher = MailPublisher(kafkaPublisher(config.kafka))
+                    val publisher = MailPublisher(kafkaPublisher(config.kafka), fakeEventLoggingService())
 
                     val referenceId = Uuid.random()
                     val content = "payload".toByteArray()
@@ -57,7 +58,7 @@ class MailPublisherSpec : KafkaSpec(
         "Publish signal message - message is received" {
             resourceScope {
                 turbineScope {
-                    val publisher = MailPublisher(kafkaPublisher(config.kafka))
+                    val publisher = MailPublisher(kafkaPublisher(config.kafka), fakeEventLoggingService())
 
                     val referenceId = Uuid.random()
                     val content = "signal".toByteArray()

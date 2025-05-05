@@ -20,6 +20,7 @@ import io.micrometer.prometheus.PrometheusConfig
 import io.micrometer.prometheus.PrometheusMeterRegistry
 import no.nav.emottak.model.Payload
 import no.nav.emottak.repository.PayloadRepository
+import no.nav.emottak.util.fakeEventLoggingService
 import no.nav.security.mock.oauth2.MockOAuth2Server
 
 // Krever kotest-plugin installert i IntelliJ for å kjøre
@@ -33,7 +34,10 @@ class SmtpTransportSpec : StringSpec(
             mockOAuth2Server = MockOAuth2Server().also { it.start(port = config().azureAuth.port.value) }
 
             println("=== Initializing Database ===")
-            payloadRepository = PayloadRepository(payloadDatabase())
+            payloadRepository = PayloadRepository(
+                payloadDatabase(),
+                fakeEventLoggingService()
+            )
             runMigrations()
         }
 

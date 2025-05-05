@@ -8,12 +8,20 @@ import no.nav.emottak.PayloadAlreadyExists
 import no.nav.emottak.PayloadNotFound
 import no.nav.emottak.model.Payload
 import no.nav.emottak.queries.PayloadDatabase
+import no.nav.emottak.util.ScopedEventLoggingService
+import no.nav.emottak.utils.kafka.model.EventType.ERROR_WHILE_READING_PAYLOAD_FROM_DATABASE
+import no.nav.emottak.utils.kafka.model.EventType.ERROR_WHILE_SAVING_PAYLOAD_INTO_DATABASE
+import no.nav.emottak.utils.kafka.model.EventType.PAYLOAD_READ_FROM_DATABASE
+import no.nav.emottak.utils.kafka.model.EventType.PAYLOAD_SAVED_INTO_DATABASE
 import org.postgresql.util.PSQLException
 import org.postgresql.util.PSQLState.UNIQUE_VIOLATION
 import java.sql.SQLException
 import kotlin.uuid.Uuid
 
-class PayloadRepository(payloadDatabase: PayloadDatabase) {
+class PayloadRepository(
+    payloadDatabase: PayloadDatabase,
+    private val eventLoggingService: ScopedEventLoggingService
+) {
     private val payloadQueries = payloadDatabase.payloadQueries
 
     suspend fun Raise<PayloadAlreadyExists>.insert(payloads: List<Payload>): List<Pair<String, String>> =
@@ -28,14 +36,28 @@ class PayloadRepository(payloadDatabase: PayloadDatabase) {
     private fun Raise<PayloadNotFound>.retrievePayloads(referenceId: Uuid): List<Payload> {
         val payloads = payloadQueries.retrievePayloads(referenceId.toString()).executeAsList()
         return when (payloads.isEmpty()) {
-            true -> raise(PayloadNotFound(referenceId.toString()))
+            true -> {
+                eventLoggingService.registerEvent(
+                    ERROR_WHILE_READING_PAYLOAD_FROM_DATABASE,
+                    Exception("Payload not found for reference id: $referenceId")
+                )
+                raise(PayloadNotFound(referenceId.toString()))
+            }
+
             else -> payloads.map {
-                Payload(
+                val payload = Payload(
                     Uuid.parse(it.reference_id),
                     it.content_id,
                     it.content_type,
                     it.content
                 )
+
+                eventLoggingService.registerEvent(
+                    PAYLOAD_READ_FROM_DATABASE,
+                    payload
+                )
+
+                payload
             }
         }
     }
@@ -61,12 +83,22 @@ class PayloadRepository(payloadDatabase: PayloadDatabase) {
             )
                 .executeAsOne()
 
+            eventLoggingService.registerEvent(
+                PAYLOAD_SAVED_INTO_DATABASE,
+                payload
+            )
+
             return Pair(
                 inserted.reference_id,
                 inserted.content_id
             )
-        }) { e: SQLException ->
-            if (e is PSQLException && UNIQUE_VIOLATION.state == e.sqlState) {
+        }) { error: SQLException ->
+            if (error is PSQLException && UNIQUE_VIOLATION.state == error.sqlState) {
+                eventLoggingService.registerEvent(
+                    ERROR_WHILE_SAVING_PAYLOAD_INTO_DATABASE,
+                    error
+                )
+
                 raise(
                     PayloadAlreadyExists(
                         payload.referenceId.toString(),
@@ -74,7 +106,7 @@ class PayloadRepository(payloadDatabase: PayloadDatabase) {
                     )
                 )
             } else {
-                throw e
+                throw error
             }
         }
 }

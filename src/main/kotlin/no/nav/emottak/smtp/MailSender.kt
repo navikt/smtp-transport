@@ -18,9 +18,14 @@ import no.nav.emottak.model.MessageType.PAYLOAD
 import no.nav.emottak.model.MessageType.SIGNAL
 import no.nav.emottak.model.PayloadMessage
 import no.nav.emottak.model.SignalMessage
+import no.nav.emottak.util.ScopedEventLoggingService
+import no.nav.emottak.utils.kafka.model.EventType.ERROR_WHILE_SENDING_MESSAGE_VIA_SMTP
+import no.nav.emottak.utils.kafka.model.EventType.MESSAGE_SENT_VIA_SMTP
 
-class MailSender(private val session: Session) {
-
+class MailSender(
+    private val session: Session,
+    private val eventLoggingService: ScopedEventLoggingService
+) {
     suspend fun sendSignalMessage(metadata: MailMetadata, signalMessage: SignalMessage) =
         sendMessage(
             metadata,
@@ -37,8 +42,18 @@ class MailSender(private val session: Session) {
 
     private suspend fun sendMessage(metadata: MailMetadata, message: MimeMessage, messageType: MessageType) =
         withContext(Dispatchers.IO) {
-            catch({ Transport.send(message) }) { e: MessagingException ->
-                log.error("Failed to send $messageType message: ${e.stackTraceToString()}")
+            catch({
+                Transport.send(message)
+                eventLoggingService.registerEvent(
+                    MESSAGE_SENT_VIA_SMTP,
+                    message
+                )
+            }) { error: MessagingException ->
+                log.error("Failed to send $messageType message: ${error.stackTraceToString()}")
+                eventLoggingService.registerEvent(
+                    ERROR_WHILE_SENDING_MESSAGE_VIA_SMTP,
+                    error
+                )
             }
         }
 

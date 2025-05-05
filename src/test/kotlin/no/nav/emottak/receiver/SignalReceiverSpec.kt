@@ -10,6 +10,7 @@ import no.nav.emottak.config
 import no.nav.emottak.configuration.Config
 import no.nav.emottak.configuration.withKafka
 import no.nav.emottak.kafkaReceiver
+import no.nav.emottak.util.fakeEventLoggingService
 import no.nav.emottak.utils.config.SecurityProtocol
 import org.apache.kafka.clients.producer.ProducerRecord
 import kotlin.uuid.Uuid
@@ -45,7 +46,10 @@ class SignalReceiverSpec : KafkaSpec(
                     )
                 }
 
-                val receiver = SignalReceiver(kafkaReceiver(config.kafka, AutoOffsetReset.Earliest))
+                val receiver = SignalReceiver(
+                    kafkaReceiver(config.kafka, AutoOffsetReset.Earliest),
+                    fakeEventLoggingService()
+                )
                 val mailRoutingMessages = receiver.receiveMailRoutingMessages()
 
                 mailRoutingMessages.test {

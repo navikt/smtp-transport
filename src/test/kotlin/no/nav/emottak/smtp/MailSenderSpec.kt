@@ -10,6 +10,7 @@ import no.nav.emottak.model.Payload
 import no.nav.emottak.model.PayloadMessage
 import no.nav.emottak.model.SignalMessage
 import no.nav.emottak.session
+import no.nav.emottak.util.fakeEventLoggingService
 import kotlin.uuid.Uuid
 
 class MailSenderSpec : StringSpec({
@@ -23,7 +24,7 @@ class MailSenderSpec : StringSpec({
             start()
             setUser(config.smtp.username.value, config.smtp.username.value, config.smtp.password.value)
         }
-        mailSender = MailSender(session)
+        mailSender = MailSender(session, fakeEventLoggingService())
     }
 
     "send signal message" {
