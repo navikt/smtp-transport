@@ -29,8 +29,8 @@ fun eventLoggingService(
     ) {
         publishEvent(
             eventType,
-            mimeMessage.contentID,
-            mimeMessage.messageID,
+            mimeMessage.contentID ?: "",
+            mimeMessage.messageID ?: "",
             ""
         )
     }
