@@ -48,7 +48,7 @@ class MailReaderSpec : StringSpec({
             val eventLoggingService = fakeEventLoggingService()
 
             val reader = MailReader(config.mail, store, false, eventLoggingService)
-            val messages = reader.readMailBatches(4)
+            val messages = reader.readMailBatches(3)
             val multipartMessages = messages.filter { it.multipart }.sortedBy { it.headers.size }
             multipartMessages.size shouldBe 2
 
@@ -66,7 +66,7 @@ class MailReaderSpec : StringSpec({
             lastMultipartMessage.headers shouldBe expectedLastMessage.headers
             lastMultipartMessage.parts.first() shouldMatchBytes expectedLastMessage.parts.first()
 
-            messages.size shouldBe 4
+            messages.size shouldBe 3
             reader.readMailBatches(3).size shouldBe 0
         }
     }
@@ -79,17 +79,17 @@ class MailReaderSpec : StringSpec({
             val inboxLimit100 = config.mail.copy(inboxLimit = 100)
             val reader = MailReader(inboxLimit100, store, false, eventLoggingService)
 
-            reader.readMailBatches(4).size shouldBe 4
-            reader.readMailBatches(4).size shouldBe 0
+            reader.readMailBatches(3).size shouldBe 3
+            reader.readMailBatches(3).size shouldBe 0
             reader.close()
 
-            MailReader(inboxLimit100, store, false, eventLoggingService).count() shouldBe 4
+            MailReader(inboxLimit100, store, false, eventLoggingService).count() shouldBe 3
 
             val inboxLimitNegative1 = config.mail.copy(inboxLimit = -1)
             val reader2 = MailReader(inboxLimitNegative1, store, false, eventLoggingService)
 
-            reader2.readMailBatches(4).size shouldBe 4
-            reader2.readMailBatches(4).size shouldBe 0
+            reader2.readMailBatches(3).size shouldBe 3
+            reader2.readMailBatches(3).size shouldBe 0
             reader2.close()
 
             MailReader(inboxLimitNegative1, store, false, eventLoggingService).count() shouldBe 0

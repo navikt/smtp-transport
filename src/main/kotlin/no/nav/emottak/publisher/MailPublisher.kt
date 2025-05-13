@@ -9,6 +9,7 @@ import no.nav.emottak.util.ScopedEventLoggingService
 import no.nav.emottak.utils.kafka.model.EventType.ERROR_WHILE_STORING_MESSAGE_IN_QUEUE
 import no.nav.emottak.utils.kafka.model.EventType.MESSAGE_PLACED_IN_QUEUE
 import org.apache.kafka.clients.producer.ProducerRecord
+import org.apache.kafka.clients.producer.RecordMetadata
 import kotlin.uuid.Uuid
 
 class MailPublisher(
@@ -17,13 +18,13 @@ class MailPublisher(
 ) {
     private val kafka = config().kafkaTopics
 
-    suspend fun publishPayloadMessage(message: PayloadMessage) =
+    suspend fun publishPayloadMessage(message: PayloadMessage): Result<RecordMetadata> =
         publishMessage(kafka.payloadInTopic, message.messageId, message.envelope)
 
-    suspend fun publishSignalMessage(message: SignalMessage) =
+    suspend fun publishSignalMessage(message: SignalMessage): Result<RecordMetadata> =
         publishMessage(kafka.signalInTopic, message.messageId, message.envelope)
 
-    private suspend fun publishMessage(topic: String, referenceId: Uuid, content: ByteArray) =
+    private suspend fun publishMessage(topic: String, referenceId: Uuid, content: ByteArray): Result<RecordMetadata> =
         kafkaPublisher.publishScope {
             publishCatching(toProducerRecord(topic, referenceId, content))
         }

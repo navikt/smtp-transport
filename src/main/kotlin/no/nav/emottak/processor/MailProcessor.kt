@@ -22,6 +22,7 @@ import no.nav.emottak.smtp.MailReader
 import no.nav.emottak.util.ScopedEventLoggingService
 import no.nav.emottak.util.toPayloadMessage
 import no.nav.emottak.util.toSignalMessage
+import org.apache.kafka.clients.producer.RecordMetadata
 import kotlin.uuid.Uuid
 
 class MailProcessor(
@@ -37,7 +38,14 @@ class MailProcessor(
             .launchIn(scope)
 
     private fun readMessages(): Flow<EmailMsg> = autoCloseScope {
-        val mailReader = install(MailReader(config().mail, store, false, eventLoggingService))
+        val mailReader = install(
+            MailReader(
+                config().mail,
+                store,
+                false,
+                eventLoggingService
+            )
+        )
         val messageCount = mailReader.count()
 
         if (messageCount > 0) {
@@ -68,6 +76,6 @@ class MailProcessor(
         }
     }
 
-    private suspend fun publishSignalMessage(signalMessage: SignalMessage) =
+    private suspend fun publishSignalMessage(signalMessage: SignalMessage): Result<RecordMetadata> =
         mailPublisher.publishSignalMessage(signalMessage)
 }
