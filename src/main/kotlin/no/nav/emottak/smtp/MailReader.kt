@@ -101,7 +101,7 @@ class MailReader(
     }
 
     private fun logMimeMultipartMessage(mimeMessage: MimeMessage) {
-        log.debug("Mime message as eml: {}", mimeMessageToEML(mimeMessage))
+        log.debug("Mime message as eml: {}", mimeMessage.toEML())
         val content = mimeMessage.content as MimeMultipart
         runCatching { content.getBodyPart(0) }
             .onSuccess {
@@ -177,9 +177,9 @@ class MailReader(
         )
     }
 
-    private fun mimeMessageToEML(mimeMessage: MimeMessage): String =
+    private fun MimeMessage.toEML(): String =
         ByteArrayOutputStream()
-            .apply { mimeMessage.writeTo(this) }
+            .apply { this@toEML.writeTo(this) }
             .toString(UTF_8.name())
 
     private fun registerEvent(message: MimeMessage) = eventLoggingService
