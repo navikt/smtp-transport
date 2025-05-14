@@ -16,7 +16,8 @@ import no.nav.emottak.log
 import no.nav.emottak.util.ScopedEventLoggingService
 import no.nav.emottak.utils.kafka.model.EventType.ERROR_WHILE_RECEIVING_MESSAGE_VIA_SMTP
 import no.nav.emottak.utils.kafka.model.EventType.MESSAGE_RECEIVED_VIA_SMTP
-import kotlin.text.RegexOption.IGNORE_CASE
+import java.io.ByteArrayOutputStream
+import kotlin.text.Charsets.UTF_8
 
 data class EmailMsg(
     val multipart: Boolean,
@@ -100,6 +101,7 @@ class MailReader(
     }
 
     private fun logMimeMultipartMessage(mimeMessage: MimeMessage) {
+        log.debug("Mime message as eml: {}", mimeMessage.toEML())
         val content = mimeMessage.content as MimeMultipart
         runCatching { content.getBodyPart(0) }
             .onSuccess {
@@ -107,7 +109,7 @@ class MailReader(
                 val bodyPartHeaders = getBodyPartHeaders(it)
                 val bodyAsString = String(it.inputStream.readAllBytes())
                 log.debug(
-                    "Incoming multipart request with headers {} body part headers {} and body {}",
+                    "Incoming multipart message with headers: {}, body part headers: {}, and body: {}",
                     messageHeaders,
                     bodyPartHeaders,
                     bodyAsString
@@ -133,7 +135,7 @@ class MailReader(
         )
 
     internal fun mapEmailMsg(message: MimeMessage): EmailMsg {
-        val multipartMessage = isMultipartMessage(message)
+        val multipartMessage = message.isMimeMultipart()
         val bodyparts: List<Part> = when (multipartMessage) {
             true -> createMimeBodyParts(message.content as MimeMultipart)
             else -> createEmptyMimeBodyParts(message)
@@ -148,10 +150,7 @@ class MailReader(
         )
     }
 
-    private fun isMultipartMessage(message: MimeMessage): Boolean {
-        return message.content is MimeMultipart &&
-            message.subject?.contains(Regex("acknowledg(e)?ment", IGNORE_CASE)) != true
-    }
+    private fun MimeMessage.isMimeMultipart(): Boolean = content is MimeMultipart
 
     private fun createEmptyMimeBodyParts(message: MimeMessage) = listOf(
         Part(
@@ -177,6 +176,11 @@ class MailReader(
             bodyPart.inputStream.readAllBytes()
         )
     }
+
+    private fun MimeMessage.toEML(): String =
+        ByteArrayOutputStream()
+            .apply { this@toEML.writeTo(this) }
+            .toString(UTF_8.name())
 
     private fun registerEvent(message: MimeMessage) = eventLoggingService
         .registerEvent(
