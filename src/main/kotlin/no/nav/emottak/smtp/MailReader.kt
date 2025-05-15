@@ -16,8 +16,6 @@ import no.nav.emottak.log
 import no.nav.emottak.util.ScopedEventLoggingService
 import no.nav.emottak.utils.kafka.model.EventType.ERROR_WHILE_RECEIVING_MESSAGE_VIA_SMTP
 import no.nav.emottak.utils.kafka.model.EventType.MESSAGE_RECEIVED_VIA_SMTP
-import java.io.ByteArrayOutputStream
-import kotlin.text.Charsets.UTF_8
 
 data class EmailMsg(
     val multipart: Boolean,
@@ -101,7 +99,6 @@ class MailReader(
     }
 
     private fun logMimeMultipartMessage(mimeMessage: MimeMessage) {
-        log.debug("Mime message as eml: {}", mimeMessage.toEML())
         val content = mimeMessage.content as MimeMultipart
         runCatching { content.getBodyPart(0) }
             .onSuccess {
@@ -176,11 +173,6 @@ class MailReader(
             bodyPart.inputStream.readAllBytes()
         )
     }
-
-    private fun MimeMessage.toEML(): String =
-        ByteArrayOutputStream()
-            .apply { this@toEML.writeTo(this) }
-            .toString(UTF_8.name())
 
     private fun registerEvent(message: MimeMessage) = eventLoggingService
         .registerEvent(
