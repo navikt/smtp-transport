@@ -8,6 +8,7 @@ import io.ktor.server.plugins.calllogging.processingTimeMillis
 import io.ktor.server.request.httpMethod
 import io.ktor.server.request.path
 import org.slf4j.LoggerFactory
+import org.slf4j.event.Level
 
 fun Application.configureCallLogging() {
     val logger = LoggerFactory.getLogger("CallLogging")
@@ -15,7 +16,12 @@ fun Application.configureCallLogging() {
     install(CallLogging) {
         filter { call -> call.request.path().startsWith("/api") }
         format { call ->
-            val status = call.response.status()
+            val status = call.response.status() ?: NotFound
+            val logLevel = when (status.value) {
+                in 500..599 -> Level.ERROR
+                404 -> Level.WARN
+                else -> Level.INFO
+            }
             val httpMethod = call.request.httpMethod.value
             val userAgent = call.request.headers["User-Agent"] ?: "Unknown"
             val path = call.request.path()
@@ -29,9 +35,11 @@ fun Application.configureCallLogging() {
                 Duration: ${duration}ms
             """.trimIndent()
 
-            when (status) {
-                NotFound -> logger.warn(message)
-                else -> logger.info(message)
+            when (logLevel) {
+                Level.ERROR -> logger.error(message)
+                Level.WARN -> logger.warn(message)
+                Level.INFO -> logger.info(message)
+                else -> logger.debug(message)
             }
 
             ""
