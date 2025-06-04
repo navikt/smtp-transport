@@ -89,6 +89,8 @@ spec:
       value: "pop3"
     - name: SMTP_INCOMING_USERNAME
       value: "nyebmstest@test-es.nav.no"
+    - name: SMTP_REDIRECT_ADDRESS
+      value: "kristian.frohlich@nav.no"
     - name: POSTGRES_JDBC_URL
       value: "jdbc:postgresql://b27dbvl035.preprod.local:5432/emottak-smtp-transport-payload"
     - name: POSTGRES_MOUNT_PATH
