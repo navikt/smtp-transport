@@ -5,12 +5,12 @@ import jakarta.mail.Message.RecipientType.TO
 import jakarta.mail.MessagingException
 import jakarta.mail.Session
 import jakarta.mail.Transport
-import jakarta.mail.internet.InternetAddress
 import jakarta.mail.internet.MimeBodyPart
 import jakarta.mail.internet.MimeMessage
 import jakarta.mail.internet.MimeMultipart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import no.nav.emottak.config
 import no.nav.emottak.log
 import no.nav.emottak.model.MailMetadata
 import no.nav.emottak.model.MessageType
@@ -22,25 +22,27 @@ import no.nav.emottak.util.ScopedEventLoggingService
 import no.nav.emottak.utils.kafka.model.EventType.ERROR_WHILE_SENDING_MESSAGE_VIA_SMTP
 import no.nav.emottak.utils.kafka.model.EventType.MESSAGE_SENT_VIA_SMTP
 
+private const val CONTENT_TYPE = "application/soap+xml; charset=UTF-8"
+
 class MailSender(
     private val session: Session,
     private val eventLoggingService: ScopedEventLoggingService
 ) {
+    private val smtp = config().smtp
+
     suspend fun sendSignalMessage(metadata: MailMetadata, signalMessage: SignalMessage) =
         sendMessage(
-            metadata,
             createMimeMessage(metadata, signalMessage),
             SIGNAL
         )
 
     suspend fun sendPayloadMessage(metadata: MailMetadata, payloadMessage: PayloadMessage) =
         sendMessage(
-            metadata,
             createMimeMultipartMessage(metadata, payloadMessage),
             PAYLOAD
         )
 
-    private suspend fun sendMessage(metadata: MailMetadata, message: MimeMessage, messageType: MessageType) =
+    private suspend fun sendMessage(message: MimeMessage, messageType: MessageType) =
         withContext(Dispatchers.IO) {
             catch({
                 Transport.send(message)
@@ -59,15 +61,15 @@ class MailSender(
 
     private fun createMimeMessage(metadata: MailMetadata, signalMessage: SignalMessage): MimeMessage =
         MimeMessage(session).apply {
-            setFrom(InternetAddress("smtp-transport@nav.no"))
-            addRecipient(TO, InternetAddress("kristian.frohlich@nav.no"))
-            setContent(signalMessage.envelope, "application/soap+xml; charset=UTF-8")
+            setFrom(smtp.smtpFromAddress)
+            addRecipients(TO, getRecipients(metadata))
+            setContent(signalMessage.envelope, CONTENT_TYPE)
         }
 
     private fun createMimeMultipartMessage(metadata: MailMetadata, payloadMessage: PayloadMessage): MimeMessage =
         MimeMessage(session).apply {
-            setFrom(InternetAddress("smtp-transport@nav.no"))
-            addRecipient(TO, InternetAddress("kristian.frohlich@nav.no"))
+            setFrom(smtp.smtpFromAddress)
+            addRecipients(TO, getRecipients(metadata))
 
             setContent(
                 MimeMultipart().apply {
@@ -78,7 +80,8 @@ class MailSender(
         }
 
     private fun createContentPart(payloadMessage: PayloadMessage): MimeBodyPart =
-        MimeBodyPart().apply { setContent(payloadMessage.envelope, "application/soap+xml; charset=UTF-8") }
+        MimeBodyPart()
+            .apply { setContent(payloadMessage.envelope, CONTENT_TYPE) }
 
     private fun createPayloadParts(payloadMessage: PayloadMessage): List<MimeBodyPart> =
         payloadMessage.payloads.map { payload ->
@@ -87,4 +90,9 @@ class MailSender(
                 contentID = payload.contentId
             }
         }
+
+    private fun getRecipients(metadata: MailMetadata): String =
+        smtp
+            .smtpRedirectAddress
+            .takeIf { it.isNotBlank() } ?: metadata.addresses
 }
