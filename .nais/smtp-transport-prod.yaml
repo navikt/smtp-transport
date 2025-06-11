@@ -44,13 +44,15 @@ spec:
     cpuThresholdPercentage: 50
   resources:
     limits:
-      cpu: "200m"
+      cpu: "1000m"
       memory: "1024Mi"
     requests:
       cpu: "200m"
       memory: "1024Mi"
   ingresses:
     - "https://smtp-transport.intern.nav.no"
+  kafka:
+    pool: nav-prod
   envFrom:
     - secret: smtp-router-secrets
   vault:
@@ -65,20 +67,29 @@ spec:
     inbound:
       rules:
         - application: ebms-async
+        - application: azure-token-generator
+          namespace: aura
+          cluster: prod-gcp
   env:
+    - name: SMTP_HOST
+      value: "a30mxvl002.oera.no"
+    - name: SMTP_PORT
+      value: "25"
     - name: SMTP_POP3_FACTORY_PORT
       value: "110"
     - name: SMTP_POP3_PORT
       value: "110"
     - name: SMTP_POP3_HOST
-      value: "d32mxvl002.oera-t.local-not-in-use"
+      value: "a30mxvl002.oera.no"
     - name: SMTP_STORE_PROTOCOL
-      value: "pop3-not-in-use"
+      value: "pop3"
     - name: SMTP_INCOMING_USERNAME
-      value: "nyebmstest@test-es.nav.no-not-in-use"
-    - name: SMTP_BCC_USERNAME
-      value: "nyebmsbcc@test-es.nav.no-not-in-use"
-    - name: SMTP_OUTGOING_USERNAME_NY
-      value: "nyebms2@test-es.nav.no-not-in-use"
-    - name: DRY_RUN
-      value: "true"
+      value: ""
+    - name: POSTGRES_JDBC_URL
+      value: "jdbc:postgresql://a01dbvl037.adeo.no:5432/emottak-smtp-transport-payload"
+    - name: POSTGRES_MOUNT_PATH
+      value: "postgresql/prod-fss"
+    - name: POSTGRES_USER_ROLE
+      value: "emottak-smtp-transport-payload-user"
+    - name: POSTGRES_ADMIN_ROLE
+      value: "emottak-smtp-transport-payload-admin"
