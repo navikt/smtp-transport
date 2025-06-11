@@ -88,7 +88,7 @@ spec:
     - name: SMTP_STORE_PROTOCOL
       value: "pop3"
     - name: SMTP_INCOMING_USERNAME
-      value: "nyebmstest@test-es.nav.no"
+      value: ""
     - name: SMTP_REDIRECT_ADDRESS
       value: "kristian.frohlich@nav.no"
     - name: POSTGRES_JDBC_URL
