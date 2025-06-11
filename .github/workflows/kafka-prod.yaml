@@ -1,7 +1,12 @@
 name: Deploy kafka topics to PROD
 on:
   workflow_dispatch:
-
+  push:
+    branches:
+      - 'main'
+    paths:
+      - '.nais/kafka/kafka-prod.yaml'
+      - '.github/workflows/kafka-prod.yaml'
 env:
   TOPIC_FILE: .nais/kafka/kafka-prod.yaml
 
