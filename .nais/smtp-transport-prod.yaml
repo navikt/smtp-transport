@@ -67,9 +67,6 @@ spec:
     inbound:
       rules:
         - application: ebms-async
-        - application: azure-token-generator
-          namespace: aura
-          cluster: prod-gcp
   env:
     - name: SMTP_HOST
       value: "a30mxvl002.oera.no"
