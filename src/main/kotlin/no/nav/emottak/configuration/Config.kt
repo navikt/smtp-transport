@@ -1,6 +1,7 @@
 package no.nav.emottak.configuration
 
 import com.sksamuel.hoplite.Masked
+import no.nav.emottak.utils.config.EventLogging
 import no.nav.emottak.utils.config.Kafka
 import java.util.Properties
 import kotlin.time.Duration
@@ -9,6 +10,7 @@ data class Config(
     val job: Job,
     val mail: Mail,
     val kafka: Kafka,
+    val eventLogging: EventLogging,
     val kafkaTopics: KafkaTopics,
     val smtp: Smtp,
     val database: Database,
