@@ -29,6 +29,7 @@ spec:
     logging:
       destinations:
         - id: elastic
+        - id: loki
   prometheus:
     enabled: true
     path: /prometheus
