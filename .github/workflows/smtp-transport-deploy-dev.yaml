@@ -1,5 +1,6 @@
 name: "Build and deploy smtp-transport"
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
