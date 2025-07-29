@@ -1,0 +1,17 @@
+ALTER TABLE payload
+RENAME COLUMN reference_id TO reference_id_old;
+
+ALTER TABLE payload
+ADD COLUMN reference_id UUID;
+
+UPDATE payload
+SET reference_id = CAST(reference_id_old AS uuid);
+
+ALTER TABLE payload
+ALTER COLUMN reference_id SET NOT NULL;
+
+ALTER TABLE payload
+DROP COLUMN reference_id_old;
+
+ALTER TABLE payload
+ADD CONSTRAINT payload_pkey PRIMARY KEY (reference_id, content_id);
