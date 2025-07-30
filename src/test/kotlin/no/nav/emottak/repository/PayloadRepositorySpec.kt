@@ -30,7 +30,7 @@ class PayloadRepositorySpec : StringSpec(
 
             with(repository) {
                 either { insert(payloads) } shouldBe Right(
-                    listOf(Pair(referenceId.toString(), "content-id"))
+                    listOf(Pair(referenceId, "content-id"))
                 )
             }
         }
@@ -42,8 +42,8 @@ class PayloadRepositorySpec : StringSpec(
             with(repository) {
                 either { insert(payloads) } shouldBe Right(
                     listOf(
-                        Pair(referenceIds.first().toString(), "first-content-id"),
-                        Pair(referenceIds.last().toString(), "second-content-id")
+                        Pair(referenceIds.first(), "first-content-id"),
+                        Pair(referenceIds.last(), "second-content-id")
                     )
                 )
             }
