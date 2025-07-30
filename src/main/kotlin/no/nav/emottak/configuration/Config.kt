@@ -3,6 +3,8 @@ package no.nav.emottak.configuration
 import com.sksamuel.hoplite.Masked
 import no.nav.emottak.utils.config.EventLogging
 import no.nav.emottak.utils.config.Kafka
+import no.nav.emottak.utils.config.Port
+import no.nav.emottak.utils.config.Server
 import java.util.Properties
 import kotlin.time.Duration
 
@@ -27,8 +29,6 @@ data class Job(val fixedInterval: Duration)
 
 data class Mail(val inboxLimit: Int)
 
-data class Server(val port: Port, val preWait: Duration)
-
 data class EbmsAsync(val baseUrl: String, val apiUrl: String)
 
 @JvmInline
@@ -48,9 +48,6 @@ value class Username(val value: String)
 
 @JvmInline
 value class Host(val value: String)
-
-@JvmInline
-value class Port(val value: Int)
 
 @JvmInline
 value class Protocol(val value: String)
