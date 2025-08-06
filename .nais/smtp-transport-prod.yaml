@@ -81,7 +81,7 @@ spec:
     - name: SMTP_STORE_PROTOCOL
       value: "pop3"
     - name: SMTP_INCOMING_USERNAME
-      value: ""
+      value: "ebms-prod@es.nav.no"
     - name: POSTGRES_JDBC_URL
       value: "jdbc:postgresql://a01dbvl037.adeo.no:5432/emottak-smtp-transport-payload"
     - name: POSTGRES_MOUNT_PATH
