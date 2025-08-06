@@ -55,7 +55,7 @@ spec:
   kafka:
     pool: nav-prod
   envFrom:
-    - secret: smtp-router-secrets
+    - secret: smtp-transport-secrets
   vault:
     enabled: true
     paths:
