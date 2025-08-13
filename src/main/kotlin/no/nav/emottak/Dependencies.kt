@@ -41,10 +41,12 @@ import no.nav.emottak.configuration.Config
 import no.nav.emottak.configuration.Database
 import no.nav.emottak.configuration.Smtp
 import no.nav.emottak.configuration.toProperties
+import no.nav.emottak.migrations.Payload
 import no.nav.emottak.model.TokenInfo
 import no.nav.emottak.queries.PayloadDatabase
 import no.nav.emottak.utils.config.Kafka
 import no.nav.emottak.utils.config.toProperties
+import no.nav.emottak.utils.sql.sqldelight.UuidAdapter
 import no.nav.emottak.utils.vault.VaultUtil
 import no.nav.vault.jdbc.hikaricp.HikariCPVaultUtil.createHikariDataSourceWithVaultIntegration
 import org.apache.kafka.common.serialization.ByteArrayDeserializer
@@ -232,7 +234,7 @@ suspend fun ResourceScope.initDependencies(): Dependencies = awaitAll {
         session(config.smtp),
         kafkaPublisher.await(),
         kafkaReceiver.await(),
-        PayloadDatabase(jdbcDriver.await()),
+        PayloadDatabase(jdbcDriver.await(), Payload.Adapter(UuidAdapter)),
         httpClient.await(),
         migrationService.await(),
         metricsRegistry.await()
