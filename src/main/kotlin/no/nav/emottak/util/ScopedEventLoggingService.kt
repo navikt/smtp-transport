@@ -31,7 +31,7 @@ fun eventLoggingService(
             eventType,
             mimeMessage.contentID ?: "",
             mimeMessage.messageID ?: "",
-            ""
+            "{}"
         )
     }
 
@@ -43,7 +43,7 @@ fun eventLoggingService(
             eventType,
             payload.contentId,
             payload.referenceId.toString(),
-            ""
+            "{}"
         )
     }
 
@@ -55,7 +55,7 @@ fun eventLoggingService(
             eventType,
             "",
             messageId.toString(),
-            ""
+            "{}"
         )
     }
 
