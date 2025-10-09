@@ -16,16 +16,23 @@ import no.nav.emottak.log
 import no.nav.emottak.util.ScopedEventLoggingService
 import no.nav.emottak.utils.kafka.model.EventType.ERROR_WHILE_RECEIVING_MESSAGE_VIA_SMTP
 import no.nav.emottak.utils.kafka.model.EventType.MESSAGE_RECEIVED_VIA_SMTP
+import kotlin.uuid.Uuid
 
 data class EmailMsg(
     val multipart: Boolean,
     val headers: Map<String, String>,
-    val parts: List<Part>
+    val parts: List<Part>,
+    val requestId: Uuid
 )
 
 data class Part(
     val headers: Map<String, String>,
     val bytes: ByteArray
+)
+
+data class MimeMessageWrapper(
+    val mimeMessage: MimeMessage,
+    val requestId: Uuid
 )
 
 class MailReader(
@@ -56,7 +63,7 @@ class MailReader(
             return if (messageCount != 0) {
                 val endIndex = (batchSize + start - 1).takeIf { it < messageCount } ?: messageCount
                 val result = inbox.getMessages(start, endIndex)
-                    .map { message -> (message as MimeMessage).also { registerEvent(it) } }
+                    .map { message -> MimeMessageWrapper(message as MimeMessage, Uuid.random()).also { registerEvent(it) } }
                     .toList()
                     .onEach(::processMimeMessage)
                 start += batchSize // Update start index
@@ -73,13 +80,13 @@ class MailReader(
 
     private fun expunge(): Boolean = (expunge || count() > mail.inboxLimit)
 
-    private fun processMimeMessage(mimeMessage: MimeMessage) {
+    private fun processMimeMessage(wrapper: MimeMessageWrapper) {
         log.debug("Reading emails startIndex $start")
-        when (mimeMessage.content) {
-            is MimeMultipart -> logMimeMultipartMessage(mimeMessage)
-            else -> logMimeMessage(mimeMessage)
+        when (wrapper.mimeMessage.content) {
+            is MimeMultipart -> logMimeMultipartMessage(wrapper.mimeMessage)
+            else -> logMimeMessage(wrapper.mimeMessage)
         }
-        setDeletedFlagOnMimeMessage(mimeMessage)
+        setDeletedFlagOnMimeMessage(wrapper.mimeMessage)
     }
 
     private fun setDeletedFlagOnMimeMessage(mimeMessage: MimeMessage) {
@@ -131,19 +138,20 @@ class MailReader(
             mutableMapOf("system source" to (xMailer ?: "-"))
         )
 
-    internal fun mapEmailMsg(message: MimeMessage): EmailMsg {
-        val multipartMessage = message.isMimeMultipart()
+    internal fun mapEmailMsg(wrapper: MimeMessageWrapper): EmailMsg {
+        val multipartMessage = wrapper.mimeMessage.isMimeMultipart()
         val bodyparts: List<Part> = when (multipartMessage) {
-            true -> createMimeBodyParts(message.content as MimeMultipart)
-            else -> createEmptyMimeBodyParts(message)
+            true -> createMimeBodyParts(wrapper.mimeMessage.content as MimeMultipart)
+            else -> createEmptyMimeBodyParts(wrapper.mimeMessage)
         }
         return EmailMsg(
             multipartMessage,
-            message.allHeaders
+            wrapper.mimeMessage.allHeaders
                 .toList()
                 .groupBy({ it.name }, { it.value })
                 .mapValues { it.value.joinToString(",") },
-            bodyparts
+            bodyparts,
+            wrapper.requestId
         )
     }
 
@@ -174,10 +182,11 @@ class MailReader(
         )
     }
 
-    private fun registerEvent(message: MimeMessage) = eventLoggingService
+    private fun registerEvent(wrapper: MimeMessageWrapper) = eventLoggingService
         .registerEvent(
             MESSAGE_RECEIVED_VIA_SMTP,
-            message
+            wrapper.mimeMessage,
+            wrapper.requestId
         )
 
     private fun registerEvent(error: MessagingException) = eventLoggingService

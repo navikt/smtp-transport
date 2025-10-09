@@ -23,7 +23,6 @@ import no.nav.emottak.util.ScopedEventLoggingService
 import no.nav.emottak.util.toPayloadMessage
 import no.nav.emottak.util.toSignalMessage
 import org.apache.kafka.clients.producer.RecordMetadata
-import kotlin.uuid.Uuid
 
 class MailProcessor(
     private val store: Store,
@@ -60,10 +59,9 @@ class MailProcessor(
     }
 
     private suspend fun processMessage(emailMsg: EmailMsg) {
-        val messageId = Uuid.random()
         when (emailMsg.multipart) {
-            true -> publishPayloadMessage(emailMsg.toPayloadMessage(messageId))
-            false -> publishSignalMessage(emailMsg.toSignalMessage(messageId))
+            true -> publishPayloadMessage(emailMsg.toPayloadMessage(emailMsg.requestId))
+            false -> publishSignalMessage(emailMsg.toSignalMessage(emailMsg.requestId))
         }
     }
 

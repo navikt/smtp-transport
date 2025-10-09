@@ -79,6 +79,7 @@ class PayloadReceiver(
                 eventLoggingService.registerEvent(
                     ERROR_WHILE_RECEIVING_PAYLOAD_VIA_HTTP,
                     Exception(error.toString())
+                    // TODO: Sende uuid her (altså referenceId)?
                 )
                 emptyList<Payload>().also { log.error("$error") }
             }
