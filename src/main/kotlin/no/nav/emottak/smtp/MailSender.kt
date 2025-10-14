@@ -1,13 +1,16 @@
 package no.nav.emottak.smtp
 
 import arrow.core.raise.catch
+import jakarta.activation.DataHandler
 import jakarta.mail.Message.RecipientType.TO
 import jakarta.mail.MessagingException
 import jakarta.mail.Session
 import jakarta.mail.Transport
+import jakarta.mail.internet.InternetAddress
 import jakarta.mail.internet.MimeBodyPart
 import jakarta.mail.internet.MimeMessage
 import jakarta.mail.internet.MimeMultipart
+import jakarta.mail.util.ByteArrayDataSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import no.nav.emottak.config
@@ -29,6 +32,46 @@ class MailSender(
     private val eventLoggingService: ScopedEventLoggingService
 ) {
     private val smtp = config().smtp
+
+    suspend fun forwardMessage(emailMsg: EmailMsg) =
+        withContext(Dispatchers.IO) {
+            catch({
+                Transport.send(
+                    createForwardableMimeMessage(emailMsg)
+                )
+            }) { error: MessagingException ->
+                log.error("Failed to forward message: ${error.localizedMessage}", error)
+            }
+        }
+
+    private fun createForwardableMimeMessage(emailMsg: EmailMsg): MimeMessage {
+        val mimeParts = emailMsg.parts.map { part ->
+            MimeBodyPart().apply {
+                part.headers.forEach { (header, value) ->
+                    setHeader(header, value)
+                }
+                val dataSource = ByteArrayDataSource(part.bytes, contentType)
+                dataHandler = DataHandler(dataSource)
+            }
+        }
+
+        return MimeMessage(session).apply {
+            emailMsg.headers.forEach { (header, value) ->
+                setHeader(header, value)
+            }
+            setRecipient(TO, InternetAddress(smtp.smtpT1EmottakAddress)) // TODO address
+
+            setContent(
+                MimeMultipart().apply {
+                    mimeParts.forEach { part ->
+                        addBodyPart(part)
+                    }
+                }
+            )
+
+            saveChanges()
+        }
+    }
 
     suspend fun sendSignalMessage(metadata: MailMetadata, signalMessage: SignalMessage) =
         sendMessage(

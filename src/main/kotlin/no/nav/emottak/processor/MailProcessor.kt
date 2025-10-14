@@ -19,6 +19,7 @@ import no.nav.emottak.publisher.MailPublisher
 import no.nav.emottak.repository.PayloadRepository
 import no.nav.emottak.smtp.EmailMsg
 import no.nav.emottak.smtp.MailReader
+import no.nav.emottak.smtp.MailSender
 import no.nav.emottak.util.ScopedEventLoggingService
 import no.nav.emottak.util.toPayloadMessage
 import no.nav.emottak.util.toSignalMessage
@@ -29,7 +30,8 @@ class MailProcessor(
     private val store: Store,
     private val mailPublisher: MailPublisher,
     private val payloadRepository: PayloadRepository,
-    private val eventLoggingService: ScopedEventLoggingService
+    private val eventLoggingService: ScopedEventLoggingService,
+    private val mailSender: MailSender
 ) {
     fun processMessages(scope: CoroutineScope) =
         readMessages()
@@ -47,6 +49,7 @@ class MailProcessor(
             )
         )
         val messageCount = mailReader.count()
+        // val maxBatchSize = max(10, messageCount)
 
         if (messageCount > 0) {
             log.info("Starting to read $messageCount messages from inbox")
@@ -61,9 +64,17 @@ class MailProcessor(
 
     private suspend fun processMessage(emailMsg: EmailMsg) {
         val messageId = Uuid.random()
-        when (emailMsg.multipart) {
-            true -> publishPayloadMessage(emailMsg.toPayloadMessage(messageId))
-            false -> publishSignalMessage(emailMsg.toSignalMessage(messageId))
+        val from = emailMsg.headers["From"]
+        val subject = emailMsg.headers["Subject"]
+
+        if (from.equals("example@example.com", true) && subject.equals("inntektsforesporsel", true)) {
+            mailSender.forwardMessage(emailMsg)
+            log.info("Mail from $from and Subject $subject forwarded to [configed forwarded address here]") // TODO
+        } else {
+            when (emailMsg.multipart) {
+                true -> publishPayloadMessage(emailMsg.toPayloadMessage(messageId))
+                false -> publishSignalMessage(emailMsg.toSignalMessage(messageId))
+            }
         }
     }
 

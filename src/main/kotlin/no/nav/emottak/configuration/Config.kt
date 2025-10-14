@@ -63,7 +63,8 @@ data class Smtp(
     val pop3FactoryPort: Port,
     val pop3FactoryFallback: Boolean,
     val smtpFromAddress: String,
-    val smtpRedirectAddress: String
+    val smtpRedirectAddress: String,
+    val smtpT1EmottakAddress: String
 )
 
 private const val MAIL_SMTP_HOST = "mail.smtp.host"
