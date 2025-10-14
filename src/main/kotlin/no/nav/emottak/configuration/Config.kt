@@ -20,7 +20,8 @@ data class Config(
     val server: Server,
     val httpClient: HttpClient,
     val httpTokenClient: HttpClient,
-    val ebmsAsync: EbmsAsync
+    val ebmsAsync: EbmsAsync,
+    val ebmsFilter: EbmsFilter
 )
 
 fun Config.withKafka(update: Kafka.() -> Kafka) = copy(kafka = kafka.update())
@@ -177,4 +178,10 @@ data class AzureAuth(
     val azureTokenEndpoint: AzureTokenEndpoint,
     val azureAppClientId: AzureApplicationId,
     val azureAppClientSecret: AzureApplicationSecret
+)
+
+data class EbmsFilter(
+    val ebmsMessageTypeSubjects: List<String>,
+    val signalMessageTypeSubjects: List<String>,
+    val ebmsSenderAddresses: List<String>
 )

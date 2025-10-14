@@ -20,7 +20,9 @@ import no.nav.emottak.repository.PayloadRepository
 import no.nav.emottak.smtp.EmailMsg
 import no.nav.emottak.smtp.MailReader
 import no.nav.emottak.smtp.MailSender
+import no.nav.emottak.util.ForwardingSystem
 import no.nav.emottak.util.ScopedEventLoggingService
+import no.nav.emottak.util.filterMimeMessage
 import no.nav.emottak.util.toPayloadMessage
 import no.nav.emottak.util.toSignalMessage
 import org.apache.kafka.clients.producer.RecordMetadata
@@ -64,17 +66,25 @@ class MailProcessor(
 
     private suspend fun processMessage(emailMsg: EmailMsg) {
         val messageId = Uuid.random()
-        val from = emailMsg.headers["From"]
-        val subject = emailMsg.headers["Subject"]
 
-        if (from.equals("example@example.com", true) && subject.equals("inntektsforesporsel", true)) {
-            mailSender.forwardMessage(emailMsg)
-            log.info("Mail from $from and Subject $subject forwarded to [configed forwarded address here]") // TODO
-        } else {
-            when (emailMsg.multipart) {
-                true -> publishPayloadMessage(emailMsg.toPayloadMessage(messageId))
-                false -> publishSignalMessage(emailMsg.toSignalMessage(messageId))
+        when (emailMsg.filterMimeMessage()) {
+            ForwardingSystem.EBMS -> publishToKafka(messageId, emailMsg)
+            ForwardingSystem.EMOTTAK -> forwardToT1(emailMsg)
+            ForwardingSystem.BOTH -> {
+                publishToKafka(messageId, emailMsg)
+                forwardToT1(emailMsg)
             }
+        }
+    }
+
+    private suspend fun forwardToT1(emailMsg: EmailMsg) {
+        mailSender.forwardMessage(emailMsg)
+    }
+
+    private suspend fun publishToKafka(messageId: Uuid, emailMsg: EmailMsg) {
+        when (emailMsg.multipart) {
+            true -> publishPayloadMessage(emailMsg.toPayloadMessage(messageId))
+            false -> publishSignalMessage(emailMsg.toSignalMessage(messageId))
         }
     }
 
