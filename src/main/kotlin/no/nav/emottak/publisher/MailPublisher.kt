@@ -41,7 +41,8 @@ class MailPublisher(
 
                 eventLoggingService.registerEvent(
                     ERROR_WHILE_STORING_MESSAGE_IN_QUEUE,
-                    Exception("Failed to publish message with reference id: $referenceId and content: $content")
+                    Exception("Failed to publish message with reference id: $referenceId and content: $content"),
+                    referenceId
                 )
             }
 

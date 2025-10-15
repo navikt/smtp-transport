@@ -15,8 +15,8 @@ import kotlin.uuid.Uuid
 interface ScopedEventLoggingService {
     fun registerEvent(eventType: EventType, messageId: Uuid)
     fun registerEvent(eventType: EventType, payload: Payload)
-    fun registerEvent(eventType: EventType, mimeMessage: MimeMessage)
-    fun registerEvent(eventType: EventType, error: Exception)
+    fun registerEvent(eventType: EventType, mimeMessage: MimeMessage, requestId: Uuid)
+    fun registerEvent(eventType: EventType, error: Exception, requestId: Uuid = Uuid.random())
 }
 
 fun eventLoggingService(
@@ -25,13 +25,15 @@ fun eventLoggingService(
 ): ScopedEventLoggingService = object : ScopedEventLoggingService {
     override fun registerEvent(
         eventType: EventType,
-        mimeMessage: MimeMessage
+        mimeMessage: MimeMessage,
+        requestId: Uuid
     ) {
         publishEvent(
             eventType,
             mimeMessage.contentID ?: "",
             mimeMessage.messageID ?: "",
-            "{}"
+            "{}",
+            requestId = requestId
         )
     }
 
@@ -43,7 +45,8 @@ fun eventLoggingService(
             eventType,
             payload.contentId,
             payload.referenceId.toString(),
-            "{}"
+            "{}",
+            requestId = payload.referenceId
         )
     }
 
@@ -55,19 +58,22 @@ fun eventLoggingService(
             eventType,
             "",
             messageId.toString(),
-            "{}"
+            "{}",
+            requestId = messageId
         )
     }
 
     override fun registerEvent(
         eventType: EventType,
-        error: Exception
+        error: Exception,
+        requestId: Uuid
     ) {
         publishEvent(
             eventType,
             "",
             "",
-            error.toEventDataJson()
+            error.toEventDataJson(),
+            requestId = requestId
         )
     }
 
@@ -75,11 +81,12 @@ fun eventLoggingService(
         eventType: EventType,
         contentId: String,
         messageId: String,
-        eventData: String
+        eventData: String,
+        requestId: Uuid = Uuid.random()
     ) = scope.launch {
         val event = Event(
             eventType,
-            Uuid.random(),
+            requestId,
             contentId,
             messageId,
             eventData,
@@ -96,7 +103,8 @@ fun fakeEventLoggingService(): ScopedEventLoggingService =
     object : ScopedEventLoggingService {
         override fun registerEvent(
             eventType: EventType,
-            mimeMessage: MimeMessage
+            mimeMessage: MimeMessage,
+            requestId: Uuid
         ) {
             logEvent(eventType)
         }
@@ -117,7 +125,8 @@ fun fakeEventLoggingService(): ScopedEventLoggingService =
 
         override fun registerEvent(
             eventType: EventType,
-            error: Exception
+            error: Exception,
+            requestId: Uuid
         ) {
             logEvent(eventType)
         }

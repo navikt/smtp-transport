@@ -12,6 +12,7 @@ import no.nav.emottak.session
 import no.nav.emottak.store
 import no.nav.emottak.util.fakeEventLoggingService
 import java.nio.file.Path.of
+import kotlin.uuid.Uuid
 
 private const val REQUEST = "mails/test@test.test/INBOX/EgenAndelForespoersel.eml"
 private const val EXAMPLE = "mails/test@test.test/INBOX/example.eml"
@@ -53,14 +54,16 @@ class MailReaderSpec : StringSpec({
             multipartMessages.size shouldBe 2
 
             val requestMessage = MimeMessage(session, classLoader.getResourceAsStream(REQUEST))
-            val expectedFirstMessage = reader.mapEmailMsg(requestMessage)
+            var wrapper = MimeMessageWrapper(requestMessage, Uuid.random())
+            val expectedFirstMessage = reader.mapEmailMsg(wrapper)
 
             val firstMultipartMessage = multipartMessages.first()
             firstMultipartMessage.headers shouldBe expectedFirstMessage.headers
             firstMultipartMessage.parts.first() shouldMatchBytes expectedFirstMessage.parts.first()
 
             val exampleMessage = MimeMessage(session, classLoader.getResourceAsStream(EXAMPLE))
-            val expectedLastMessage = reader.mapEmailMsg(exampleMessage)
+            wrapper = MimeMessageWrapper(exampleMessage, Uuid.random())
+            val expectedLastMessage = reader.mapEmailMsg(wrapper)
 
             val lastMultipartMessage = multipartMessages.last()
             lastMultipartMessage.headers shouldBe expectedLastMessage.headers
@@ -109,10 +112,12 @@ class MailReaderSpec : StringSpec({
             multipartMessages.size shouldBe 2
 
             val requestMessage = MimeMessage(session, classLoader.getResourceAsStream(REQUEST))
-            val mappedRequestMessage = reader.mapEmailMsg(requestMessage)
+            var wrapper = MimeMessageWrapper(requestMessage, Uuid.random())
+            val mappedRequestMessage = reader.mapEmailMsg(wrapper)
 
             val exampleMessage = MimeMessage(session, classLoader.getResourceAsStream(EXAMPLE))
-            val mappedExampleMessage = reader.mapEmailMsg(exampleMessage)
+            wrapper = MimeMessageWrapper(exampleMessage, Uuid.random())
+            val mappedExampleMessage = reader.mapEmailMsg(wrapper)
 
             val firstMultipartMessage = multipartMessages.first()
             val lastMultipartMessage = multipartMessages.last()

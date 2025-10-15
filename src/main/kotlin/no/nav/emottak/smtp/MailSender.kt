@@ -42,42 +42,50 @@ class MailSender(
             PAYLOAD
         )
 
-    private suspend fun sendMessage(message: MimeMessage, messageType: MessageType) =
+    private suspend fun sendMessage(wrapper: MimeMessageWrapper, messageType: MessageType) =
         withContext(Dispatchers.IO) {
             catch({
-                Transport.send(message)
+                Transport.send(wrapper.mimeMessage)
                 eventLoggingService.registerEvent(
                     MESSAGE_SENT_VIA_SMTP,
-                    message
+                    wrapper.mimeMessage,
+                    wrapper.requestId
                 )
             }) { error: MessagingException ->
                 log.error("Failed to send $messageType message: ${error.stackTraceToString()}")
                 eventLoggingService.registerEvent(
                     ERROR_WHILE_SENDING_MESSAGE_VIA_SMTP,
-                    error
+                    error,
+                    wrapper.requestId
                 )
             }
         }
 
-    private fun createMimeMessage(metadata: MailMetadata, signalMessage: SignalMessage): MimeMessage =
-        MimeMessage(session).apply {
-            setFrom(smtp.smtpFromAddress)
-            addRecipients(TO, getRecipients(metadata))
-            setContent(signalMessage.envelope, CONTENT_TYPE)
-        }
+    private fun createMimeMessage(metadata: MailMetadata, signalMessage: SignalMessage): MimeMessageWrapper =
+        MimeMessageWrapper(
+            MimeMessage(session).apply {
+                setFrom(smtp.smtpFromAddress)
+                addRecipients(TO, getRecipients(metadata))
+                setContent(signalMessage.envelope, CONTENT_TYPE)
+            },
+            signalMessage.messageId
+        )
 
-    private fun createMimeMultipartMessage(metadata: MailMetadata, payloadMessage: PayloadMessage): MimeMessage =
-        MimeMessage(session).apply {
-            setFrom(smtp.smtpFromAddress)
-            addRecipients(TO, getRecipients(metadata))
+    private fun createMimeMultipartMessage(metadata: MailMetadata, payloadMessage: PayloadMessage): MimeMessageWrapper =
+        MimeMessageWrapper(
+            MimeMessage(session).apply {
+                setFrom(smtp.smtpFromAddress)
+                addRecipients(TO, getRecipients(metadata))
 
-            setContent(
-                MimeMultipart().apply {
-                    addBodyPart(createContentPart(payloadMessage))
-                    createPayloadParts(payloadMessage).forEach(::addBodyPart)
-                }
-            )
-        }
+                setContent(
+                    MimeMultipart().apply {
+                        addBodyPart(createContentPart(payloadMessage))
+                        createPayloadParts(payloadMessage).forEach(::addBodyPart)
+                    }
+                )
+            },
+            payloadMessage.messageId
+        )
 
     private fun createContentPart(payloadMessage: PayloadMessage): MimeBodyPart =
         MimeBodyPart()
