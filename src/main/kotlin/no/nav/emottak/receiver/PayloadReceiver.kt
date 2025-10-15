@@ -61,11 +61,11 @@ class PayloadReceiver(
         return MailRoutingPayloadMessage(mailMetadata, payloadMessage)
     }
 
-    private suspend fun getPayloads(uuid: Uuid): List<Payload> =
+    private suspend fun getPayloads(referenceId: Uuid): List<Payload> =
         with(ebmsAsyncClient) {
             recover({
-                val payloads = getPayloads(uuid)
-                    .also { log.info("Retrieved ${it.size} payload(s) for reference id: $uuid") }
+                val payloads = getPayloads(referenceId)
+                    .also { log.info("Retrieved ${it.size} payload(s) for reference id: $referenceId") }
 
                 payloads.map {
                     eventLoggingService.registerEvent(
@@ -78,8 +78,8 @@ class PayloadReceiver(
             }) { error: PayloadError ->
                 eventLoggingService.registerEvent(
                     ERROR_WHILE_RECEIVING_PAYLOAD_VIA_HTTP,
-                    Exception(error.toString())
-                    // TODO: Sende uuid her (altså referenceId)?
+                    Exception(error.toString()),
+                    referenceId
                 )
                 emptyList<Payload>().also { log.error("$error") }
             }

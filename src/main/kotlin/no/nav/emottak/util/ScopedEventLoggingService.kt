@@ -45,8 +45,8 @@ fun eventLoggingService(
             eventType,
             payload.contentId,
             payload.referenceId.toString(),
-            "{}"
-            // TODO: Sende inn payload.referenceId her (key fra kafka)?
+            "{}",
+            requestId = payload.referenceId
         )
     }
 
@@ -58,7 +58,8 @@ fun eventLoggingService(
             eventType,
             "",
             messageId.toString(),
-            "{}"
+            "{}",
+            requestId = messageId
         )
     }
 

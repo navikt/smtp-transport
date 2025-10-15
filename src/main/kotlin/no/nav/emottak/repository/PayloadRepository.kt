@@ -39,8 +39,8 @@ class PayloadRepository(
             true -> {
                 eventLoggingService.registerEvent(
                     ERROR_WHILE_READING_PAYLOAD_FROM_DATABASE,
-                    Exception("Payload not found for reference id: $referenceId")
-                    // TODO: Sende inn referenceId her?
+                    Exception("Payload not found for reference id: $referenceId"),
+                    referenceId
                 )
                 raise(PayloadNotFound(referenceId.toString()))
             }
@@ -97,8 +97,8 @@ class PayloadRepository(
             if (error is PSQLException && UNIQUE_VIOLATION.state == error.sqlState) {
                 eventLoggingService.registerEvent(
                     ERROR_WHILE_SAVING_PAYLOAD_INTO_DATABASE,
-                    error
-                    // TODO: Sende inn payload.referenceId her?
+                    error,
+                    payload.referenceId
                 )
 
                 raise(
