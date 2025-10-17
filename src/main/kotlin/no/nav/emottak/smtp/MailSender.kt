@@ -1,7 +1,6 @@
 package no.nav.emottak.smtp
 
 import arrow.core.raise.catch
-import jakarta.activation.DataHandler
 import jakarta.mail.Message.RecipientType.TO
 import jakarta.mail.MessagingException
 import jakarta.mail.Session
@@ -10,7 +9,6 @@ import jakarta.mail.internet.InternetAddress
 import jakarta.mail.internet.MimeBodyPart
 import jakarta.mail.internet.MimeMessage
 import jakarta.mail.internet.MimeMultipart
-import jakarta.mail.util.ByteArrayDataSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import no.nav.emottak.config
@@ -36,36 +34,33 @@ class MailSender(
     suspend fun forwardMessage(emailMsg: EmailMsg) =
         withContext(Dispatchers.IO) {
             catch({
-                Transport.send(
-                    createForwardableMimeMessage(emailMsg)
-                )
+                Transport
+                    .send(
+                        createForwardableMimeMessage(emailMsg),
+                        arrayOf(InternetAddress(config().smtp.smtpT1EmottakAddress))
+                    )
             }) { error: MessagingException ->
                 log.error("Failed to forward message: ${error.localizedMessage}", error)
             }
         }
 
     private fun createForwardableMimeMessage(emailMsg: EmailMsg): MimeMessage {
-        val mimeParts = emailMsg.parts.map { part ->
-            MimeBodyPart().apply {
-                part.headers.forEach { (header, value) ->
-                    setHeader(header, value)
-                }
-                val dataSource = ByteArrayDataSource(part.bytes, contentType)
-                dataHandler = DataHandler(dataSource)
-            }
-        }
-
         return MimeMessage(session).apply {
             emailMsg.headers.forEach { (header, value) ->
                 setHeader(header, value)
             }
             subject = "Forwarded from smtp-transport: ${emailMsg.headers["Subject"] ?: "No Subject"}"
-            setRecipient(TO, InternetAddress(smtp.smtpT1EmottakAddress))
-
             setContent(
                 MimeMultipart().apply {
-                    mimeParts.forEach { part ->
-                        addBodyPart(part)
+                    emailMsg.parts.forEach { part ->
+                        addBodyPart(
+                            MimeBodyPart(part.bytes.inputStream())
+                                .apply {
+                                    part.headers.forEach { (key, value) ->
+                                        addHeader(key, value)
+                                    }
+                                }
+                        )
                     }
                 }
             )
