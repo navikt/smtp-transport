@@ -59,7 +59,7 @@ class MailSender(
             emailMsg.headers.forEach { (header, value) ->
                 setHeader(header, value)
             }
-            setRecipient(TO, InternetAddress(smtp.smtpT1EmottakAddress)) // TODO address
+            setRecipient(TO, InternetAddress(smtp.smtpT1EmottakAddress))
 
             setContent(
                 MimeMultipart().apply {
@@ -68,7 +68,6 @@ class MailSender(
                     }
                 }
             )
-
             saveChanges()
         }
     }
