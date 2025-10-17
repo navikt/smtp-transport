@@ -51,7 +51,7 @@ class MailSender(
             }
             subject = "Forwarded from smtp-transport: ${emailMsg.headers["Subject"] ?: "No Subject"}"
 
-            if(emailMsg.multipart) {
+            if (emailMsg.multipart) {
                 setContent(
                     MimeMultipart().apply {
                         emailMsg.parts.forEach { part ->
