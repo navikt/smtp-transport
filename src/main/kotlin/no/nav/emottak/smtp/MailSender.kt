@@ -50,20 +50,25 @@ class MailSender(
                 setHeader(header, value)
             }
             subject = "Forwarded from smtp-transport: ${emailMsg.headers["Subject"] ?: "No Subject"}"
-            setContent(
-                MimeMultipart().apply {
-                    emailMsg.parts.forEach { part ->
-                        addBodyPart(
-                            MimeBodyPart(part.bytes.inputStream())
-                                .apply {
-                                    part.headers.forEach { (key, value) ->
-                                        addHeader(key, value)
+
+            if(emailMsg.multipart) {
+                setContent(
+                    MimeMultipart().apply {
+                        emailMsg.parts.forEach { part ->
+                            addBodyPart(
+                                MimeBodyPart(part.bytes.inputStream())
+                                    .apply {
+                                        part.headers.forEach { (key, value) ->
+                                            addHeader(key, value)
+                                        }
                                     }
-                                }
-                        )
+                            )
+                        }
                     }
-                }
-            )
+                )
+            } else {
+                setContent(emailMsg.parts.get(0).bytes, emailMsg.headers[CONTENT_TYPE])
+            }
             saveChanges()
         }
     }
