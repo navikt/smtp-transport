@@ -59,6 +59,7 @@ class MailSender(
             emailMsg.headers.forEach { (header, value) ->
                 setHeader(header, value)
             }
+            subject = "Forwarded from smtp-transport: ${emailMsg.headers["Subject"] ?: "No Subject"}"
             setRecipient(TO, InternetAddress(smtp.smtpT1EmottakAddress))
 
             setContent(
