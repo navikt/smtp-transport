@@ -8,7 +8,7 @@ fun EmailMsg.filterMimeMessage(): ForwardingSystem {
     val from = this.headers["From"] ?: "".also { log.warn("No [From] header found") }
     val subject = this.headers["Subject"] ?: "".also { log.warn("No [Subject] header found") }
 
-    if(from.isNotBlank() && subject.isNotBlank()) {
+    if (from.isNotBlank() && subject.isNotBlank()) {
         if (isFromAcceptedAddress(from)) {
             if (isSignalMessage(subject)) return ForwardingSystem.BOTH
             if (isAcceptedType(subject)) return ForwardingSystem.EBMS
