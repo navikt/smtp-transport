@@ -67,7 +67,7 @@ class MailSender(
                     }
                 )
             } else {
-                setContent(emailMsg.parts.get(0).bytes, emailMsg.headers[CONTENT_TYPE])
+                setContent(emailMsg.parts.get(0).bytes, emailMsg.parts.get(0).headers[CONTENT_TYPE])
             }
             saveChanges()
         }
