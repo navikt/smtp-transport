@@ -67,7 +67,11 @@ class MailProcessor(
     private suspend fun processMessage(emailMsg: EmailMsg) {
         val messageId = Uuid.random()
 
-        when (emailMsg.filterMimeMessage()) {
+        when (
+            emailMsg.filterMimeMessage().also {
+                log.info("Sending message to ${it.name}. Sender <${emailMsg.headers["From"]}> and subject <${emailMsg.headers["Subject"]}>")
+            }
+        ) {
             ForwardingSystem.EBMS -> publishToKafka(messageId, emailMsg)
             ForwardingSystem.EMOTTAK -> forwardToT1(emailMsg)
             ForwardingSystem.BOTH -> {
