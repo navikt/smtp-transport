@@ -22,9 +22,12 @@ import no.nav.emottak.model.SignalMessage
 import no.nav.emottak.util.ScopedEventLoggingService
 import no.nav.emottak.utils.kafka.model.EventType.ERROR_WHILE_SENDING_MESSAGE_VIA_SMTP
 import no.nav.emottak.utils.kafka.model.EventType.MESSAGE_SENT_VIA_SMTP
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
 
 private const val CONTENT_TYPE = "application/soap+xml; charset=UTF-8"
 
+@OptIn(ExperimentalEncodingApi::class)
 class MailSender(
     private val session: Session,
     private val eventLoggingService: ScopedEventLoggingService
@@ -56,18 +59,19 @@ class MailSender(
                     MimeMultipart().apply {
                         emailMsg.parts.forEach { part ->
                             addBodyPart(
-                                MimeBodyPart(part.bytes.inputStream())
-                                    .apply {
-                                        part.headers.forEach { (key, value) ->
-                                            addHeader(key, value)
-                                        }
+                                MimeBodyPart(
+                                    Base64.Default.encode(part.bytes).byteInputStream()
+                                ).apply {
+                                    part.headers.forEach { (key, value) ->
+                                        addHeader(key, value)
                                     }
+                                }
                             )
                         }
                     }
                 )
-            } else {
-                setContent(emailMsg.parts.get(0).bytes, emailMsg.parts.get(0).headers[CONTENT_TYPE])
+            } else { // Singlepart
+                setContent(emailMsg.parts.get(0).bytes, emailMsg.parts.get(0).headers["Content-Type"])
             }
             saveChanges()
         }
