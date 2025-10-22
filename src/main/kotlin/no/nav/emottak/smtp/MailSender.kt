@@ -58,21 +58,23 @@ class MailSender(
 
             if (emailMsg.multipart) {
                 setContent(
-                    MimeMultipart().apply {
+                    MimeMultipart("related").apply {
                         emailMsg.parts.forEach { part ->
-                            with(MimeBodyPart()) {
+                            val mimeBodyPart = MimeBodyPart().apply {
                                 part.headers.forEach { (key, value) ->
                                     this.addHeader(key, value)
                                 }
                                 this.setContent(
                                     when (part.headers["Content-Transfer-Encoding"]?.lowercase()) {
-                                        "base64" -> Base64.Mime.encode(part.bytes).byteInputStream()
-                                        else -> part.bytes.inputStream()
+                                        "base64" -> Base64.Mime.encode(part.bytes)
+                                        else -> String(part.bytes)
                                     },
                                     part.headers["Content-Type"]
                                 )
-                                addBodyPart(this)
+                            }.also {
+                                log.debug("Created MimeBodyPart headers: ${it.allHeaders.toList().joinToString(", ") { header -> "${header.name}: ${header.value}" } }")
                             }
+                            addBodyPart(mimeBodyPart)
                         }
                     }
                 )
@@ -81,7 +83,6 @@ class MailSender(
             }
             saveChanges()
         }.also {
-            log.debug("Created forwardable MimeMessage: $it")
             log.debug("Created forwardable MimeMessage headers: ${it.allHeaders.toList().joinToString(", ") { header -> "${header.name}: ${header.value}" } }")
         }
     }
