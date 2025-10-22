@@ -41,7 +41,9 @@ class MailSender(
                     .send(
                         createForwardableMimeMessage(emailMsg),
                         arrayOf(InternetAddress(config().smtp.smtpT1EmottakAddress))
-                    )
+                    ).also {
+                        log.info("Message forwarded to ${config().smtp.smtpT1EmottakAddress}")
+                    }
             }) { error: MessagingException ->
                 log.error("Failed to forward message: ${error.localizedMessage}", error)
             }
@@ -75,9 +77,12 @@ class MailSender(
                     }
                 )
             } else { // Singlepart
-                setContent(emailMsg.parts[0].bytes, emailMsg.parts[0].headers["Content-Type"])
+                setContent(emailMsg.parts[0].bytes, emailMsg.headers["Content-Type"])
             }
             saveChanges()
+        }.also {
+            log.debug("Created forwardable MimeMessage: $it")
+            log.debug("Created forwardable MimeMessage headers: ${it.allHeaders.toList().joinToString(", ") { header -> "${header.name}: ${header.value}" } }")
         }
     }
 
