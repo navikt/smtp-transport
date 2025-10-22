@@ -61,7 +61,9 @@ class MailSender(
                     MimeMultipart("related").apply {
                         emailMsg.parts.forEach { part ->
                             val mimeBodyPart = MimeBodyPart().apply {
-                                part.headers.forEach { (key, value) ->
+                                part.headers.also {
+                                    log.debug("Creating MimeBodyPart with headers: ${it.entries.joinToString(", ") { header -> "${header.key}: ${header.value}" } }")
+                                }.forEach { (key, value) ->
                                     this.addHeader(key, value)
                                 }
                                 this.setContent(
@@ -79,7 +81,13 @@ class MailSender(
                     }
                 )
             } else { // Singlepart
-                setContent(emailMsg.parts[0].bytes, emailMsg.headers["Content-Type"])
+                setContent(
+                    when (emailMsg.headers["Content-Transfer-Encoding"]?.lowercase()) {
+                        "base64" -> Base64.Mime.encode(emailMsg.parts[0].bytes)
+                        else -> String(emailMsg.parts[0].bytes)
+                    },
+                    emailMsg.headers["Content-Type"]
+                )
             }
             saveChanges()
         }.also {
