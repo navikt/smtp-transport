@@ -67,7 +67,7 @@ class MailSender(
                                     this.setHeader(key, value)
                                 }
                                 this.setContent(
-                                    String(part.bytes),
+                                    part.bytes,
                                     part.headers["Content-Type"]
                                 )
                                 this.setHeader("Content-Transfer-Encoding", contentTransferEncoding ?: "7bit")
@@ -80,9 +80,10 @@ class MailSender(
                 )
             } else { // Singlepart
                 setContent(
-                    String(emailMsg.parts[0].bytes),
+                    emailMsg.parts[0].bytes,
                     emailMsg.headers["Content-Type"]
                 )
+                setHeader("Content-Transfer-Encoding", emailMsg.headers["Content-Transfer-Encoding"] ?: "7bit")
             }
             saveChanges()
         }.also {
@@ -156,6 +157,7 @@ class MailSender(
             MimeBodyPart().apply {
                 setContent(String(payload.content), payload.contentType)
                 contentID = payload.contentId
+                setHeader("Content-Transfer-Encoding", "base64")
             }
         }
 
