@@ -54,7 +54,7 @@ class MailSender(
             emailMsg.headers.forEach { (header, value) ->
                 setHeader(header, value)
             }
-            subject = "Forwarded from smtp-transport: ${emailMsg.headers["Subject"] ?: "No Subject"}"
+            // subject = "Forwarded from smtp-transport: ${emailMsg.headers["Subject"] ?: "No Subject"}"
 
             if (emailMsg.multipart) {
                 setContent(
