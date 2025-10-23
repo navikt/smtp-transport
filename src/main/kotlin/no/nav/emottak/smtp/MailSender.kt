@@ -48,7 +48,7 @@ class MailSender(
             }
         }
 
-    private fun createForwardableMimeMessage(emailMsg: EmailMsg): MimeMessage {
+    fun createForwardableMimeMessage(emailMsg: EmailMsg): MimeMessage {
         return MimeMessage(session).apply {
             emailMsg.headers.forEach { (header, value) ->
                 setHeader(header, value)

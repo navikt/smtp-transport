@@ -6,13 +6,16 @@ import com.icegreen.greenmail.util.ServerSetupTest.SMTP_POP3
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.equals.shouldBeEqual
 import io.kotest.matchers.shouldBe
+import jakarta.mail.Transport
+import jakarta.mail.internet.InternetAddress
 import jakarta.mail.internet.MimeMessage
+import java.io.ByteArrayOutputStream
+import java.nio.file.Path.of
+import kotlin.uuid.Uuid
 import no.nav.emottak.config
 import no.nav.emottak.session
 import no.nav.emottak.store
 import no.nav.emottak.util.fakeEventLoggingService
-import java.nio.file.Path.of
-import kotlin.uuid.Uuid
 
 private const val REQUEST = "mails/test@test.test/INBOX/EgenAndelForespoersel.eml"
 private const val EXAMPLE = "mails/test@test.test/INBOX/example.eml"
@@ -40,6 +43,44 @@ class MailReaderSpec : StringSpec({
     afterEach {
         greenMail.purgeEmailFromAllMailboxes()
         greenMail.stop()
+    }
+
+
+    "MailReader forwards inbox" {
+        resourceScope {
+            val store = store(config.smtp)
+            val session = session(config.smtp)
+            val eventLoggingService = fakeEventLoggingService()
+
+            val reader = MailReader(config.mail, store, false, eventLoggingService)
+            val messages = reader.readMailBatches(3)
+
+            greenMail.receivedMessages.size shouldBe 3
+
+            val multipartMessages = messages.filter { it.multipart }.sortedBy { it.headers.size }
+            multipartMessages.size shouldBe 2
+
+            val mailSender = MailSender(session, fakeEventLoggingService())
+            val forwardableMimeMessage = mailSender.createForwardableMimeMessage(messages.get(0))
+            val bos = ByteArrayOutputStream()
+            forwardableMimeMessage.writeTo(bos)
+            val forwardableMsg = String(bos.toByteArray())
+            println(forwardableMsg)
+            Transport.send(forwardableMimeMessage,
+                arrayOf(InternetAddress("test@test.test")), // pop3://test@test.test:changeit@localhost
+                "test@test.test",
+                "changeit")
+
+            val received = greenMail.receivedMessages
+            received.size shouldBe 4
+
+            bos.reset()
+            received.get(3).writeTo(bos)
+            val forwardedReceived = String(bos.toByteArray())
+            println(bos.toByteArray())
+
+            // TODO check if valid mimemessage
+        }
     }
 
     "MailReader reads inbox with messages and verifies content" {
