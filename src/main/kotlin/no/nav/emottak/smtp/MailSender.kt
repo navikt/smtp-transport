@@ -22,7 +22,6 @@ import no.nav.emottak.model.SignalMessage
 import no.nav.emottak.util.ScopedEventLoggingService
 import no.nav.emottak.utils.kafka.model.EventType.ERROR_WHILE_SENDING_MESSAGE_VIA_SMTP
 import no.nav.emottak.utils.kafka.model.EventType.MESSAGE_SENT_VIA_SMTP
-import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 
 private const val CONTENT_TYPE = "application/soap+xml; charset=UTF-8"
@@ -68,10 +67,7 @@ class MailSender(
                                     this.setHeader(key, value)
                                 }
                                 this.setContent(
-                                    when (contentTransferEncoding) {
-                                        "base64" -> Base64.Mime.encode(part.bytes)
-                                        else -> String(part.bytes)
-                                    },
+                                    String(part.bytes),
                                     part.headers["Content-Type"]
                                 )
                                 this.setHeader("Content-Transfer-Encoding", contentTransferEncoding ?: "7bit")
@@ -84,10 +80,7 @@ class MailSender(
                 )
             } else { // Singlepart
                 setContent(
-                    when (emailMsg.headers["Content-Transfer-Encoding"]?.lowercase()) {
-                        "base64" -> Base64.Mime.encode(emailMsg.parts[0].bytes)
-                        else -> String(emailMsg.parts[0].bytes)
-                    },
+                    String(emailMsg.parts[0].bytes),
                     emailMsg.headers["Content-Type"]
                 )
             }
