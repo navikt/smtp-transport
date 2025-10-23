@@ -9,13 +9,13 @@ import io.kotest.matchers.shouldBe
 import jakarta.mail.Transport
 import jakarta.mail.internet.InternetAddress
 import jakarta.mail.internet.MimeMessage
-import java.io.ByteArrayOutputStream
-import java.nio.file.Path.of
-import kotlin.uuid.Uuid
 import no.nav.emottak.config
 import no.nav.emottak.session
 import no.nav.emottak.store
 import no.nav.emottak.util.fakeEventLoggingService
+import java.io.ByteArrayOutputStream
+import java.nio.file.Path.of
+import kotlin.uuid.Uuid
 
 private const val REQUEST = "mails/test@test.test/INBOX/EgenAndelForespoersel.eml"
 private const val EXAMPLE = "mails/test@test.test/INBOX/example.eml"
@@ -45,7 +45,6 @@ class MailReaderSpec : StringSpec({
         greenMail.stop()
     }
 
-
     "MailReader forwards inbox" {
         resourceScope {
             val store = store(config.smtp)
@@ -66,10 +65,12 @@ class MailReaderSpec : StringSpec({
             forwardableMimeMessage.writeTo(bos)
             val forwardableMsg = String(bos.toByteArray())
             println(forwardableMsg)
-            Transport.send(forwardableMimeMessage,
+            Transport.send(
+                forwardableMimeMessage,
                 arrayOf(InternetAddress("test@test.test")), // pop3://test@test.test:changeit@localhost
                 "test@test.test",
-                "changeit")
+                "changeit"
+            )
 
             val received = greenMail.receivedMessages
             received.size shouldBe 4
