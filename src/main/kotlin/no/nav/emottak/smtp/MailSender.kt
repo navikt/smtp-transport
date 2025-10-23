@@ -1,6 +1,7 @@
 package no.nav.emottak.smtp
 
 import arrow.core.raise.catch
+import jakarta.activation.DataHandler
 import jakarta.mail.Message.RecipientType.TO
 import jakarta.mail.MessagingException
 import jakarta.mail.Session
@@ -9,6 +10,7 @@ import jakarta.mail.internet.InternetAddress
 import jakarta.mail.internet.MimeBodyPart
 import jakarta.mail.internet.MimeMessage
 import jakarta.mail.internet.MimeMultipart
+import jakarta.mail.util.ByteArrayDataSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import no.nav.emottak.config
@@ -22,6 +24,8 @@ import no.nav.emottak.model.SignalMessage
 import no.nav.emottak.util.ScopedEventLoggingService
 import no.nav.emottak.utils.kafka.model.EventType.ERROR_WHILE_SENDING_MESSAGE_VIA_SMTP
 import no.nav.emottak.utils.kafka.model.EventType.MESSAGE_SENT_VIA_SMTP
+import org.bouncycastle.jce.provider.BouncyCastleProvider
+import java.security.Security
 import kotlin.io.encoding.ExperimentalEncodingApi
 
 private const val CONTENT_TYPE = "application/soap+xml; charset=UTF-8"
@@ -32,6 +36,10 @@ class MailSender(
     private val eventLoggingService: ScopedEventLoggingService
 ) {
     private val smtp = config().smtp
+
+    init {
+        Security.addProvider(BouncyCastleProvider())
+    }
 
     suspend fun forwardMessage(emailMsg: EmailMsg) =
         withContext(Dispatchers.IO) {
@@ -66,9 +74,10 @@ class MailSender(
                                 }.forEach { (key, value) ->
                                     this.setHeader(key, value)
                                 }
-                                this.setContent(
-                                    part.bytes,
-                                    part.headers["Content-Type"]
+                                this.setDataHandler(
+                                    DataHandler(
+                                        ByteArrayDataSource(part.bytes, part.headers["Content-Type"])
+                                    )
                                 )
                                 this.setHeader("Content-Transfer-Encoding", contentTransferEncoding ?: "7bit")
                             }.also {

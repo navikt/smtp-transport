@@ -67,6 +67,7 @@ dependencies {
     implementation(libs.arrow.suspendapp)
     implementation(libs.arrow.suspendapp.ktor)
     implementation(libs.bundles.jakarta.mail)
+    implementation(libs.bundles.bouncycastle.mail)
     implementation(libs.bundles.logging)
     implementation(libs.bundles.prometheus)
     implementation(libs.flyway.core)
