@@ -149,7 +149,7 @@ class MailSender(
                 addRecipients(TO, getRecipients(metadata))
 
                 setContent(
-                    MimeMultipart().apply {
+                    MimeMultipart("related").apply {
                         addBodyPart(createContentPart(payloadMessage))
                         createPayloadParts(payloadMessage).forEach(::addBodyPart)
                     }
@@ -160,12 +160,23 @@ class MailSender(
 
     private fun createContentPart(payloadMessage: PayloadMessage): MimeBodyPart =
         MimeBodyPart()
-            .apply { setContent(payloadMessage.envelope, CONTENT_TYPE) }
+            .apply {
+                setDataHandler(
+                    DataHandler(
+                        ByteArrayDataSource(payloadMessage.envelope, CONTENT_TYPE)
+                    )
+                )
+                setHeader("Content-Transfer-Encoding", "base64")
+            }
 
     private fun createPayloadParts(payloadMessage: PayloadMessage): List<MimeBodyPart> =
         payloadMessage.payloads.map { payload ->
             MimeBodyPart().apply {
-                setContent(String(payload.content), payload.contentType)
+                setDataHandler(
+                    DataHandler(
+                        ByteArrayDataSource(payload.content, payload.contentType)
+                    )
+                )
                 contentID = payload.contentId
                 setHeader("Content-Transfer-Encoding", "base64")
             }
