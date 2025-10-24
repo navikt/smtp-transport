@@ -44,7 +44,11 @@ class MailSender(
             catch({
                 Transport
                     .send(
-                        MimeMessage(mimeMessage),
+                        mimeMessage,
+//                            .apply {
+//                            if(!folder.isOpen) folder.open(READ_WRITE)
+//                            //if(session.store.connect())
+//                                }
                         arrayOf(address)
                     ).also {
                         log.info("Message forwarded to ${config().smtp.smtpT1EmottakAddress}")

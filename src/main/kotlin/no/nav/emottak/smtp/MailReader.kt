@@ -153,7 +153,7 @@ class MailReader(
                 .mapValues { it.value.joinToString(",") },
             bodyparts,
             wrapper.requestId,
-            wrapper.mimeMessage
+            MimeMessage(wrapper.mimeMessage)
         )
     }
 
