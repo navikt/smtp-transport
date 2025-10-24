@@ -88,9 +88,10 @@ class MailSender(
                     }
                 )
             } else { // Singlepart
-                setContent(
-                    emailMsg.parts[0].bytes,
-                    emailMsg.headers["Content-Type"]
+                setDataHandler(
+                    DataHandler(
+                        ByteArrayDataSource(emailMsg.parts[0].bytes, emailMsg.headers["Content-Type"])
+                    )
                 )
                 setHeader("Content-Transfer-Encoding", emailMsg.headers["Content-Transfer-Encoding"] ?: "7bit")
             }
