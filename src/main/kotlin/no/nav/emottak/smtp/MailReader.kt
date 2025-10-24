@@ -22,7 +22,8 @@ data class EmailMsg(
     val multipart: Boolean,
     val headers: Map<String, String>,
     val parts: List<Part>,
-    val requestId: Uuid
+    val requestId: Uuid,
+    val originalMimeMessage: MimeMessage
 )
 
 data class Part(
@@ -151,7 +152,8 @@ class MailReader(
                 .groupBy({ it.name }, { it.value })
                 .mapValues { it.value.joinToString(",") },
             bodyparts,
-            wrapper.requestId
+            wrapper.requestId,
+            wrapper.mimeMessage
         )
     }
 

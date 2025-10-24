@@ -39,6 +39,21 @@ class MailSender(
         Security.addProvider(BouncyCastleProvider())
     }
 
+    suspend fun rawForward(mimeMessage: MimeMessage, address: InternetAddress = InternetAddress(config().smtp.smtpT1EmottakAddress)) =
+        withContext(Dispatchers.IO) {
+            catch({
+                Transport
+                    .send(
+                        mimeMessage,
+                        arrayOf(address)
+                    ).also {
+                        log.info("Message forwarded to ${config().smtp.smtpT1EmottakAddress}")
+                    }
+            }) { error: MessagingException ->
+                log.error("Failed to forward message: ${error.localizedMessage}", error)
+            }
+        }
+
     suspend fun forwardMessage(emailMsg: EmailMsg) =
         withContext(Dispatchers.IO) {
             catch({

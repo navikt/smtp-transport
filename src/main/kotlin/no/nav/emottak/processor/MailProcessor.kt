@@ -79,7 +79,8 @@ class MailProcessor(
     }
 
     private suspend fun forwardToT1(emailMsg: EmailMsg) {
-        mailSender.forwardMessage(emailMsg)
+        // mailSender.forwardMessage(emailMsg)
+        mailSender.rawForward(emailMsg.originalMimeMessage)
     }
 
     private suspend fun publishToKafka(emailMsg: EmailMsg) {
