@@ -26,11 +26,9 @@ import no.nav.emottak.utils.kafka.model.EventType.ERROR_WHILE_SENDING_MESSAGE_VI
 import no.nav.emottak.utils.kafka.model.EventType.MESSAGE_SENT_VIA_SMTP
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import java.security.Security
-import kotlin.io.encoding.ExperimentalEncodingApi
 
 private const val CONTENT_TYPE = "application/soap+xml; charset=UTF-8"
 
-@OptIn(ExperimentalEncodingApi::class)
 class MailSender(
     private val session: Session,
     private val eventLoggingService: ScopedEventLoggingService
