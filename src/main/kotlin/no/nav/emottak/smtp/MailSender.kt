@@ -44,7 +44,7 @@ class MailSender(
             catch({
                 Transport
                     .send(
-                        mimeMessage,
+                        MimeMessage(mimeMessage),
                         arrayOf(address)
                     ).also {
                         log.info("Message forwarded to ${config().smtp.smtpT1EmottakAddress}")
