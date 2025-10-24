@@ -34,9 +34,7 @@ class MailReaderSpec : StringSpec({
     beforeEach {
         val smtp = config.smtp
         greenMail.setUser(smtp.username.value, smtp.username.value, smtp.password.value)
-
         greenMail.start()
-
         greenMail.loadEmails(of(classLoader.getResource("mails")!!.toURI()))
     }
 

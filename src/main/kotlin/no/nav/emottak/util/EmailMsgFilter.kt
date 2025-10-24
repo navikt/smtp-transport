@@ -2,11 +2,10 @@ package no.nav.emottak.util
 
 import no.nav.emottak.config
 import no.nav.emottak.log
-import no.nav.emottak.smtp.EmailMsg
 
-fun EmailMsg.filterMimeMessage(): ForwardingSystem {
-    val from = this.headers["From"]?.extractEmailAddressOnly() ?: "".also { log.warn("No [From] header found") }
-    val subject = this.headers["Subject"] ?: "".also { log.warn("No [Subject] header found") }
+fun Map<String, String>.filterMimeMessage(): ForwardingSystem {
+    val from = this["From"]?.extractEmailAddressOnly() ?: "".also { log.warn("No [From] header found") }
+    val subject = this["Subject"] ?: "".also { log.warn("No [Subject] header found") }
 
     if (from.isNotBlank() && subject.isNotBlank()) {
         if (isFromAcceptedAddress(from)) {

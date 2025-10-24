@@ -22,7 +22,6 @@ import no.nav.emottak.smtp.MailReader
 import no.nav.emottak.smtp.MailSender
 import no.nav.emottak.util.ForwardingSystem
 import no.nav.emottak.util.ScopedEventLoggingService
-import no.nav.emottak.util.filterMimeMessage
 import no.nav.emottak.util.toPayloadMessage
 import no.nav.emottak.util.toSignalMessage
 import org.apache.kafka.clients.producer.RecordMetadata
@@ -65,7 +64,7 @@ class MailProcessor(
 
     private suspend fun processMessage(emailMsg: EmailMsg) {
         when (
-            emailMsg.filterMimeMessage().also {
+            emailMsg.forwardableMimeMessage.forwardingSystem.also {
                 log.info("Sending message to ${it.name}. Sender <${emailMsg.headers["From"]}> and subject <${emailMsg.headers["Subject"]}>")
             }
         ) {
@@ -80,7 +79,7 @@ class MailProcessor(
 
     private suspend fun forwardToT1(emailMsg: EmailMsg) {
         // mailSender.forwardMessage(emailMsg)
-        mailSender.rawForward(emailMsg.originalMimeMessage)
+        mailSender.rawForward(emailMsg.forwardableMimeMessage.forwardableMimeMessage!!)
     }
 
     private suspend fun publishToKafka(emailMsg: EmailMsg) {
