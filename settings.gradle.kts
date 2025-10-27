@@ -15,7 +15,7 @@ dependencyResolutionManagement {
             version("flyway", "9.16.3")
             version("hikari", "5.0.1")
             version("suspendapp", "0.5.0")
-            version("ktor", "3.3.1")
+            version("ktor", "3.0.3")
             version("token-validation-ktor", "5.0.15")
             version("jakarta-mail", "2.1.2")
             version("eclipse-angus", "2.0.2")
