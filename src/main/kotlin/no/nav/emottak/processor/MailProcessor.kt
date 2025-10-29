@@ -50,13 +50,13 @@ class MailProcessor(
             )
         )
         val messageCount = mailReader.count()
-        val maxBatchSize = max(10, messageCount)
+        val batchSize = max(config().mail.inboxBatchReadLimit, messageCount)
 
         if (messageCount > 0) {
-            log.info("Starting to read $messageCount messages from inbox")
-            mailReader.readMailBatches(maxBatchSize)
+            log.info("Starting to read $messageCount messages from inbox (limit $batchSize)")
+            mailReader.readMailBatches(batchSize)
                 .asFlow()
-                .also { log.info("Finished reading all messages from inbox") }
+                .also { log.info("Finished reading $batchSize messages from inbox") }
         } else {
             log.info("No messages found in inbox")
             emptyFlow()
@@ -79,7 +79,6 @@ class MailProcessor(
     }
 
     private suspend fun forwardToT1(emailMsg: EmailMsg) {
-        // mailSender.forwardMessage(emailMsg)
         mailSender.rawForward(emailMsg.forwardableMimeMessage.forwardableMimeMessage!!)
     }
 

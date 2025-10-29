@@ -28,7 +28,10 @@ fun Config.withKafka(update: Kafka.() -> Kafka) = copy(kafka = kafka.update())
 
 data class Job(val fixedInterval: Duration)
 
-data class Mail(val inboxLimit: Int)
+data class Mail(
+    val inboxLimit: Int,
+    val inboxBatchReadLimit: Int
+)
 
 data class EbmsAsync(val baseUrl: String, val apiUrl: String)
 
