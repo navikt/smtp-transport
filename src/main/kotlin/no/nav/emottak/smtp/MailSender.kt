@@ -22,6 +22,7 @@ import no.nav.emottak.model.MessageType.SIGNAL
 import no.nav.emottak.model.PayloadMessage
 import no.nav.emottak.model.SignalMessage
 import no.nav.emottak.util.ScopedEventLoggingService
+import no.nav.emottak.util.addEbXMLMimeHeaders
 import no.nav.emottak.utils.kafka.model.EventType.ERROR_WHILE_SENDING_MESSAGE_VIA_SMTP
 import no.nav.emottak.utils.kafka.model.EventType.MESSAGE_SENT_VIA_SMTP
 import org.bouncycastle.jce.provider.BouncyCastleProvider
@@ -152,6 +153,7 @@ class MailSender(
     private fun createMimeMessage(metadata: MailMetadata, signalMessage: SignalMessage): MimeMessageWrapper =
         MimeMessageWrapper(
             MimeMessage(session).apply {
+                addEbXMLMimeHeaders()
                 setFrom(smtp.smtpFromAddress)
                 addRecipients(TO, getRecipients(metadata))
                 setContent(signalMessage.envelope, CONTENT_TYPE)
@@ -162,6 +164,7 @@ class MailSender(
     private fun createMimeMultipartMessage(metadata: MailMetadata, payloadMessage: PayloadMessage): MimeMessageWrapper =
         MimeMessageWrapper(
             MimeMessage(session).apply {
+                addEbXMLMimeHeaders()
                 setFrom(smtp.smtpFromAddress)
                 addRecipients(TO, getRecipients(metadata))
 
