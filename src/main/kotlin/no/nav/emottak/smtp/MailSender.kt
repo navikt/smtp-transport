@@ -204,7 +204,7 @@ class MailSender(
             smtp
                 .smtpRedirectAddress
                 .takeIf { it.isNotBlank() } ?: metadata.addresses
-        ).also {
+            ).also {
             log.debug("Sending message to <$it>")
         }
 }
