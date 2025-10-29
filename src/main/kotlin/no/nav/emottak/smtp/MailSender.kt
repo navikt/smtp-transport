@@ -200,7 +200,11 @@ class MailSender(
         }
 
     private fun getRecipients(metadata: MailMetadata): String =
-        smtp
-            .smtpRedirectAddress
-            .takeIf { it.isNotBlank() } ?: metadata.addresses
+        (
+            smtp
+                .smtpRedirectAddress
+                .takeIf { it.isNotBlank() } ?: metadata.addresses
+        ).also {
+            log.debug("Sending message to <$it>")
+        }
 }
