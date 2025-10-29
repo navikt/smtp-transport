@@ -6,8 +6,6 @@ import com.icegreen.greenmail.util.ServerSetupTest.SMTP_POP3
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.equals.shouldBeEqual
 import io.kotest.matchers.shouldBe
-import jakarta.mail.Transport
-import jakarta.mail.internet.InternetAddress
 import jakarta.mail.internet.MimeMessage
 import no.nav.emottak.config
 import no.nav.emottak.session
@@ -54,35 +52,13 @@ class MailReaderSpec : StringSpec({
 
             greenMail.receivedMessages.size shouldBe 3
 
-            val multipartMessages = messages.filter { it.multipart }.sortedBy { it.headers.size }
-            multipartMessages.size shouldBe 2
-
             val mailSender = MailSender(session, fakeEventLoggingService())
-            val forwardableMimeMessage = mailSender.createForwardableMimeMessage(messages.get(0))
+
+            mailSender.rawForward(greenMail.receivedMessages[0])
+
+            greenMail.receivedMessages.size shouldBe 4
             val bos = ByteArrayOutputStream()
-            forwardableMimeMessage.writeTo(bos)
-            val forwardableMsg = String(bos.toByteArray())
-            println(forwardableMsg)
-            Transport.send(
-                forwardableMimeMessage,
-                arrayOf(InternetAddress("test@test.test")), // pop3://test@test.test:changeit@localhost
-                "test@test.test",
-                "changeit"
-            )
-
-            val received = greenMail.receivedMessages
-            received.size shouldBe 4
-
-            received.get(3).writeTo(bos)
-            val forwardedReceived = String(bos.toByteArray())
-            println("Forwarded message:")
-            println(String(bos.toByteArray()))
-
-            mailSender.rawForward(received.get(0))
-
-            greenMail.receivedMessages.size shouldBe 5
-            bos.reset()
-            greenMail.receivedMessages.get(4).writeTo(bos)
+            greenMail.receivedMessages[3].writeTo(bos)
             println("RAW Forwarded Message:")
             println(String(bos.toByteArray()))
             // TODO check if valid mimemessage

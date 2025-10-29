@@ -25,8 +25,8 @@ fun EmailMsg.toPayloadMessage(messageId: Uuid): PayloadMessage = PayloadMessage(
 )
 
 fun MimeMessage.addEbXMLMimeHeaders() {
-    this.setHeader(SOAP_ACTION, "ebXML")
-    this.setHeader(X_MAILER, "NAV EBMS")
+    setHeader(SOAP_ACTION, "\"ebXML\"")
+    setHeader(X_MAILER, "NAV EBMS")
 }
 
 private fun EmailMsg.getEnvelope() = parts

@@ -20,7 +20,7 @@ private fun String.extractEmailAddressOnly() = if (this.contains("<")) this.subs
 
 private fun isAcceptedType(subject: String) = config().ebmsFilter.ebmsMessageTypeSubjects.contains(subject.lowercase())
 private fun isSignalMessage(subject: String) = config().ebmsFilter.signalMessageTypeSubjects.contains(subject.lowercase())
-private fun isFromAcceptedAddress(from: String) = config().ebmsFilter.ebmsSenderAddresses.contains(from.lowercase())
+private fun isFromAcceptedAddress(from: String) = config().ebmsFilter.senderAddresses.contains(from.lowercase())
 
 enum class ForwardingSystem {
     EBMS, EMOTTAK, BOTH

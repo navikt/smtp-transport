@@ -46,10 +46,6 @@ class MailSender(
                 Transport
                     .send(
                         mimeMessage,
-//                            .apply {
-//                            if(!folder.isOpen) folder.open(READ_WRITE)
-//                            //if(session.store.connect())
-//                                }
                         arrayOf(address)
                     ).also {
                         log.info("Message forwarded to ${config().smtp.smtpT1EmottakAddress}")
@@ -58,66 +54,6 @@ class MailSender(
                 log.error("Failed to forward message: ${error.localizedMessage}", error)
             }
         }
-
-    suspend fun forwardMessage(emailMsg: EmailMsg) =
-        withContext(Dispatchers.IO) {
-            catch({
-                Transport
-                    .send(
-                        createForwardableMimeMessage(emailMsg),
-                        arrayOf(InternetAddress(config().smtp.smtpT1EmottakAddress))
-                    ).also {
-                        log.info("Message forwarded to ${config().smtp.smtpT1EmottakAddress}")
-                    }
-            }) { error: MessagingException ->
-                log.error("Failed to forward message: ${error.localizedMessage}", error)
-            }
-        }
-
-    fun createForwardableMimeMessage(emailMsg: EmailMsg): MimeMessage {
-        return MimeMessage(session).apply {
-            emailMsg.headers.forEach { (header, value) ->
-                setHeader(header, value)
-            }
-            // subject = "Forwarded from smtp-transport: ${emailMsg.headers["Subject"] ?: "No Subject"}"
-
-            if (emailMsg.multipart) {
-                setContent(
-                    MimeMultipart("related").apply {
-                        emailMsg.parts.forEach { part ->
-                            val contentTransferEncoding = part.headers["Content-Transfer-Encoding"]?.lowercase()
-                            val mimeBodyPart = MimeBodyPart().apply {
-                                part.headers.also {
-                                    log.debug("Creating MimeBodyPart with headers: ${it.entries.joinToString(", ") { header -> "${header.key}: ${header.value}" } }")
-                                }.forEach { (key, value) ->
-                                    this.setHeader(key, value)
-                                }
-                                this.setDataHandler(
-                                    DataHandler(
-                                        ByteArrayDataSource(part.bytes, part.headers["Content-Type"])
-                                    )
-                                )
-                                this.setHeader("Content-Transfer-Encoding", contentTransferEncoding ?: "7bit")
-                            }.also {
-                                log.debug("Created MimeBodyPart headers: ${it.allHeaders.toList().joinToString(", ") { header -> "${header.name}: ${header.value}" } }")
-                            }
-                            addBodyPart(mimeBodyPart)
-                        }
-                    }
-                )
-            } else { // Singlepart
-                setDataHandler(
-                    DataHandler(
-                        ByteArrayDataSource(emailMsg.parts[0].bytes, emailMsg.headers["Content-Type"])
-                    )
-                )
-                setHeader("Content-Transfer-Encoding", emailMsg.headers["Content-Transfer-Encoding"] ?: "7bit")
-            }
-            saveChanges()
-        }.also {
-            log.debug("Created forwardable MimeMessage headers: ${it.allHeaders.toList().joinToString(", ") { header -> "${header.name}: ${header.value}" } }")
-        }
-    }
 
     suspend fun sendSignalMessage(metadata: MailMetadata, signalMessage: SignalMessage) =
         sendMessage(
@@ -207,7 +143,10 @@ class MailSender(
             smtp
                 .smtpRedirectAddress
                 .takeIf { it.isNotBlank() } ?: metadata.addresses
-            ).also {
-            log.debug("Sending message to <$it> in place of <${metadata.addresses}>")
-        }
+            )
+            .apply {
+                this.replace("mailto://", "")
+            }.also {
+                log.debug("Sending message to <$it> in place of <${metadata.addresses}>")
+            }
 }

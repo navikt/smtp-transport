@@ -6,6 +6,7 @@
  * Detailed information about configuring a multi-project build in Gradle can be found
  * in the user manual at https://docs.gradle.org/8.1.1/userguide/multi_project_builds.html
  */
+rootProject.name = "smtp-transport"
 
 dependencyResolutionManagement {
 
@@ -146,5 +147,3 @@ dependencyResolutionManagement {
         }
     }
 }
-
-rootProject.name = "smtp-transport"
