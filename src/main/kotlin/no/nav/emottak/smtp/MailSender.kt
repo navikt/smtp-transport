@@ -144,9 +144,8 @@ class MailSender(
                 .smtpRedirectAddress
                 .takeIf { it.isNotBlank() } ?: metadata.addresses
             )
-            .apply {
-                this.replace("mailto://", "")
-            }.also {
+            .replace("mailto://", "")
+            .also {
                 log.debug("Sending message to <$it> in place of <${metadata.addresses}>")
             }
 }
