@@ -34,9 +34,7 @@ class MailReaderSpec : StringSpec({
     beforeEach {
         val smtp = config.smtp
         greenMail.setUser(smtp.username.value, smtp.username.value, smtp.password.value)
-
         greenMail.start()
-
         greenMail.loadEmails(of(classLoader.getResource("mails")!!.toURI()))
     }
 
@@ -75,11 +73,18 @@ class MailReaderSpec : StringSpec({
             val received = greenMail.receivedMessages
             received.size shouldBe 4
 
-            bos.reset()
             received.get(3).writeTo(bos)
             val forwardedReceived = String(bos.toByteArray())
-            println(bos.toByteArray())
+            println("Forwarded message:")
+            println(String(bos.toByteArray()))
 
+            mailSender.rawForward(received.get(0))
+
+            greenMail.receivedMessages.size shouldBe 5
+            bos.reset()
+            greenMail.receivedMessages.get(4).writeTo(bos)
+            println("RAW Forwarded Message:")
+            println(String(bos.toByteArray()))
             // TODO check if valid mimemessage
         }
     }
