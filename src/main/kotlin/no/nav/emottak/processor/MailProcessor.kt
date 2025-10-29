@@ -25,7 +25,7 @@ import no.nav.emottak.util.ScopedEventLoggingService
 import no.nav.emottak.util.toPayloadMessage
 import no.nav.emottak.util.toSignalMessage
 import org.apache.kafka.clients.producer.RecordMetadata
-import kotlin.math.max
+import kotlin.math.min
 
 class MailProcessor(
     private val store: Store,
@@ -50,13 +50,13 @@ class MailProcessor(
             )
         )
         val messageCount = mailReader.count()
-        val batchSize = max(config().mail.inboxBatchReadLimit, messageCount)
+        val batchSize = min(config().mail.inboxBatchReadLimit, messageCount)
 
         if (messageCount > 0) {
-            log.info("Starting to read $messageCount messages from inbox (limit $batchSize)")
+            log.info("Starting to read $batchSize of $messageCount messages from inbox")
             mailReader.readMailBatches(batchSize)
                 .asFlow()
-                .also { log.info("Finished reading $batchSize messages from inbox") }
+                .also { log.info("Finished reading $batchSize of $messageCount messages from inbox") }
         } else {
             log.info("No messages found in inbox")
             emptyFlow()
