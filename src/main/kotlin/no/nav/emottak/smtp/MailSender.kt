@@ -6,6 +6,7 @@ import jakarta.mail.Message.RecipientType.TO
 import jakarta.mail.MessagingException
 import jakarta.mail.Session
 import jakarta.mail.Transport
+import jakarta.mail.internet.ContentType
 import jakarta.mail.internet.InternetAddress
 import jakarta.mail.internet.MimeBodyPart
 import jakarta.mail.internet.MimeMessage
@@ -27,8 +28,9 @@ import no.nav.emottak.utils.kafka.model.EventType.ERROR_WHILE_SENDING_MESSAGE_VI
 import no.nav.emottak.utils.kafka.model.EventType.MESSAGE_SENT_VIA_SMTP
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import java.security.Security
+import kotlin.uuid.Uuid
 
-private const val CONTENT_TYPE = "application/soap+xml; charset=UTF-8"
+private const val CONTENT_TYPE = "text/xml; charset=UTF-8"
 
 class MailSender(
     private val session: Session,
@@ -103,39 +105,49 @@ class MailSender(
                 addEbXMLMimeHeaders()
                 setFrom(smtp.smtpFromAddress)
                 addRecipients(TO, getRecipients(metadata))
+                val mainContentId = Uuid.random().toString()
 
                 setContent(
                     MimeMultipart("related").apply {
-                        addBodyPart(createContentPart(payloadMessage))
+                        addBodyPart(
+                            createMimeBodyPart(
+                                mainContentId,
+                                CONTENT_TYPE,
+                                payloadMessage.envelope
+                            )
+                        )
                         createPayloadParts(payloadMessage).forEach(::addBodyPart)
+                        setHeader(
+                            "Content-Type",
+                            ContentType(contentType).apply {
+                                setParameter("type", "\"$CONTENT_TYPE\"")
+                                setParameter("start", "\"<$mainContentId>\"")
+                            }.toString()
+                        )
                     }
                 )
             },
             payloadMessage.messageId
         )
 
-    private fun createContentPart(payloadMessage: PayloadMessage): MimeBodyPart =
-        MimeBodyPart()
-            .apply {
-                setDataHandler(
-                    DataHandler(
-                        ByteArrayDataSource(payloadMessage.envelope, CONTENT_TYPE)
-                    )
-                )
-                setHeader("Content-Transfer-Encoding", "base64")
-            }
-
     private fun createPayloadParts(payloadMessage: PayloadMessage): List<MimeBodyPart> =
         payloadMessage.payloads.map { payload ->
-            MimeBodyPart().apply {
-                setDataHandler(
-                    DataHandler(
-                        ByteArrayDataSource(payload.content, payload.contentType)
-                    )
+            createMimeBodyPart(
+                payload.contentId,
+                payload.contentType,
+                payload.content
+            )
+        }
+
+    private fun createMimeBodyPart(contentId: String, contentType: String, content: ByteArray): MimeBodyPart =
+        MimeBodyPart().apply {
+            setDataHandler(
+                DataHandler(
+                    ByteArrayDataSource(content, contentType)
                 )
-                contentID = payload.contentId
-                setHeader("Content-Transfer-Encoding", "base64")
-            }
+            )
+            this.contentID = "<$contentId>"
+            setHeader("Content-Transfer-Encoding", "base64")
         }
 
     private fun getRecipients(metadata: MailMetadata): String =

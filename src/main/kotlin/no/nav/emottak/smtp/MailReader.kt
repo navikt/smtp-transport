@@ -109,7 +109,6 @@ class MailReader(
     private fun expunge(): Boolean = (expunge || count() > mail.inboxLimit)
 
     private fun processMimeMessage(wrapper: MimeMessageWrapper) {
-        log.debug("Reading emails startIndex $start")
         when (wrapper.mimeMessage.content) {
             is MimeMultipart -> logMimeMultipartMessage(wrapper.mimeMessage)
             else -> logMimeMessage(wrapper.mimeMessage)
