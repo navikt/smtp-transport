@@ -30,7 +30,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider
 import java.security.Security
 import kotlin.uuid.Uuid
 
-private const val CONTENT_TYPE = "text/xml; charset=UTF-8"
+private const val CONTENT_TYPE = "text/xml"
 
 class MailSender(
     private val session: Session,
@@ -117,13 +117,15 @@ class MailSender(
                             )
                         )
                         createPayloadParts(payloadMessage).forEach(::addBodyPart)
-                        setHeader(
-                            "Content-Type",
-                            ContentType(contentType).apply {
-                                setParameter("type", "\"$CONTENT_TYPE\"")
-                                setParameter("start", "\"<$mainContentId>\"")
-                            }.toString()
-                        )
+                    }
+                )
+                setHeader(
+                    "Content-Type",
+                    ContentType(contentType).apply {
+                        setParameter("type", "\"$CONTENT_TYPE\"")
+                        setParameter("start", "\"<$mainContentId>\"")
+                    }.toString().also {
+                        log.info("Set Content-Type to $it")
                     }
                 )
             },
