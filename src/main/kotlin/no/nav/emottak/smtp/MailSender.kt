@@ -117,15 +117,15 @@ class MailSender(
                             )
                         )
                         createPayloadParts(payloadMessage).forEach(::addBodyPart)
-                    }
-                )
-                setHeader(
-                    "Content-Type",
-                    ContentType(contentType).apply {
-                        setParameter("type", "\"$CONTENT_TYPE\"")
-                        setParameter("start", "\"<$mainContentId>\"")
-                    }.toString().also {
-                        log.info("Set Content-Type to $it")
+                        setHeader(
+                            "Content-Type",
+                            ContentType(contentType).apply {
+                                setParameter("type", "\"$CONTENT_TYPE\"")
+                                setParameter("start", "\"<$mainContentId>\"")
+                            }.toString().also {
+                                log.info("Set Content-Type to $it")
+                            }
+                        )
                     }
                 )
             },
