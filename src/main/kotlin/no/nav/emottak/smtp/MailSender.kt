@@ -120,10 +120,10 @@ class MailSender(
                         setHeader(
                             "Content-Type",
                             ContentType(contentType).apply {
-                                setParameter("type", "\"$CONTENT_TYPE\"")
-                                setParameter("start", "\"<$mainContentId>\"")
+                                setParameter("type", CONTENT_TYPE)
+                                setParameter("start", "<$mainContentId>")
                             }.toString().also {
-                                log.info("Set Content-Type to $it")
+                                log.info("Set Content-Type to <$it>")
                             }
                         )
                     }
