@@ -94,6 +94,7 @@ class MailSender(
                 addEbXMLMimeHeaders()
                 setFrom(smtp.smtpFromAddress)
                 addRecipients(TO, getRecipients(metadata))
+                subject = metadata.subject
                 setContent(signalMessage.envelope, CONTENT_TYPE)
             },
             signalMessage.messageId
@@ -105,6 +106,7 @@ class MailSender(
                 addEbXMLMimeHeaders()
                 setFrom(smtp.smtpFromAddress)
                 addRecipients(TO, getRecipients(metadata))
+                subject = metadata.subject
                 val mainContentId = Uuid.random().toString()
                 val mimeMultipart = MimeMultipart("related").apply {
                     addBodyPart(
