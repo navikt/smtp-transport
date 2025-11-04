@@ -106,26 +106,25 @@ class MailSender(
                 setFrom(smtp.smtpFromAddress)
                 addRecipients(TO, getRecipients(metadata))
                 val mainContentId = Uuid.random().toString()
+                val mimeMultipart = MimeMultipart("related").apply {
+                    addBodyPart(
+                        createMimeBodyPart(
+                            mainContentId,
+                            CONTENT_TYPE,
+                            payloadMessage.envelope
+                        )
+                    )
+                    createPayloadParts(payloadMessage).forEach(::addBodyPart)
+                }
 
-                setContent(
-                    MimeMultipart("related").apply {
-                        addBodyPart(
-                            createMimeBodyPart(
-                                mainContentId,
-                                CONTENT_TYPE,
-                                payloadMessage.envelope
-                            )
-                        )
-                        createPayloadParts(payloadMessage).forEach(::addBodyPart)
-                        setHeader(
-                            "Content-Type",
-                            ContentType(contentType).apply {
-                                setParameter("type", CONTENT_TYPE)
-                                setParameter("start", "<$mainContentId>")
-                            }.toString().also {
-                                log.info("Set Content-Type to <$it>")
-                            }
-                        )
+                setContent(mimeMultipart)
+                setHeader(
+                    "Content-Type",
+                    ContentType(mimeMultipart.contentType).apply {
+                        setParameter("type", CONTENT_TYPE)
+                        setParameter("start", "<$mainContentId>")
+                    }.toString().also {
+                        log.debug("Set Content-Type to <$it>")
                     }
                 )
             },
