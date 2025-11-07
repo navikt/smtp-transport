@@ -95,7 +95,12 @@ class MailSender(
                 setFrom(smtp.smtpFromAddress)
                 addRecipients(TO, getRecipients(metadata))
                 subject = metadata.subject
-                setContent(signalMessage.envelope, CONTENT_TYPE)
+                setDataHandler(
+                    DataHandler(
+                        ByteArrayDataSource(signalMessage.envelope, CONTENT_TYPE)
+                    )
+                )
+                setHeader("Content-Transfer-Encoding", "base64")
             },
             signalMessage.messageId
         )
