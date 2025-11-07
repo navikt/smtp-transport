@@ -31,6 +31,7 @@ import java.security.Security
 import kotlin.uuid.Uuid
 
 private const val CONTENT_TYPE = "text/xml"
+private const val CONTENT_TRANSFER_ENCODING = "7bit"
 
 class MailSender(
     private val session: Session,
@@ -134,6 +135,7 @@ class MailSender(
                         log.debug("Set Content-Type to <$it>")
                     }
                 )
+                setHeader("Content-Transfer-Encoding", CONTENT_TRANSFER_ENCODING)
             },
             payloadMessage.messageId
         )
