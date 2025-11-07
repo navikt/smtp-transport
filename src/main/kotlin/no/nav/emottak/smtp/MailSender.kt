@@ -31,7 +31,11 @@ import java.security.Security
 import kotlin.uuid.Uuid
 
 private const val CONTENT_TYPE = "text/xml"
-private const val CONTENT_TRANSFER_ENCODING = "7bit"
+private const val CONTENT_TYPE_TEXT_XML = "text/xml"
+
+private const val CONTENT_TRANSFER_ENCODING = "Content-Transfer-Encoding"
+private const val ENCODING_7BIT = "7bit"
+private const val ENCODING_BASE64 = "base64"
 
 class MailSender(
     private val session: Session,
@@ -98,10 +102,10 @@ class MailSender(
                 subject = metadata.subject
                 setDataHandler(
                     DataHandler(
-                        ByteArrayDataSource(signalMessage.envelope, CONTENT_TYPE)
+                        ByteArrayDataSource(signalMessage.envelope, CONTENT_TYPE_TEXT_XML)
                     )
                 )
-                setHeader("Content-Transfer-Encoding", "base64")
+                setHeader(CONTENT_TRANSFER_ENCODING, ENCODING_BASE64)
             },
             signalMessage.messageId
         )
@@ -118,7 +122,7 @@ class MailSender(
                     addBodyPart(
                         createMimeBodyPart(
                             mainContentId,
-                            CONTENT_TYPE,
+                            CONTENT_TYPE_TEXT_XML,
                             payloadMessage.envelope
                         )
                     )
@@ -127,15 +131,15 @@ class MailSender(
 
                 setContent(mimeMultipart)
                 setHeader(
-                    "Content-Type",
+                    CONTENT_TYPE,
                     ContentType(mimeMultipart.contentType).apply {
-                        setParameter("type", CONTENT_TYPE)
+                        setParameter("type", CONTENT_TYPE_TEXT_XML)
                         setParameter("start", "<$mainContentId>")
                     }.toString().also {
                         log.debug("Set Content-Type to <$it>")
                     }
                 )
-                setHeader("Content-Transfer-Encoding", CONTENT_TRANSFER_ENCODING)
+                setHeader(CONTENT_TRANSFER_ENCODING, ENCODING_7BIT)
             },
             payloadMessage.messageId
         )
@@ -157,7 +161,7 @@ class MailSender(
                 )
             )
             this.contentID = "<$contentId>"
-            setHeader("Content-Transfer-Encoding", "base64")
+            setHeader(CONTENT_TRANSFER_ENCODING, ENCODING_BASE64)
         }
 
     private fun getRecipients(metadata: MailMetadata): String =
