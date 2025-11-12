@@ -35,6 +35,7 @@ private const val CONTENT_TYPE_TEXT_XML = "text/xml"
 
 private const val CONTENT_TRANSFER_ENCODING = "Content-Transfer-Encoding"
 private const val ENCODING_7BIT = "7bit"
+private const val ENCODING_8BIT = "8bit"
 private const val ENCODING_BASE64 = "base64"
 
 class MailSender(
@@ -139,7 +140,7 @@ class MailSender(
                         log.debug("Set Content-Type to <$it>")
                     }
                 )
-                setHeader(CONTENT_TRANSFER_ENCODING, ENCODING_7BIT)
+                setHeader(CONTENT_TRANSFER_ENCODING, ENCODING_8BIT)
             },
             payloadMessage.messageId
         )
