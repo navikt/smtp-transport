@@ -18,9 +18,9 @@ fun Map<String, String>.filterMimeMessage(): ForwardingSystem {
 
 private fun String.extractEmailAddressOnly() = if (this.contains("<")) this.substringAfter("<").substringBefore(">").lowercase() else this.lowercase()
 
-private fun isAcceptedType(subject: String) = config().ebmsFilter.ebmsMessageTypeSubjects.contains(subject.lowercase())
-private fun isSignalMessage(subject: String) = config().ebmsFilter.signalMessageTypeSubjects.contains(subject.lowercase())
-private fun isFromAcceptedAddress(from: String) = config().ebmsFilter.senderAddresses.contains(from.lowercase())
+private fun isAcceptedType(subject: String) = config().ebmsFilter.ebmsMessageTypeSubjects.any { subject.contains(it, ignoreCase = true) }
+private fun isSignalMessage(subject: String) = config().ebmsFilter.signalMessageTypeSubjects.any { subject.contains(it, ignoreCase = true) }
+private fun isFromAcceptedAddress(from: String) = config().ebmsFilter.senderAddresses.any { it.equals(from, ignoreCase = true) }
 
 enum class ForwardingSystem {
     EBMS, EMOTTAK, BOTH
