@@ -52,8 +52,8 @@ fun main() = SuspendApp {
             val payloadReceiver = PayloadReceiver(deps.kafkaReceiver, ebmsAsyncClient, eventLoggingService)
             val signalReceiver = SignalReceiver(deps.kafkaReceiver, eventLoggingService)
             val payloadRepository = PayloadRepository(deps.payloadDatabase, eventLoggingService)
-            val mailProcessor = MailProcessor(deps.store, mailPublisher, payloadRepository, eventLoggingService)
             val mailSender = MailSender(deps.session, eventLoggingService)
+            val mailProcessor = MailProcessor(deps.store, mailPublisher, payloadRepository, eventLoggingService, mailSender)
             val messageProcessor = MessageProcessor(payloadReceiver, signalReceiver, mailSender)
 
             val server = config().server

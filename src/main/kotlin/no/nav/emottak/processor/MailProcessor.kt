@@ -19,16 +19,20 @@ import no.nav.emottak.publisher.MailPublisher
 import no.nav.emottak.repository.PayloadRepository
 import no.nav.emottak.smtp.EmailMsg
 import no.nav.emottak.smtp.MailReader
+import no.nav.emottak.smtp.MailSender
+import no.nav.emottak.util.ForwardingSystem
 import no.nav.emottak.util.ScopedEventLoggingService
 import no.nav.emottak.util.toPayloadMessage
 import no.nav.emottak.util.toSignalMessage
 import org.apache.kafka.clients.producer.RecordMetadata
+import kotlin.math.min
 
 class MailProcessor(
     private val store: Store,
     private val mailPublisher: MailPublisher,
     private val payloadRepository: PayloadRepository,
-    private val eventLoggingService: ScopedEventLoggingService
+    private val eventLoggingService: ScopedEventLoggingService,
+    private val mailSender: MailSender
 ) {
     fun processMessages(scope: CoroutineScope) =
         readMessages()
@@ -46,12 +50,13 @@ class MailProcessor(
             )
         )
         val messageCount = mailReader.count()
+        val batchSize = min(config().mail.inboxBatchReadLimit, messageCount)
 
         if (messageCount > 0) {
-            log.info("Starting to read $messageCount messages from inbox")
-            mailReader.readMailBatches(messageCount)
+            log.info("Starting to read $batchSize of $messageCount messages from inbox")
+            mailReader.readMailBatches(batchSize)
                 .asFlow()
-                .also { log.info("Finished reading all messages from inbox") }
+                .also { log.info("Finished reading $batchSize of $messageCount messages from inbox") }
         } else {
             log.info("No messages found in inbox")
             emptyFlow()
@@ -59,6 +64,25 @@ class MailProcessor(
     }
 
     private suspend fun processMessage(emailMsg: EmailMsg) {
+        when (
+            emailMsg.forwardableMimeMessage.forwardingSystem.also {
+                log.info("Sending message to ${it.name}. Sender <${emailMsg.headers["From"]}> and subject <${emailMsg.headers["Subject"]}>")
+            }
+        ) {
+            ForwardingSystem.EBMS -> publishToKafka(emailMsg)
+            ForwardingSystem.EMOTTAK -> forwardToT1(emailMsg)
+            ForwardingSystem.BOTH -> {
+                publishToKafka(emailMsg)
+                forwardToT1(emailMsg)
+            }
+        }
+    }
+
+    private suspend fun forwardToT1(emailMsg: EmailMsg) {
+        mailSender.rawForward(emailMsg.forwardableMimeMessage.forwardableMimeMessage!!)
+    }
+
+    private suspend fun publishToKafka(emailMsg: EmailMsg) {
         when (emailMsg.multipart) {
             true -> publishPayloadMessage(emailMsg.toPayloadMessage(emailMsg.requestId))
             false -> publishSignalMessage(emailMsg.toSignalMessage(emailMsg.requestId))
