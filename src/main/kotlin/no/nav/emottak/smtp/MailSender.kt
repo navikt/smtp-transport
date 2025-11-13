@@ -30,7 +30,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider
 import java.security.Security
 import kotlin.uuid.Uuid
 
-private const val CONTENT_TYPE = "text/xml"
+private const val CONTENT_TYPE = "Content-Type"
 private const val CONTENT_TYPE_TEXT_XML = "text/xml"
 
 private const val CONTENT_TRANSFER_ENCODING = "Content-Transfer-Encoding"
