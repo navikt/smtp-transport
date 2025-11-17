@@ -61,7 +61,6 @@ class MailReaderSpec : StringSpec({
             greenMail.receivedMessages[3].writeTo(bos)
             println("RAW Forwarded Message:")
             println(String(bos.toByteArray()))
-            // TODO check if valid mimemessage
         }
     }
 
