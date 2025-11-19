@@ -152,4 +152,16 @@ class MailReaderSpec : StringSpec({
             lastMultipartMessage.parts.size shouldBeEqual mappedExampleMessage.parts.size
         }
     }
+
+    "MailReader reads inbox with batch size set" {
+        resourceScope {
+            val store = store(config.smtp)
+            val eventLoggingService = fakeEventLoggingService()
+
+            val reader = MailReader(config.mail, store, false, eventLoggingService)
+            val messages = reader.readMailBatches(1)
+            reader.count() shouldBe 3
+            messages.size shouldBe 1
+        }
+    }
 })

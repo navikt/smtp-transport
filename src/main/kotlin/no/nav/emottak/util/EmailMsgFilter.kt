@@ -16,7 +16,7 @@ fun Map<String, String>.filterMimeMessage(): ForwardingSystem {
     return ForwardingSystem.EMOTTAK
 }
 
-private fun String.extractEmailAddressOnly() = if (this.contains("<")) this.substringAfter("<").substringBefore(">").lowercase() else this.lowercase()
+fun String.extractEmailAddressOnly() = if (this.contains("<")) this.substringAfter("<").substringBefore(">").lowercase() else this.lowercase()
 
 private fun isAcceptedType(subject: String) = config().ebmsFilter.ebmsMessageTypeSubjects.any { subject.contains(it, ignoreCase = true) }
 private fun isSignalMessage(subject: String) = config().ebmsFilter.signalMessageTypeSubjects.any { subject.contains(it, ignoreCase = true) }
