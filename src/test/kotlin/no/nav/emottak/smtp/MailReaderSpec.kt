@@ -11,6 +11,7 @@ import no.nav.emottak.config
 import no.nav.emottak.session
 import no.nav.emottak.store
 import no.nav.emottak.util.fakeEventLoggingService
+import java.io.ByteArrayOutputStream
 import java.nio.file.Path.of
 import kotlin.uuid.Uuid
 
@@ -31,15 +32,36 @@ class MailReaderSpec : StringSpec({
     beforeEach {
         val smtp = config.smtp
         greenMail.setUser(smtp.username.value, smtp.username.value, smtp.password.value)
-
         greenMail.start()
-
         greenMail.loadEmails(of(classLoader.getResource("mails")!!.toURI()))
     }
 
     afterEach {
         greenMail.purgeEmailFromAllMailboxes()
         greenMail.stop()
+    }
+
+    "MailReader forwards inbox" {
+        resourceScope {
+            val store = store(config.smtp)
+            val session = session(config.smtp)
+            val eventLoggingService = fakeEventLoggingService()
+
+            val reader = MailReader(config.mail, store, false, eventLoggingService)
+            val messages = reader.readMailBatches(3)
+
+            greenMail.receivedMessages.size shouldBe 3
+
+            val mailSender = MailSender(session, fakeEventLoggingService())
+
+            mailSender.rawForward(greenMail.receivedMessages[0])
+
+            greenMail.receivedMessages.size shouldBe 4
+            val bos = ByteArrayOutputStream()
+            greenMail.receivedMessages[3].writeTo(bos)
+            println("RAW Forwarded Message:")
+            println(String(bos.toByteArray()))
+        }
     }
 
     "MailReader reads inbox with messages and verifies content" {
@@ -127,6 +149,18 @@ class MailReaderSpec : StringSpec({
 
             lastMultipartMessage.headers.size shouldBeEqual mappedExampleMessage.headers.size
             lastMultipartMessage.parts.size shouldBeEqual mappedExampleMessage.parts.size
+        }
+    }
+
+    "MailReader reads inbox with batch size set" {
+        resourceScope {
+            val store = store(config.smtp)
+            val eventLoggingService = fakeEventLoggingService()
+
+            val reader = MailReader(config.mail, store, false, eventLoggingService)
+            val messages = reader.readMailBatches(1)
+            reader.count() shouldBe 3
+            messages.size shouldBe 1
         }
     }
 })

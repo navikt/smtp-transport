@@ -9,6 +9,7 @@ import no.nav.emottak.config
 import no.nav.emottak.model.MailMetadata
 import no.nav.emottak.model.MailRoutingSignalMessage
 import no.nav.emottak.model.SignalMessage
+import no.nav.emottak.util.EBXML_ACTION
 import no.nav.emottak.util.EMAIL_ADDRESSES
 import no.nav.emottak.util.ScopedEventLoggingService
 import no.nav.emottak.util.getHeaderValueAsString
@@ -35,9 +36,10 @@ class SignalReceiver(
         .map(::toMailRoutingMessage)
 
     private fun toMailRoutingMessage(record: ReceiverRecord<String, ByteArray>): MailRoutingSignalMessage {
-        val mailAddresses = record.getHeaderValueAsString(EMAIL_ADDRESSES)
-        val mailMetadata = MailMetadata(mailAddresses)
-
+        val mailMetadata = MailMetadata(
+            addresses = record.getHeaderValueAsString(EMAIL_ADDRESSES),
+            subject = record.getHeaderValueAsString(EBXML_ACTION)
+        )
         val signalMessage = SignalMessage(
             Uuid.parse(record.key()),
             record.value()
