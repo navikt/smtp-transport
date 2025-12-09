@@ -13,7 +13,9 @@ import net.logstash.logback.marker.LogstashMarker
 import net.logstash.logback.marker.Markers
 import no.nav.emottak.configuration.Mail
 import no.nav.emottak.log
+import no.nav.emottak.util.ForwardingSystem
 import no.nav.emottak.util.ScopedEventLoggingService
+import no.nav.emottak.util.filterMimeMessage
 import no.nav.emottak.utils.kafka.model.EventType.ERROR_WHILE_RECEIVING_MESSAGE_VIA_SMTP
 import no.nav.emottak.utils.kafka.model.EventType.MESSAGE_RECEIVED_VIA_SMTP
 import kotlin.uuid.Uuid
@@ -22,8 +24,29 @@ data class EmailMsg(
     val multipart: Boolean,
     val headers: Map<String, String>,
     val parts: List<Part>,
-    val requestId: Uuid
+    val requestId: Uuid,
+    private val originalMimeMessage: MimeMessage,
+    val forwardableMimeMessage: ForwardableMimeMessage = filterMessageForwarding(headers, originalMimeMessage)
 )
+
+data class ForwardableMimeMessage(
+    val forwardingSystem: ForwardingSystem,
+    val forwardableMimeMessage: MimeMessage?
+)
+
+fun filterMessageForwarding(
+    headers: Map<String, String>,
+    originalMimeMessage: MimeMessage
+): ForwardableMimeMessage {
+    val forwarding = headers.filterMimeMessage()
+    val forwardableMessage =
+        if (forwarding == ForwardingSystem.EBMS) {
+            null // Deep copy not needed
+        } else {
+            MimeMessage(originalMimeMessage) // Creates a deep copy
+        }
+    return ForwardableMimeMessage(forwarding, forwardableMessage)
+}
 
 data class Part(
     val headers: Map<String, String>,
@@ -63,7 +86,12 @@ class MailReader(
             return if (messageCount != 0) {
                 val endIndex = (batchSize + start - 1).takeIf { it < messageCount } ?: messageCount
                 val result = inbox.getMessages(start, endIndex)
-                    .map { message -> MimeMessageWrapper(message as MimeMessage, Uuid.random()).also { registerEvent(it) } }
+                    .map { message ->
+                        MimeMessageWrapper(
+                            message as MimeMessage,
+                            Uuid.random()
+                        ).also { registerEvent(it) }
+                    }
                     .toList()
                     .onEach(::processMimeMessage)
                 start += batchSize // Update start index
@@ -81,7 +109,6 @@ class MailReader(
     private fun expunge(): Boolean = (expunge || count() > mail.inboxLimit)
 
     private fun processMimeMessage(wrapper: MimeMessageWrapper) {
-        log.debug("Reading emails startIndex $start")
         when (wrapper.mimeMessage.content) {
             is MimeMultipart -> logMimeMultipartMessage(wrapper.mimeMessage)
             else -> logMimeMessage(wrapper.mimeMessage)
@@ -151,7 +178,8 @@ class MailReader(
                 .groupBy({ it.name }, { it.value })
                 .mapValues { it.value.joinToString(",") },
             bodyparts,
-            wrapper.requestId
+            wrapper.requestId,
+            wrapper.mimeMessage
         )
     }
 

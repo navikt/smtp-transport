@@ -20,14 +20,18 @@ data class Config(
     val server: Server,
     val httpClient: HttpClient,
     val httpTokenClient: HttpClient,
-    val ebmsAsync: EbmsAsync
+    val ebmsAsync: EbmsAsync,
+    val ebmsFilter: EbmsFilter
 )
 
 fun Config.withKafka(update: Kafka.() -> Kafka) = copy(kafka = kafka.update())
 
 data class Job(val fixedInterval: Duration)
 
-data class Mail(val inboxLimit: Int)
+data class Mail(
+    val inboxLimit: Int,
+    val inboxBatchReadLimit: Int
+)
 
 data class EbmsAsync(val baseUrl: String, val apiUrl: String)
 
@@ -63,7 +67,8 @@ data class Smtp(
     val pop3FactoryPort: Port,
     val pop3FactoryFallback: Boolean,
     val smtpFromAddress: String,
-    val smtpRedirectAddress: String
+    val smtpRedirectAddress: String,
+    val smtpT1EmottakAddress: String
 )
 
 private const val MAIL_SMTP_HOST = "mail.smtp.host"
@@ -176,4 +181,10 @@ data class AzureAuth(
     val azureTokenEndpoint: AzureTokenEndpoint,
     val azureAppClientId: AzureApplicationId,
     val azureAppClientSecret: AzureApplicationSecret
+)
+
+data class EbmsFilter(
+    val ebmsMessageTypeSubjects: List<String>,
+    val signalMessageTypeSubjects: List<String>,
+    val senderAddresses: List<String>
 )

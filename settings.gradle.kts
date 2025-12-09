@@ -6,6 +6,7 @@
  * Detailed information about configuring a multi-project build in Gradle can be found
  * in the user manual at https://docs.gradle.org/8.1.1/userguide/multi_project_builds.html
  */
+rootProject.name = "smtp-transport"
 
 dependencyResolutionManagement {
 
@@ -28,6 +29,7 @@ dependencyResolutionManagement {
             version("logback", "1.5.19")
             version("logstash", "7.4")
             version("emottak-utils", "0.3.3")
+            version("bouncycastle", "1.82")
 
             library("arrow-core", "io.arrow-kt", "arrow-core").versionRef("arrow")
             library("arrow-functions", "io.arrow-kt", "arrow-functions").versionRef("arrow")
@@ -73,10 +75,15 @@ dependencyResolutionManagement {
             library("jakarta-mail-api", "jakarta.mail", "jakarta.mail-api").versionRef("jakarta-mail")
             library("eclipse-angus", "org.eclipse.angus", "jakarta.mail").versionRef("eclipse-angus")
 
+            library("bcjmail-jdk18on", "org.bouncycastle", "bcjmail-jdk18on").versionRef("bouncycastle")
+            library("bcpkix-jdk18on", "org.bouncycastle", "bcpkix-jdk18on").versionRef("bouncycastle")
+            library("bcprov-jdk18on", "org.bouncycastle", "bcprov-jdk18on").versionRef("bouncycastle")
+
             library("emottak-utils", "no.nav.emottak", "emottak-utils").versionRef("emottak-utils")
 
             bundle("prometheus", listOf("ktor-server-metrics-micrometer", "micrometer-registry-prometheus"))
             bundle("jakarta-mail", listOf("jakarta-mail-api", "eclipse-angus"))
+            bundle("bouncycastle-mail", listOf("bcjmail-jdk18on", "bcpkix-jdk18on", "bcprov-jdk18on"))
             bundle("logging", listOf("logback-classic", "logback-logstash"))
         }
 
@@ -140,5 +147,3 @@ dependencyResolutionManagement {
         }
     }
 }
-
-rootProject.name = "smtp-transport"

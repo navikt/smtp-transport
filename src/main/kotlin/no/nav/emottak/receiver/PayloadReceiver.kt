@@ -13,6 +13,7 @@ import no.nav.emottak.model.MailMetadata
 import no.nav.emottak.model.MailRoutingPayloadMessage
 import no.nav.emottak.model.Payload
 import no.nav.emottak.model.PayloadMessage
+import no.nav.emottak.util.EBXML_SERVICE
 import no.nav.emottak.util.EMAIL_ADDRESSES
 import no.nav.emottak.util.EbmsAsyncClient
 import no.nav.emottak.util.ScopedEventLoggingService
@@ -43,8 +44,10 @@ class PayloadReceiver(
         .map(::toMailRoutingMessage)
 
     private suspend fun toMailRoutingMessage(record: ReceiverRecord<String, ByteArray>): MailRoutingPayloadMessage {
-        val mailAddresses = record.getHeaderValueAsString(EMAIL_ADDRESSES)
-        val mailMetadata = MailMetadata(mailAddresses)
+        val mailMetadata = MailMetadata(
+            addresses = record.getHeaderValueAsString(EMAIL_ADDRESSES),
+            subject = record.getHeaderValueAsString(EBXML_SERVICE)
+        )
 
         val referenceId = Uuid.parse(record.key())
         val payloadMessage = PayloadMessage(
