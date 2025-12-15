@@ -11,6 +11,7 @@ import no.nav.emottak.model.MailRoutingSignalMessage
 import no.nav.emottak.model.SignalMessage
 import no.nav.emottak.util.EBXML_ACTION
 import no.nav.emottak.util.EMAIL_ADDRESSES
+import no.nav.emottak.util.EMOTTAK_EBXML_SENDER
 import no.nav.emottak.util.ScopedEventLoggingService
 import no.nav.emottak.util.getHeaderValueAsString
 import no.nav.emottak.utils.kafka.model.EventType.ERROR_WHILE_READING_MESSAGE_FROM_QUEUE
@@ -37,8 +38,9 @@ class SignalReceiver(
 
     private fun toMailRoutingMessage(record: ReceiverRecord<String, ByteArray>): MailRoutingSignalMessage {
         val mailMetadata = MailMetadata(
-            addresses = record.getHeaderValueAsString(EMAIL_ADDRESSES),
-            subject = record.getHeaderValueAsString(EBXML_ACTION)
+            recipientAddress = record.getHeaderValueAsString(EMAIL_ADDRESSES),
+            subject = record.getHeaderValueAsString(EBXML_ACTION),
+            senderAddress = record.getHeaderValueAsString(EMOTTAK_EBXML_SENDER)
         )
         val signalMessage = SignalMessage(
             Uuid.parse(record.key()),

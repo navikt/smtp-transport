@@ -29,7 +29,7 @@ class MailSenderSpec : StringSpec({
 
     "send signal message" {
         resourceScope {
-            val metadata = MailMetadata("signal")
+            val metadata = MailMetadata("to", "signal", "fromNav")
             val message = SignalMessage(Uuid.random(), getEnvelope().toByteArray())
 
             mailSender.sendSignalMessage(metadata, message)
@@ -38,7 +38,7 @@ class MailSenderSpec : StringSpec({
 
     "send payload message" {
         resourceScope {
-            val metadata = MailMetadata("payload")
+            val metadata = MailMetadata("to", "payload", "fromNav")
             val message = PayloadMessage(Uuid.random(), getEnvelope().toByteArray(), listOf(getPayload()))
 
             mailSender.sendPayloadMessage(metadata, message)
