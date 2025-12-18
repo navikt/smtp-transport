@@ -45,7 +45,7 @@ class MailProcessor(
             MailReader(
                 config().mail,
                 store,
-                false,
+                config().mail.inboxExpunge,
                 eventLoggingService
             )
         )

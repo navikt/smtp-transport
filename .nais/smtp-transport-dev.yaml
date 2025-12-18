@@ -104,3 +104,7 @@ spec:
       value: "emottak-smtp-transport-payload-user"
     - name: POSTGRES_ADMIN_ROLE
       value: "emottak-smtp-transport-payload-admin"
+    - name: EMOTTAK_LOGGING_LEVEL
+      value: "DEBUG"
+    - name: INBOX_EXPUNGE
+      value: "true"
