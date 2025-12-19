@@ -72,7 +72,7 @@ class MailSenderSpec : StringSpec({
 
             mailSender.sendSignalMessage(metadata, message)
 
-            with (greenMail.receivedMessages) {
+            with(greenMail.receivedMessages) {
                 this.size shouldBe 1
                 this.first().getHeader("From") shouldBe arrayOf(sender)
                 this.first().getHeader("To") shouldBe arrayOf(receiver)
