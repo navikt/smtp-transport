@@ -86,7 +86,7 @@ spec:
 #    - name: SMTP_REDIRECT_ADDRESS
 #      value: "devnull@example.com"
     - name: SMTP_FROM_ADDRESS
-      value: "mottak-prod@es.nav.no"
+      value: "ebms-prod@es.nav.no"
     - name: SMTP_T1_EMOTTAK_ADDRESS
       value: "mottak-a01wavl00008.adeo.no@es.nav.no"
     - name: POSTGRES_JDBC_URL
