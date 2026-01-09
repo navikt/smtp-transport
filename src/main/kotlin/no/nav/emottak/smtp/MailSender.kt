@@ -97,7 +97,7 @@ class MailSender(
         MimeMessageWrapper(
             MimeMessage(session).apply {
                 addEbXMLMimeHeaders()
-                setFrom(smtp.smtpFromAddress)
+                setFrom(getSender(metadata))
                 addRecipients(TO, getRecipients(metadata))
                 subject = metadata.subject
                 setDataHandler(
@@ -114,7 +114,7 @@ class MailSender(
         MimeMessageWrapper(
             MimeMessage(session).apply {
                 addEbXMLMimeHeaders()
-                setFrom(smtp.smtpFromAddress)
+                setFrom(getSender(metadata))
                 addRecipients(TO, getRecipients(metadata))
                 subject = metadata.subject
                 val mainContentId = Uuid.random().toString()
@@ -168,10 +168,13 @@ class MailSender(
         (
             smtp
                 .smtpRedirectAddress
-                .takeIf { it.isNotBlank() } ?: metadata.addresses
+                .takeIf { it.isNotBlank() } ?: metadata.recipientAddress
             )
             .replace("mailto://", "")
             .also {
-                log.debug("Sending message to <$it> in place of <${metadata.addresses}>")
+                log.debug("Sending message to <$it> in place of <${metadata.recipientAddress}>")
             }
+
+    private fun getSender(metadata: MailMetadata): String =
+        metadata.senderAddress.takeIf { it.isNotBlank() } ?: smtp.smtpFromAddress
 }
