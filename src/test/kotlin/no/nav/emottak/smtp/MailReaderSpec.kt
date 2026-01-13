@@ -163,4 +163,28 @@ class MailReaderSpec : StringSpec({
             messages.size shouldBe 1
         }
     }
+
+    "MailReader expunges 'batchSize' messages accordingly" {
+        resourceScope {
+            val store = store(config.smtp)
+            val eventLoggingService = fakeEventLoggingService()
+
+            val mailConfig = config.mail
+
+            val reader = MailReader(mailConfig, store, true, eventLoggingService)
+            reader.count() shouldBe 3
+            reader.readMailBatches(1).size shouldBe 1
+            reader.close()
+
+            val reader2 = MailReader(mailConfig, store, true, eventLoggingService)
+            reader2.count() shouldBe 2
+            reader2.readMailBatches(1).size shouldBe 1
+            reader2.close()
+
+            val reader3 = MailReader(mailConfig, store, true, eventLoggingService)
+            reader3.count() shouldBe 1
+            reader3.readMailBatches(1).size shouldBe 1
+            reader3.close()
+        }
+    }
 })
