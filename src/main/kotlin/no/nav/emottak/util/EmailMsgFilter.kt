@@ -11,6 +11,7 @@ fun Map<String, String>.filterMimeMessage(): ForwardingSystem {
         if (isFromAcceptedAddress(from)) {
             if (isSignalMessage(subject)) return ForwardingSystem.BOTH
             if (isAcceptedType(subject)) return ForwardingSystem.EBMS
+            if (config().clusterName.value == "dev-fss") return ForwardingSystem.EBMS
         }
     }
     return ForwardingSystem.EMOTTAK

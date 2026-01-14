@@ -21,7 +21,8 @@ data class Config(
     val httpClient: HttpClient,
     val httpTokenClient: HttpClient,
     val ebmsAsync: EbmsAsync,
-    val ebmsFilter: EbmsFilter
+    val ebmsFilter: EbmsFilter,
+    val clusterName: ClusterName
 )
 
 fun Config.withKafka(update: Kafka.() -> Kafka) = copy(kafka = kafka.update())
