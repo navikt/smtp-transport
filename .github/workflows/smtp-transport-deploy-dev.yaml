@@ -1,9 +1,9 @@
-name: "Build and deploy smtp-transport to dev"
+name: "DEV: Build and deploy smtp-transport"
 on:
   workflow_dispatch:
   push:
     branches:
-      - main
+      - dev/**
 
 env:
   MODULE_NAME: "smtp-transport"
