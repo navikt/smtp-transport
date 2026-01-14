@@ -24,4 +24,6 @@ private fun filterConfigResolver() = when (getEnvVar("NAIS_CLUSTER_NAME", "local
     "prod-fss" -> "/filter-prod.conf"
     "dev-fss" -> "/filter-dev.conf"
     else -> "/filter-dev.conf"
+}.also {
+    log.info("Loading filter configuration from $it")
 }
