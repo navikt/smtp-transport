@@ -11,6 +11,8 @@ import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import net.logstash.logback.marker.LogstashMarker
+import net.logstash.logback.marker.Markers
 import no.nav.emottak.config
 import no.nav.emottak.log
 import no.nav.emottak.model.PayloadMessage
@@ -64,9 +66,16 @@ class MailProcessor(
     }
 
     private suspend fun processMessage(emailMsg: EmailMsg) {
+        val marker: LogstashMarker = Markers.appendEntries(
+            mapOf(
+                "requestId" to emailMsg.requestId.toString(),
+                "smtpSender" to (emailMsg.headers["From"] ?: ""),
+                "smtpSubject" to (emailMsg.headers["Subject"] ?: "")
+            )
+        )
         when (
             emailMsg.forwardableMimeMessage.forwardingSystem.also {
-                log.info("Sending message to ${it.name}. Sender <${emailMsg.headers["From"]}> and subject <${emailMsg.headers["Subject"]}>")
+                log.info(marker, "Sending message to ${it.name}")
             }
         ) {
             ForwardingSystem.EBMS -> publishToKafka(emailMsg)
