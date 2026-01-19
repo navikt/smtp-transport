@@ -7,14 +7,15 @@ fun Map<String, String>.filterMimeMessage(): ForwardingSystem {
     val from = this["From"]?.extractEmailAddressOnly() ?: "".also { log.warn("No [From] header found") }
     val subject = this["Subject"] ?: "".also { log.warn("No [Subject] header found") }
 
-    if (from.isNotBlank() && subject.isNotBlank()) {
-        if (isFromAcceptedAddress(from)) {
-            if (isSignalMessage(subject)) return ForwardingSystem.BOTH
-            if (isAcceptedType(subject)) return ForwardingSystem.EBMS
-//            if (config().clusterName.value == "dev-fss") return ForwardingSystem.EBMS
-        }
-    }
-    return ForwardingSystem.EMOTTAK
+    return ForwardingSystem.EBMS
+//    if (from.isNotBlank() && subject.isNotBlank()) {
+//        if (isFromAcceptedAddress(from)) {
+//            if (isSignalMessage(subject)) return ForwardingSystem.BOTH
+//            if (isAcceptedType(subject)) return ForwardingSystem.EBMS
+// //            if (config().clusterName.value == "dev-fss") return ForwardingSystem.EBMS
+//        }
+//    }
+//    return ForwardingSystem.EMOTTAK
 }
 
 fun String.extractEmailAddressOnly() = if (this.contains("<")) this.substringAfter("<").substringBefore(">").lowercase() else this.lowercase()
