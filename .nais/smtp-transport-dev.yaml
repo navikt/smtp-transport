@@ -109,6 +109,6 @@ spec:
     - name: INBOX_EXPUNGE
       value: "true"
     - name: SMTP_READ_INTERVAL
-      value: "10s"
+      value: "30s"
 #    - name: INBOX_BATCH_READ_LIMIT
 #      value: "20"
