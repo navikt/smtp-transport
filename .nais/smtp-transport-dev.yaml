@@ -108,3 +108,5 @@ spec:
       value: "DEBUG"
     - name: INBOX_EXPUNGE
       value: "true"
+    - name: SMTP_READ_INTERVAL
+      value: "10s"
