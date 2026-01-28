@@ -15,8 +15,8 @@ import no.nav.emottak.model.Payload
 import no.nav.emottak.model.PayloadMessage
 import no.nav.emottak.util.EBXML_SERVICE
 import no.nav.emottak.util.EMAIL_ADDRESSES
-import no.nav.emottak.util.EMOTTAK_EBXML_SENDER
 import no.nav.emottak.util.EbmsAsyncClient
+import no.nav.emottak.util.SENDER_ADDRESS
 import no.nav.emottak.util.ScopedEventLoggingService
 import no.nav.emottak.util.getHeaderValueAsString
 import no.nav.emottak.utils.kafka.model.EventType.ERROR_WHILE_READING_MESSAGE_FROM_QUEUE
@@ -48,7 +48,7 @@ class PayloadReceiver(
         val mailMetadata = MailMetadata(
             recipientAddress = record.getHeaderValueAsString(EMAIL_ADDRESSES),
             subject = record.getHeaderValueAsString(EBXML_SERVICE),
-            senderAddress = record.getHeaderValueAsString(EMOTTAK_EBXML_SENDER)
+            senderAddress = record.getHeaderValueAsString(SENDER_ADDRESS)
         )
 
         val referenceId = Uuid.parse(record.key())
