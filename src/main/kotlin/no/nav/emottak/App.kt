@@ -101,8 +101,7 @@ private suspend fun ResourceScope.scheduleProcessMailMessages(processor: MailPro
         .repeat {
             val start = Clock.System.now()
             processor.processMessages(scope)
-            val duration = Clock.System.now() - start
-            log.info("processMessages executed in ${duration.inWholeMilliseconds} ms")
+            log.info("Scheduled message batch executed in ${(Clock.System.now() - start).inWholeMilliseconds} ms")
         }
 }
 

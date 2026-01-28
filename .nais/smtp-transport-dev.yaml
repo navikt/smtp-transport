@@ -110,5 +110,5 @@ spec:
       value: "true"
     - name: SMTP_READ_INTERVAL
       value: "30s"
-#    - name: INBOX_BATCH_READ_LIMIT
-#      value: "20"
+    - name: INBOX_BATCH_READ_LIMIT
+      value: "10"
