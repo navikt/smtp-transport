@@ -13,6 +13,7 @@ import no.nav.emottak.configuration.withKafka
 import no.nav.emottak.kafkaPublisher
 import no.nav.emottak.model.PayloadMessage
 import no.nav.emottak.model.SignalMessage
+import no.nav.emottak.util.SENDER_ADDRESS
 import no.nav.emottak.util.fakeEventLoggingService
 import no.nav.emottak.utils.config.SecurityProtocol
 import kotlin.uuid.Uuid
@@ -38,18 +39,26 @@ class MailPublisherSpec : KafkaSpec(
 
                     val referenceId = Uuid.random()
                     val content = "payload".toByteArray()
+                    val senderAddress = "sender@address"
                     val payloadMessage = PayloadMessage(referenceId, content, emptyList())
 
-                    publisher.publishPayloadMessage(payloadMessage)
+                    publisher.publishPayloadMessage(payloadMessage, senderAddress)
 
                     val receiver = KafkaReceiver(receiverSettings())
                     val consumer = receiver.receive(config.kafkaTopics.payloadInTopic)
-                        .map { Pair(it.key(), it.value()) }
+                        .map {
+                            mapOf(
+                                "key" to it.key(),
+                                "value" to it.value(),
+                                "senderAddress" to it.headers().lastHeader(SENDER_ADDRESS).value()
+                            )
+                        }
 
                     consumer.test {
-                        val (key, value) = awaitItem()
-                        key shouldBe referenceId.toString()
-                        value shouldBe content
+                        val map = awaitItem()
+                        map["key"] shouldBe referenceId.toString()
+                        map["value"] shouldBe content
+                        map["senderAddress"] shouldBe senderAddress.toByteArray()
                     }
                 }
             }
@@ -62,18 +71,26 @@ class MailPublisherSpec : KafkaSpec(
 
                     val referenceId = Uuid.random()
                     val content = "signal".toByteArray()
+                    val senderAddress = "sender@address"
                     val signalMessage = SignalMessage(referenceId, content)
 
-                    publisher.publishSignalMessage(signalMessage)
+                    publisher.publishSignalMessage(signalMessage, senderAddress)
 
                     val receiver = KafkaReceiver(receiverSettings())
                     val consumer = receiver.receive(config.kafkaTopics.signalInTopic)
-                        .map { Pair(it.key(), it.value()) }
+                        .map {
+                            mapOf(
+                                "key" to it.key(),
+                                "value" to it.value(),
+                                "senderAddress" to it.headers().lastHeader(SENDER_ADDRESS).value()
+                            )
+                        }
 
                     consumer.test {
-                        val (key, value) = awaitItem()
-                        key shouldBe referenceId.toString()
-                        value shouldBe content
+                        val map = awaitItem()
+                        map["key"] shouldBe referenceId.toString()
+                        map["value"] shouldBe content
+                        map["senderAddress"] shouldBe senderAddress.toByteArray()
                     }
                 }
             }
