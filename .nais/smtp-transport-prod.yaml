@@ -99,3 +99,7 @@ spec:
       value: "emottak-smtp-transport-payload-admin"
     - name: INBOX_EXPUNGE
       value: "true"
+    - name: SMTP_READ_INTERVAL
+      value: "1m"
+    - name: INBOX_BATCH_READ_LIMIT
+      value: "10"
