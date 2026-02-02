@@ -5,6 +5,7 @@ import no.nav.emottak.config
 import no.nav.emottak.log
 import no.nav.emottak.model.PayloadMessage
 import no.nav.emottak.model.SignalMessage
+import no.nav.emottak.util.SENDER_ADDRESS
 import no.nav.emottak.util.ScopedEventLoggingService
 import no.nav.emottak.utils.kafka.model.EventType.ERROR_WHILE_STORING_MESSAGE_IN_QUEUE
 import no.nav.emottak.utils.kafka.model.EventType.MESSAGE_PLACED_IN_QUEUE
@@ -18,15 +19,19 @@ class MailPublisher(
 ) {
     private val kafka = config().kafkaTopics
 
-    suspend fun publishPayloadMessage(message: PayloadMessage): Result<RecordMetadata> =
-        publishMessage(kafka.payloadInTopic, message.messageId, message.envelope)
+    suspend fun publishPayloadMessage(message: PayloadMessage, senderAddress: String): Result<RecordMetadata> =
+        publishMessage(kafka.payloadInTopic, message.messageId, message.envelope, senderAddress)
 
-    suspend fun publishSignalMessage(message: SignalMessage): Result<RecordMetadata> =
-        publishMessage(kafka.signalInTopic, message.messageId, message.envelope)
+    suspend fun publishSignalMessage(message: SignalMessage, senderAddress: String): Result<RecordMetadata> =
+        publishMessage(kafka.signalInTopic, message.messageId, message.envelope, senderAddress)
 
-    private suspend fun publishMessage(topic: String, referenceId: Uuid, content: ByteArray): Result<RecordMetadata> =
+    private suspend fun publishMessage(topic: String, referenceId: Uuid, content: ByteArray, senderAddress: String): Result<RecordMetadata> =
         kafkaPublisher.publishScope {
-            publishCatching(toProducerRecord(topic, referenceId, content))
+            publishCatching(
+                toProducerRecord(topic, referenceId, content).apply {
+                    headers().add(SENDER_ADDRESS, senderAddress.toByteArray())
+                }
+            )
         }
             .onSuccess {
                 log.info("Published message with reference id $referenceId to: $topic")

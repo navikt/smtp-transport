@@ -15,6 +15,7 @@ import no.nav.emottak.configuration.Mail
 import no.nav.emottak.log
 import no.nav.emottak.util.ForwardingSystem
 import no.nav.emottak.util.ScopedEventLoggingService
+import no.nav.emottak.util.extractEmailAddressOnly
 import no.nav.emottak.util.filterMimeMessage
 import no.nav.emottak.utils.kafka.model.EventType.ERROR_WHILE_RECEIVING_MESSAGE_VIA_SMTP
 import no.nav.emottak.utils.kafka.model.EventType.MESSAGE_RECEIVED_VIA_SMTP
@@ -26,7 +27,8 @@ data class EmailMsg(
     val parts: List<Part>,
     val requestId: Uuid,
     private val originalMimeMessage: MimeMessage,
-    val forwardableMimeMessage: ForwardableMimeMessage = filterMessageForwarding(headers, originalMimeMessage)
+    val forwardableMimeMessage: ForwardableMimeMessage = filterMessageForwarding(headers, originalMimeMessage),
+    val senderAddress: String
 )
 
 data class ForwardableMimeMessage(
@@ -171,15 +173,17 @@ class MailReader(
             true -> createMimeBodyParts(wrapper.mimeMessage.content as MimeMultipart)
             else -> createEmptyMimeBodyParts(wrapper.mimeMessage)
         }
+        val headers: Map<String, String> = wrapper.mimeMessage.allHeaders
+            .toList()
+            .groupBy({ it.name }, { it.value })
+            .mapValues { it.value.joinToString(",") }
         return EmailMsg(
-            multipartMessage,
-            wrapper.mimeMessage.allHeaders
-                .toList()
-                .groupBy({ it.name }, { it.value })
-                .mapValues { it.value.joinToString(",") },
-            bodyparts,
-            wrapper.requestId,
-            wrapper.mimeMessage
+            multipart = multipartMessage,
+            headers = headers,
+            parts = bodyparts,
+            requestId = wrapper.requestId,
+            originalMimeMessage = wrapper.mimeMessage,
+            senderAddress = headers.getOrDefault("From", "").extractEmailAddressOnly()
         )
     }
 

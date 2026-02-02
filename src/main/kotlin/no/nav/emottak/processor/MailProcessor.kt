@@ -69,7 +69,7 @@ class MailProcessor(
         val marker: LogstashMarker = Markers.appendEntries(
             mapOf(
                 "requestId" to emailMsg.requestId.toString(),
-                "smtpSender" to (emailMsg.headers["From"] ?: ""),
+                "smtpSender" to (emailMsg.senderAddress),
                 "smtpSubject" to (emailMsg.headers["Subject"] ?: "")
             )
         )
@@ -93,20 +93,20 @@ class MailProcessor(
 
     private suspend fun publishToKafka(emailMsg: EmailMsg) {
         when (emailMsg.multipart) {
-            true -> publishPayloadMessage(emailMsg.toPayloadMessage(emailMsg.requestId))
-            false -> publishSignalMessage(emailMsg.toSignalMessage(emailMsg.requestId))
+            true -> publishPayloadMessage(emailMsg.toPayloadMessage(emailMsg.requestId), emailMsg.senderAddress)
+            false -> publishSignalMessage(emailMsg.toSignalMessage(emailMsg.requestId), emailMsg.senderAddress)
         }
     }
 
-    private suspend fun publishPayloadMessage(payloadMessage: PayloadMessage) {
+    private suspend fun publishPayloadMessage(payloadMessage: PayloadMessage, senderAddress: String) {
         with(payloadRepository) {
             fold(
                 { insert(payloadMessage.payloads) },
                 { log.error("Could not insert payloads: ${payloadMessage.payloads.map { it }}") }
-            ) { mailPublisher.publishPayloadMessage(payloadMessage) }
+            ) { mailPublisher.publishPayloadMessage(payloadMessage, senderAddress) }
         }
     }
 
-    private suspend fun publishSignalMessage(signalMessage: SignalMessage): Result<RecordMetadata> =
-        mailPublisher.publishSignalMessage(signalMessage)
+    private suspend fun publishSignalMessage(signalMessage: SignalMessage, senderAddress: String): Result<RecordMetadata> =
+        mailPublisher.publishSignalMessage(signalMessage, senderAddress)
 }
