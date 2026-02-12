@@ -6,7 +6,6 @@ import jakarta.mail.Folder
 import jakarta.mail.Folder.READ_WRITE
 import jakarta.mail.MessagingException
 import jakarta.mail.Store
-import jakarta.mail.internet.MimeBodyPart
 import jakarta.mail.internet.MimeMessage
 import jakarta.mail.internet.MimeMultipart
 import net.logstash.logback.marker.LogstashMarker
@@ -15,8 +14,8 @@ import no.nav.emottak.configuration.Mail
 import no.nav.emottak.log
 import no.nav.emottak.util.ForwardingSystem
 import no.nav.emottak.util.ScopedEventLoggingService
-import no.nav.emottak.util.extractEmailAddressOnly
-import no.nav.emottak.util.filterMimeMessage
+import no.nav.emottak.util.filterMessageForwarding
+import no.nav.emottak.util.mapEmailMsg
 import no.nav.emottak.utils.kafka.model.EventType.ERROR_WHILE_RECEIVING_MESSAGE_VIA_SMTP
 import no.nav.emottak.utils.kafka.model.EventType.MESSAGE_RECEIVED_VIA_SMTP
 import kotlin.uuid.Uuid
@@ -26,29 +25,16 @@ data class EmailMsg(
     val headers: Map<String, String>,
     val parts: List<Part>,
     val requestId: Uuid,
-    private val originalMimeMessage: MimeMessage,
-    val forwardableMimeMessage: ForwardableMimeMessage = filterMessageForwarding(headers, originalMimeMessage),
+    val originalMimeMessage: MimeMessage,
     val senderAddress: String
-)
+) {
+    val forwardableMimeMessage: ForwardableMimeMessage = this.filterMessageForwarding()
+}
 
 data class ForwardableMimeMessage(
     val forwardingSystem: ForwardingSystem,
     val forwardableMimeMessage: MimeMessage?
 )
-
-fun filterMessageForwarding(
-    headers: Map<String, String>,
-    originalMimeMessage: MimeMessage
-): ForwardableMimeMessage {
-    val forwarding = headers.filterMimeMessage()
-    val forwardableMessage =
-        if (forwarding == ForwardingSystem.EBMS) {
-            null // Deep copy not needed
-        } else {
-            MimeMessage(originalMimeMessage) // Creates a deep copy
-        }
-    return ForwardableMimeMessage(forwarding, forwardableMessage)
-}
 
 data class Part(
     val headers: Map<String, String>,
@@ -97,7 +83,9 @@ class MailReader(
                     .toList()
                     .onEach(::processMimeMessage)
                 start += batchSize // Update start index
-                result.map(::mapEmailMsg) // Return all mapped emails
+                result.map {
+                    it.mapEmailMsg()
+                } // Return all mapped emails
             } else {
                 emptyList<EmailMsg>().also { log.info("No email messages found") }
             }
@@ -115,15 +103,15 @@ class MailReader(
             is MimeMultipart -> logMimeMultipartMessage(wrapper.mimeMessage)
             else -> logMimeMessage(wrapper.mimeMessage)
         }
+        val headerXMailer = wrapper.mimeMessage.getHeader("X-Mailer")
+            ?.toList()
+            ?.firstOrNull()
+        val headerMarker = createHeaderMarker(headerXMailer)
+        log.debug(headerMarker, "From: <{}> Subject: <{}>", wrapper.mimeMessage.from[0], wrapper.mimeMessage.subject)
         setDeletedFlagOnMimeMessage(wrapper.mimeMessage)
     }
 
     private fun setDeletedFlagOnMimeMessage(mimeMessage: MimeMessage) {
-        val headerXMailer = mimeMessage.getHeader("X-Mailer")
-            ?.toList()
-            ?.firstOrNull()
-        val headerMarker = createHeaderMarker(headerXMailer)
-        log.debug(headerMarker, "From: <{}> Subject: <{}>", mimeMessage.from[0], mimeMessage.subject)
         mimeMessage.setFlag(DELETED, expunge())
     }
 
@@ -166,53 +154,6 @@ class MailReader(
         .appendEntries(
             mutableMapOf("system source" to (xMailer ?: "-"))
         )
-
-    internal fun mapEmailMsg(wrapper: MimeMessageWrapper): EmailMsg {
-        val multipartMessage = wrapper.mimeMessage.isMimeMultipart()
-        val bodyparts: List<Part> = when (multipartMessage) {
-            true -> createMimeBodyParts(wrapper.mimeMessage.content as MimeMultipart)
-            else -> createEmptyMimeBodyParts(wrapper.mimeMessage)
-        }
-        val headers: Map<String, String> = wrapper.mimeMessage.allHeaders
-            .toList()
-            .groupBy({ it.name }, { it.value })
-            .mapValues { it.value.joinToString(",") }
-        return EmailMsg(
-            multipart = multipartMessage,
-            headers = headers,
-            parts = bodyparts,
-            requestId = wrapper.requestId,
-            originalMimeMessage = wrapper.mimeMessage,
-            senderAddress = headers.getOrDefault("From", "").extractEmailAddressOnly()
-        )
-    }
-
-    private fun MimeMessage.isMimeMultipart(): Boolean = content is MimeMultipart
-
-    private fun createEmptyMimeBodyParts(message: MimeMessage) = listOf(
-        Part(
-            emptyMap(),
-            message.inputStream.readAllBytes()
-        )
-    )
-
-    private fun createMimeBodyParts(messageContent: MimeMultipart) = mutableListOf<MimeBodyPart>()
-        .apply {
-            for (i in 0 until messageContent.count) {
-                add(messageContent.getBodyPart(i) as MimeBodyPart)
-            }
-        }
-        .map(mapBodyPart())
-
-    private fun mapBodyPart(): (MimeBodyPart) -> Part = { bodyPart ->
-        Part(
-            bodyPart.allHeaders
-                .toList()
-                .groupBy({ it.name }, { it.value })
-                .mapValues { it.value.joinToString(",") },
-            bodyPart.inputStream.readAllBytes()
-        )
-    }
 
     private fun registerEvent(wrapper: MimeMessageWrapper) = eventLoggingService
         .registerEvent(
