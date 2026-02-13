@@ -13,6 +13,9 @@ import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.xpath.XPathConstants
 import javax.xml.xpath.XPathFactory
 
+private const val URN_OASIS_NAMES_TC_EBXML_MSG_SERVICE = "urn:oasis:names:tc:ebxml-msg:service"
+private val activatedServices = config().ebmsFilter.ebmsMessageTypes
+
 fun EmailMsg.filterMessageForwarding(): ForwardableMimeMessage = when (val forwardingSystem = this.filterMimeMessage()) {
     ForwardingSystem.EBMS -> ForwardableMimeMessage(forwardingSystem, null)
     ForwardingSystem.EMOTTAK -> ForwardableMimeMessage(forwardingSystem, MimeMessage(originalMimeMessage))
@@ -34,17 +37,9 @@ fun EmailMsg.filterMimeMessage(): ForwardingSystem {
     return ForwardingSystem.EMOTTAK
 }
 
-fun String.extractEmailAddressOnly() = if (this.contains("<")) this.substringAfter("<").substringBefore(">").lowercase() else this.lowercase()
-
-const val URN_OASIS_NAMES_TC_EBXML_MSG_SERVICE = "urn:oasis:names:tc:ebxml-msg:service"
-val activatedServices = config().ebmsFilter.ebmsMessageTypes
-
 private fun isFromAcceptedAddress(from: String) = config().ebmsFilter.senderAddresses.any { it.equals(from, ignoreCase = true) }
 
-/**
- * Parses the XML from a ByteArray using UTF-8 encoding and returns a Document object.
- */
-fun ByteArray.toXmlDocument(): Document? {
+private fun ByteArray.toXmlDocument(): Document? {
     return try {
         val dbFactory = DocumentBuilderFactory.newInstance()
         dbFactory.isNamespaceAware = true
@@ -59,11 +54,7 @@ fun ByteArray.toXmlDocument(): Document? {
     }
 }
 
-/**
- * Checks if the given Document contains any of the specified values in the specified element.
- * Handles namespaces and prefixes.
- */
-fun Document.ebXMLHasServiceType(vararg values: String): Boolean {
+private fun Document.ebXMLHasServiceType(vararg values: String): Boolean {
     return try {
         val nsUri = this.documentElement.namespaceURI
         val xPath = XPathFactory.newInstance().newXPath()

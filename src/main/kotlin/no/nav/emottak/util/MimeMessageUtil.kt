@@ -27,6 +27,8 @@ internal fun MimeMessageWrapper.mapEmailMsg(): EmailMsg {
     )
 }
 
+fun String.extractEmailAddressOnly() = if (this.contains("<")) this.substringAfter("<").substringBefore(">").lowercase() else this.lowercase()
+
 private fun MimeMessage.isMimeMultipart(): Boolean = content is MimeMultipart
 
 private fun createEmptyMimeBodyParts(message: MimeMessage) = listOf(
