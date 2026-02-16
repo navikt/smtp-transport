@@ -94,7 +94,7 @@ dependencyResolutionManagement {
             version("ktor-server-test", "3.3.1")
             version("kotest", "5.9.1")
             version("mock-oauth2", "2.1.2")
-            version("testcontainers", "1.18.1")
+            version("testcontainers", "1.21.4")
             version("kotest-extensions", "2.0.2")
             version("greenmail", "2.1.0-alpha-3")
             version("postgres", "42.7.4")

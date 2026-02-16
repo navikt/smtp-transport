@@ -17,7 +17,7 @@ import org.apache.kafka.common.serialization.ByteArrayDeserializer
 import org.apache.kafka.common.serialization.ByteArraySerializer
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.kafka.common.serialization.StringSerializer
-import org.testcontainers.containers.KafkaContainer
+import org.testcontainers.kafka.ConfluentKafkaContainer
 import org.testcontainers.utility.DockerImageName
 import java.util.Properties
 import kotlin.time.Duration.Companion.seconds
@@ -32,12 +32,12 @@ abstract class KafkaSpec(body: KafkaSpec.() -> Unit = {}) : StringSpec() {
     private val consumerPollingTimeout = 1.seconds
 
     private val kafkaImage: DockerImageName =
-        DockerImageName.parse("confluentinc/cp-kafka:7.4.0")
+        DockerImageName.parse("confluentinc/cp-kafka:7.5.0")
 
-    internal val container: KafkaContainer =
+    internal val container: ConfluentKafkaContainer =
         install(
             ContainerExtension(
-                KafkaContainer(kafkaImage)
+                ConfluentKafkaContainer(kafkaImage)
                     .withExposedPorts(9092, 9093)
                     .withNetworkAliases("broker")
                     .withEnv("KAFKA_HOST_NAME", "broker")
@@ -47,7 +47,7 @@ abstract class KafkaSpec(body: KafkaSpec.() -> Unit = {}) : StringSpec() {
                         "KAFKA_TRANSACTION_ABORT_TIMED_OUT_TRANSACTION_CLEANUP_INTERVAL_MS",
                         transactionTimeoutInterval.inWholeMilliseconds.toString()
                     )
-                    .withEnv("KAFKA_AUTHORIZER_CLASS_NAME", "kafka.security.authorizer.AclAuthorizer")
+                    .withEnv("KAFKA_AUTHORIZER_CLASS_NAME", "org.apache.kafka.metadata.authorizer.StandardAuthorizer") // For KRaft-based clusters
                     .withEnv("KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND", "true")
                     .withReuse(false)
                     .also { container -> container.start() }
