@@ -11,7 +11,8 @@ import no.nav.emottak.queries.PayloadDatabase
 import no.nav.emottak.utils.sql.sqldelight.UuidAdapter
 import org.flywaydb.core.Flyway
 import org.flywaydb.core.api.output.MigrateResult
-import org.testcontainers.containers.PostgreSQLContainer
+import org.testcontainers.containers.JdbcDatabaseContainer
+import org.testcontainers.containers.PostgreSQLContainerProvider
 
 private const val MIGRATIONS_PATH = "filesystem:./build/generated/migrations"
 private const val TEST_DATA_PATH = "filesystem:./src/test/resources/testDb"
@@ -36,13 +37,11 @@ private fun Spec.jdbcDriver(): JdbcDriver {
     return install(containerExtension).asJdbcDriver()
 }
 
-private val container: () -> PostgreSQLContainer<Nothing> = {
-    PostgreSQLContainer<Nothing>("postgres:14.8")
-        .apply {
-            startupAttempts = 1
-            withDatabaseName("payload-db")
-            withUsername("postgres")
-            withPassword("postgres")
-        }
-}
-    .memoize()
+private val container: () -> JdbcDatabaseContainer<*> = {
+    PostgreSQLContainerProvider().newInstance("16.10").apply {
+        startupAttempts = 1
+        withDatabaseName("payload-db")
+        withUsername("postgres")
+        withPassword("postgres")
+    }
+}.memoize()

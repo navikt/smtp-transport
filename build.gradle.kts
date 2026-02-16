@@ -71,6 +71,7 @@ dependencies {
     implementation(libs.bundles.logging)
     implementation(libs.bundles.prometheus)
     implementation(libs.flyway.core)
+    implementation(libs.flyway.database.postgresql)
     implementation(libs.hikari)
     implementation(libs.hoplite.core)
     implementation(libs.hoplite.hocon)

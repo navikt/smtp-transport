@@ -13,8 +13,8 @@ dependencyResolutionManagement {
     versionCatalogs {
         create("libs") {
             version("arrow", "2.0.1")
-            version("flyway", "9.16.3")
-            version("hikari", "5.0.1")
+            version("flyway", "11.20.3")
+            version("hikari", "6.3.3")
             version("suspendapp", "0.5.0")
             version("ktor", "3.3.1")
             version("token-validation-ktor", "5.0.30")
@@ -22,7 +22,7 @@ dependencyResolutionManagement {
             version("eclipse-angus", "2.0.2")
             version("hoplite", "2.8.2")
             version("kotlin-kafka", "0.4.1")
-            version("sqldelight", "2.0.2")
+            version("sqldelight", "2.2.1")
             version("postgres", "42.7.4")
             version("vault-jdbc", "1.3.10")
             version("prometheus", "1.12.4")
@@ -71,6 +71,7 @@ dependencyResolutionManagement {
             library("ktor-server-auth-jvm", "io.ktor", "ktor-server-auth-jvm").versionRef("ktor")
             library("token-validation-ktor-v3", "no.nav.security", "token-validation-ktor-v3").versionRef("token-validation-ktor")
             library("flyway-core", "org.flywaydb", "flyway-core").versionRef("flyway")
+            library("flyway-database-postgresql", "org.flywaydb", "flyway-database-postgresql").versionRef("flyway")
 
             library("jakarta-mail-api", "jakarta.mail", "jakarta.mail-api").versionRef("jakarta-mail")
             library("eclipse-angus", "org.eclipse.angus", "jakarta.mail").versionRef("eclipse-angus")
@@ -89,12 +90,11 @@ dependencyResolutionManagement {
 
         create("testLibs") {
             version("arrow", "2.0.0")
-            version("testPostgres", "1.18.0")
             version("ktor", "3.3.1")
             version("ktor-server-test", "3.3.1")
             version("kotest", "5.9.1")
             version("mock-oauth2", "2.1.2")
-            version("testcontainers", "1.21.4")
+            version("testcontainers", "2.0.1")
             version("kotest-extensions", "2.0.2")
             version("greenmail", "2.1.0-alpha-3")
             version("postgres", "42.7.4")
@@ -115,8 +115,8 @@ dependencyResolutionManagement {
             library("kotest-assertions-arrow", "io.kotest.extensions", "kotest-assertions-arrow").versionRef("arrow")
 
             library("testcontainers", "org.testcontainers", "testcontainers").versionRef("testcontainers")
-            library("testcontainers-kafka", "org.testcontainers", "kafka").versionRef("testcontainers")
-            library("testcontainers-postgresql", "org.testcontainers", "postgresql").versionRef("testcontainers")
+            library("testcontainers-kafka", "org.testcontainers", "testcontainers-kafka").versionRef("testcontainers")
+            library("testcontainers-postgresql", "org.testcontainers", "testcontainers-postgresql").versionRef("testcontainers")
 
             library("postgresql", "org.postgresql", "postgresql").versionRef("postgres")
 
