@@ -15,7 +15,8 @@
 
     <logger name="no.nav" level="${EMOTTAK_LOGGING_LEVEL:-INFO}"/>
     <logger name="com.zaxxer.hikari" level="${EMOTTAK_LOGGING_LEVEL:-INFO}"/>
-    <logger name="io.ktor" level="INFO"/>
+    <logger name="org.flywaydb" level="${EMOTTAK_LOGGING_LEVEL:-INFO}"/>
+    <logger name="io.ktor" level="${EMOTTAK_LOGGING_LEVEL:-INFO}"/>
 
     <root level="INFO">
         <appender-ref ref="stdout_json"/>
