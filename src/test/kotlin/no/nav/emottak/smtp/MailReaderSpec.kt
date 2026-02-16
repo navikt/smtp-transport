@@ -11,6 +11,7 @@ import no.nav.emottak.config
 import no.nav.emottak.session
 import no.nav.emottak.store
 import no.nav.emottak.util.fakeEventLoggingService
+import no.nav.emottak.util.mapEmailMsg
 import java.io.ByteArrayOutputStream
 import java.nio.file.Path.of
 import kotlin.uuid.Uuid
@@ -77,7 +78,7 @@ class MailReaderSpec : StringSpec({
 
             val requestMessage = MimeMessage(session, classLoader.getResourceAsStream(REQUEST))
             var wrapper = MimeMessageWrapper(requestMessage, Uuid.random())
-            val expectedFirstMessage = reader.mapEmailMsg(wrapper)
+            val expectedFirstMessage = wrapper.mapEmailMsg()
 
             val firstMultipartMessage = multipartMessages.first()
             firstMultipartMessage.headers shouldBe expectedFirstMessage.headers
@@ -85,7 +86,7 @@ class MailReaderSpec : StringSpec({
 
             val exampleMessage = MimeMessage(session, classLoader.getResourceAsStream(EXAMPLE))
             wrapper = MimeMessageWrapper(exampleMessage, Uuid.random())
-            val expectedLastMessage = reader.mapEmailMsg(wrapper)
+            val expectedLastMessage = wrapper.mapEmailMsg()
 
             val lastMultipartMessage = multipartMessages.last()
             lastMultipartMessage.headers shouldBe expectedLastMessage.headers
@@ -135,11 +136,11 @@ class MailReaderSpec : StringSpec({
 
             val requestMessage = MimeMessage(session, classLoader.getResourceAsStream(REQUEST))
             var wrapper = MimeMessageWrapper(requestMessage, Uuid.random())
-            val mappedRequestMessage = reader.mapEmailMsg(wrapper)
+            val mappedRequestMessage = wrapper.mapEmailMsg()
 
             val exampleMessage = MimeMessage(session, classLoader.getResourceAsStream(EXAMPLE))
             wrapper = MimeMessageWrapper(exampleMessage, Uuid.random())
-            val mappedExampleMessage = reader.mapEmailMsg(wrapper)
+            val mappedExampleMessage = wrapper.mapEmailMsg()
 
             val firstMultipartMessage = multipartMessages.first()
             val lastMultipartMessage = multipartMessages.last()
