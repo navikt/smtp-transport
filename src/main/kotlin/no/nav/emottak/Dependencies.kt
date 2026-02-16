@@ -168,11 +168,14 @@ private suspend fun submitForm(httpTokenClient: HttpClient, config: AzureAuth): 
 private fun migrationService(database: Database): Flyway {
     val adminCredentials = getVaultAdminCredentials(database)
     val hikariDataSource = HikariDataSource(
-        HikariConfig(database.toProperties())
-    ).apply {
-        username = adminCredentials.username
-        password = adminCredentials.password
-    }
+        HikariConfig(
+            database.toProperties()
+        )
+            .apply {
+                username = adminCredentials.username
+                password = adminCredentials.password
+            }
+    )
     return Flyway
         .configure()
         .dataSource(hikariDataSource)
