@@ -6,6 +6,7 @@ import arrow.core.raise.result
 import arrow.fx.coroutines.ResourceScope
 import arrow.fx.coroutines.resourceScope
 import arrow.resilience.Schedule
+import com.zaxxer.hikari.HikariDataSource
 import io.ktor.server.application.Application
 import io.ktor.server.netty.Netty
 import io.ktor.utils.io.CancellationException
@@ -39,7 +40,13 @@ fun main() = SuspendApp {
     result {
         resourceScope {
             val deps = initDependencies()
-            deps.migrationService.migrate()
+            try {
+                deps.migrationService.migrate()
+            } finally {
+                (deps.migrationService.configuration.dataSource as? HikariDataSource)?.close()?.also {
+                    log.info("Closed Flyway datasource")
+                }
+            }
 
             val scope = coroutineScope(coroutineContext)
             val eventScope = coroutineScope(Dispatchers.IO)

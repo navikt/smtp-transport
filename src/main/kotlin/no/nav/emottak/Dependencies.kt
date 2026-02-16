@@ -169,9 +169,18 @@ private fun migrationService(database: Database): Flyway {
     val adminCredentials = getVaultAdminCredentials(database)
     val user = adminCredentials.username
     val password = adminCredentials.password
+    val dataSource = HikariDataSource(
+        HikariConfig(
+            database.toProperties()
+        ).apply {
+            this.username = user
+            this.password = password
+            this.maximumPoolSize = 2
+        }
+    )
     return Flyway
         .configure()
-        .dataSource(database.url.value, user, password)
+        .dataSource(dataSource)
         .initSql("SET ROLE \"${database.adminRole.value}\"")
         .locations(database.migrationsPath.value)
         .loggers("slf4j")
