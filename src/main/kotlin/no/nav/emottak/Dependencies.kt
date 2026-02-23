@@ -233,16 +233,33 @@ suspend fun ResourceScope.initDependencies(): Dependencies = awaitAll {
 
     log.info("Started initializing dependencies, awaiting completion...")
 
+    log.info("Awaiting store...")
+    val storeResult = store.await().also { log.info("Store ready") }
+    log.info("Awaiting session...")
+    val sessionResult = session(config.smtp).also { log.info("Session ready") }
+    log.info("Awaiting kafkaPublisher...")
+    val kafkaPublisherResult = kafkaPublisher.await().also { log.info("KafkaPublisher ready") }
+    log.info("Awaiting kafkaReceiver...")
+    val kafkaReceiverResult = kafkaReceiver.await().also { log.info("KafkaReceiver ready") }
+    log.info("Awaiting jdbcDriver...")
+    val jdbcDriverResult = jdbcDriver.await().also { log.info("JdbcDriver ready") }
+    log.info("Awaiting migrationService...")
+    val migrationServiceResult = migrationService.await().also { log.info("MigrationService ready") }
+    log.info("Awaiting metricsRegistry...")
+    val metricsRegistryResult = metricsRegistry.await().also { log.info("MetricsRegistry ready") }
+    log.info("Awaiting httpClient...")
+    val httpClientResult = httpClient.await().also { log.info("HttpClient ready") }
+
+    log.info("Dependency initialization complete.")
+
     Dependencies(
-        store.await(),
-        session(config.smtp),
-        kafkaPublisher.await(),
-        kafkaReceiver.await(),
-        PayloadDatabase(jdbcDriver.await(), Payload.Adapter(UuidAdapter)),
-        httpClient.await(),
-        migrationService.await(),
-        metricsRegistry.await()
-    ).also {
-        log.info("Dependency initialization complete.")
-    }
+        storeResult,
+        sessionResult,
+        kafkaPublisherResult,
+        kafkaReceiverResult,
+        PayloadDatabase(jdbcDriverResult, Payload.Adapter(UuidAdapter)),
+        httpClientResult,
+        migrationServiceResult,
+        metricsRegistryResult
+    )
 }
