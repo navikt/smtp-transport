@@ -240,9 +240,10 @@ suspend fun ResourceScope.initDependencies(): Dependencies = awaitAll {
         httpTokenClient(httpTokenClientEngine.await(), config).also {
             log.info("HttpTokenClient initialized.")
         }
-    }
+    }.await()
+
     val httpClient = async {
-        httpClient(httpClientEngine.await(), httpTokenClient.await(), config).also {
+        httpClient(httpClientEngine.await(), httpTokenClient, config).also {
             log.info("HttpClient initialized.")
         }
     }
