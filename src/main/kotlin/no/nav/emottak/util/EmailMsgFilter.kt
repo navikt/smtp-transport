@@ -13,8 +13,8 @@ import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.xpath.XPathConstants
 import javax.xml.xpath.XPathFactory
 
-private const val URN_OASIS_NAMES_TC_EBXML_MSG_SERVICE = "urn:oasis:names:tc:ebxml-msg:service"
-private val activatedServices = config().ebmsFilter.ebmsMessageTypes
+private val ebmsServices = config().ebmsFilter.ebmsMessageTypes.toTypedArray()
+private val bothServices = config().ebmsFilter.bothMessageTypes.toTypedArray()
 
 fun EmailMsg.filterMessageForwarding(): ForwardableMimeMessage = when (val forwardingSystem = this.filterMimeMessage()) {
     ForwardingSystem.EBMS -> ForwardableMimeMessage(forwardingSystem, null)
@@ -26,10 +26,10 @@ fun EmailMsg.filterMimeMessage(): ForwardingSystem {
     val envelopeDoc = getEnvelope().toXmlDocument()
     if (senderAddress.isNotBlank() && envelopeDoc != null) {
         if (isFromAcceptedAddress(senderAddress)) {
-            if (envelopeDoc.ebXMLHasServiceType(URN_OASIS_NAMES_TC_EBXML_MSG_SERVICE)) {
+            if (envelopeDoc.ebXMLHasServiceType(*bothServices)) {
                 return ForwardingSystem.BOTH
             }
-            if (envelopeDoc.ebXMLHasServiceType(*activatedServices.toTypedArray())) {
+            if (envelopeDoc.ebXMLHasServiceType(*ebmsServices)) {
                 return ForwardingSystem.EBMS
             }
         }

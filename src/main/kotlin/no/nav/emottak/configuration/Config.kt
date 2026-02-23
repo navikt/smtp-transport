@@ -186,5 +186,6 @@ data class AzureAuth(
 
 data class EbmsFilter(
     val ebmsMessageTypes: List<String>,
+    val bothMessageTypes: List<String>,
     val senderAddresses: Set<String>
 )
