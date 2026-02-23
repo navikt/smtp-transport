@@ -224,10 +224,13 @@ suspend fun ResourceScope.initDependencies(): Dependencies = awaitAll {
     val jdbcDriver = async { (jdbcDriver(hikari(config.database))) }
     val migrationService = async { migrationService(config.database) }
     val metricsRegistry = async { metricsRegistry() }
-    val httpClientEngine = async { httpClientEngine() }
-    val httpTokenClientEngine = async { httpTokenClientEngine() }
-    val httpTokenClient = async { httpTokenClient(httpTokenClientEngine.await(), config) }
-    val httpClient = async { httpClient(httpClientEngine.await(), httpTokenClient.await(), config) }
+    val httpClient = async {
+        httpClient(
+            clientEngine = httpClientEngine(),
+            httpTokenClient = httpTokenClient(httpTokenClientEngine(), config),
+            config = config
+        )
+    }
 
     Dependencies(
         store.await(),
