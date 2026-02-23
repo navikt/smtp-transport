@@ -226,26 +226,17 @@ suspend fun ResourceScope.initDependencies(): Dependencies = awaitAll {
     val jdbcDriver = async { (jdbcDriver(hikari(config.database))) }
     val migrationService = async { migrationService(config.database) }
     val metricsRegistry = async { metricsRegistry() }
-    val httpClientEngine = async {
-        httpClientEngine().also {
-            log.info("HttpClientEngine initialized.")
-        }
+    val httpClientEngine = httpClientEngine().also {
+        log.info("HttpClientEngine initialized.")
     }
-    val httpTokenClientEngine = async {
-        httpTokenClientEngine().also {
-            log.info("HttpTokenClientEngine initialized.")
-        }
+    val httpTokenClientEngine = httpTokenClientEngine().also {
+        log.info("HttpTokenClientEngine initialized.")
     }
-    val httpTokenClient = async {
-        httpTokenClient(httpTokenClientEngine.await(), config).also {
-            log.info("HttpTokenClient initialized.")
-        }
-    }.await()
-
-    val httpClient = async {
-        httpClient(httpClientEngine.await(), httpTokenClient, config).also {
-            log.info("HttpClient initialized.")
-        }
+    val httpTokenClient = httpTokenClient(httpTokenClientEngine, config).also {
+        log.info("HttpTokenClient initialized.")
+    }
+    val httpClient = httpClient(httpClientEngine, httpTokenClient, config).also {
+        log.info("HttpClient initialized.")
     }
 
     log.info("Started initializing dependencies, awaiting completion...")
@@ -265,7 +256,7 @@ suspend fun ResourceScope.initDependencies(): Dependencies = awaitAll {
     log.info("Awaiting metricsRegistry...")
     val metricsRegistryResult = metricsRegistry.await().also { log.info("MetricsRegistry ready") }
     log.info("Awaiting httpClient...")
-    val httpClientResult = httpClient.await().also { log.info("HttpClient ready") }
+    val httpClientResult = httpClient.also { log.info("HttpClient ready") }
 
     log.info("Dependency initialization complete.")
 
