@@ -218,6 +218,8 @@ internal val session: (Smtp) -> Session = { smtp: Smtp ->
 suspend fun ResourceScope.initDependencies(): Dependencies = awaitAll {
     val config = config()
 
+    log.info("Starting dependency initializing...")
+
     val store = async { store(config.smtp) }
     val kafkaPublisher = async { kafkaPublisher(config.kafka) }
     val kafkaReceiver = async { kafkaReceiver(config.kafka) }
@@ -229,6 +231,8 @@ suspend fun ResourceScope.initDependencies(): Dependencies = awaitAll {
     val httpTokenClient = async { httpTokenClient(httpTokenClientEngine.await(), config) }
     val httpClient = async { httpClient(httpClientEngine.await(), httpTokenClient.await(), config) }
 
+    log.info("Started initializing dependencies, awaiting completion...")
+
     Dependencies(
         store.await(),
         session(config.smtp),
@@ -238,5 +242,7 @@ suspend fun ResourceScope.initDependencies(): Dependencies = awaitAll {
         httpClient.await(),
         migrationService.await(),
         metricsRegistry.await()
-    )
+    ).also {
+        log.info("Dependency initialization complete.")
+    }
 }
