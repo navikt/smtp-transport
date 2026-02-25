@@ -218,56 +218,28 @@ internal val session: (Smtp) -> Session = { smtp: Smtp ->
 suspend fun ResourceScope.initDependencies(): Dependencies = awaitAll {
     val config = config()
 
-    log.info("Starting dependency initializing...")
-
     val store = async { store(config.smtp) }
     val kafkaPublisher = async { kafkaPublisher(config.kafka) }
     val kafkaReceiver = async { kafkaReceiver(config.kafka) }
     val jdbcDriver = async { (jdbcDriver(hikari(config.database))) }
     val migrationService = async { migrationService(config.database) }
     val metricsRegistry = async { metricsRegistry() }
-    val httpClientEngine = httpClientEngine().also {
-        log.info("HttpClientEngine initialized.")
+    val httpClient = async {
+        httpClient(
+            clientEngine = httpClientEngine(),
+            httpTokenClient = httpTokenClient(httpTokenClientEngine(), config),
+            config = config
+        )
     }
-    val httpTokenClientEngine = httpTokenClientEngine().also {
-        log.info("HttpTokenClientEngine initialized.")
-    }
-    val httpTokenClient = httpTokenClient(httpTokenClientEngine, config).also {
-        log.info("HttpTokenClient initialized.")
-    }
-    val httpClient = httpClient(httpClientEngine, httpTokenClient, config).also {
-        log.info("HttpClient initialized.")
-    }
-
-    log.info("Started initializing dependencies, awaiting completion...")
-
-    log.info("Awaiting store...")
-    val storeResult = store.await().also { log.info("Store ready") }
-    log.info("Awaiting session...")
-    val sessionResult = session(config.smtp).also { log.info("Session ready") }
-    log.info("Awaiting kafkaPublisher...")
-    val kafkaPublisherResult = kafkaPublisher.await().also { log.info("KafkaPublisher ready") }
-    log.info("Awaiting kafkaReceiver...")
-    val kafkaReceiverResult = kafkaReceiver.await().also { log.info("KafkaReceiver ready") }
-    log.info("Awaiting jdbcDriver...")
-    val jdbcDriverResult = jdbcDriver.await().also { log.info("JdbcDriver ready") }
-    log.info("Awaiting migrationService...")
-    val migrationServiceResult = migrationService.await().also { log.info("MigrationService ready") }
-    log.info("Awaiting metricsRegistry...")
-    val metricsRegistryResult = metricsRegistry.await().also { log.info("MetricsRegistry ready") }
-    log.info("Awaiting httpClient...")
-    val httpClientResult = httpClient.also { log.info("HttpClient ready") }
-
-    log.info("Dependency initialization complete.")
 
     Dependencies(
-        storeResult,
-        sessionResult,
-        kafkaPublisherResult,
-        kafkaReceiverResult,
-        PayloadDatabase(jdbcDriverResult, Payload.Adapter(UuidAdapter)),
-        httpClientResult,
-        migrationServiceResult,
-        metricsRegistryResult
+        store.await(),
+        session(config.smtp),
+        kafkaPublisher.await(),
+        kafkaReceiver.await(),
+        PayloadDatabase(jdbcDriver.await(), Payload.Adapter(UuidAdapter)),
+        httpClient.await(),
+        migrationService.await(),
+        metricsRegistry.await()
     )
 }
