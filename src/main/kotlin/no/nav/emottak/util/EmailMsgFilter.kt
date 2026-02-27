@@ -1,40 +1,54 @@
 package no.nav.emottak.util
 
 import jakarta.mail.internet.MimeMessage
+import net.logstash.logback.marker.LogstashMarker
+import net.logstash.logback.marker.Markers
 import no.nav.emottak.config
 import no.nav.emottak.log
 import no.nav.emottak.smtp.EmailMsg
 import no.nav.emottak.smtp.ForwardableMimeMessage
 import org.w3c.dom.Document
-import org.w3c.dom.Element
 import org.w3c.dom.NodeList
 import javax.xml.namespace.NamespaceContext
 import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.xpath.XPathConstants
 import javax.xml.xpath.XPathFactory
 
-private val ebmsServices = config().ebmsFilter.ebmsMessageTypes.toTypedArray()
-private val bothServices = config().ebmsFilter.bothMessageTypes.toTypedArray()
+private val ebmsServices = config().ebmsFilter.ebmsMessageTypes
+private val bothServices = config().ebmsFilter.bothMessageTypes
 
-fun EmailMsg.filterMessageForwarding(): ForwardableMimeMessage = when (val forwardingSystem = this.filterMimeMessage()) {
-    ForwardingSystem.EBMS -> ForwardableMimeMessage(forwardingSystem, null)
-    ForwardingSystem.EMOTTAK -> ForwardableMimeMessage(forwardingSystem, MimeMessage(originalMimeMessage))
-    ForwardingSystem.BOTH -> ForwardableMimeMessage(forwardingSystem, MimeMessage(originalMimeMessage))
+fun EmailMsg.filterMessageForwarding(): ForwardableMimeMessage {
+    val (forwardingSystem, serviceName) = this.filterMimeMessage()
+    val marker: LogstashMarker = Markers.appendEntries(
+        mapOf(
+            "requestId" to this.requestId.toString(),
+            "smtpSender" to this.senderAddress,
+            "smtpSubject" to (this.headers["Subject"] ?: ""),
+            "service" to serviceName,
+            "forwardingSystem" to forwardingSystem
+        )
+    )
+    log.info(marker, "Message forwarding system identified")
+    return when (forwardingSystem) {
+        ForwardingSystem.EBMS -> ForwardableMimeMessage(forwardingSystem, null)
+        ForwardingSystem.EMOTTAK -> ForwardableMimeMessage(forwardingSystem, MimeMessage(originalMimeMessage))
+        ForwardingSystem.BOTH -> ForwardableMimeMessage(forwardingSystem, MimeMessage(originalMimeMessage))
+    }
 }
 
-fun EmailMsg.filterMimeMessage(): ForwardingSystem {
-    val envelopeDoc = getEnvelope().toXmlDocument()
-    if (senderAddress.isNotBlank() && envelopeDoc != null) {
+fun EmailMsg.filterMimeMessage(): Pair<ForwardingSystem, String> {
+    val envelopeServiceName = getEnvelope().toXmlDocument()?.getEbxmlServiceName() ?: "Unparseable"
+    if (senderAddress.isNotBlank()) {
         if (isFromAcceptedAddress(senderAddress)) {
-            if (envelopeDoc.ebXMLHasServiceType(*bothServices)) {
-                return ForwardingSystem.BOTH
+            if (bothServices.contains(envelopeServiceName)) {
+                return ForwardingSystem.BOTH to envelopeServiceName
             }
-            if (envelopeDoc.ebXMLHasServiceType(*ebmsServices)) {
-                return ForwardingSystem.EBMS
+            if (ebmsServices.contains(envelopeServiceName)) {
+                return ForwardingSystem.EBMS to envelopeServiceName
             }
         }
     }
-    return ForwardingSystem.EMOTTAK
+    return ForwardingSystem.EMOTTAK to envelopeServiceName
 }
 
 private fun isFromAcceptedAddress(from: String) = config().ebmsFilter.senderAddresses.any { it.equals(from, ignoreCase = true) }
@@ -54,7 +68,7 @@ private fun ByteArray.toXmlDocument(): Document? {
     }
 }
 
-private fun Document.ebXMLHasServiceType(vararg values: String): Boolean {
+private fun Document.getEbxmlServiceName(): String {
     return try {
         val nsUri = this.documentElement.namespaceURI
         val xPath = XPathFactory.newInstance().newXPath()
@@ -67,16 +81,14 @@ private fun Document.ebXMLHasServiceType(vararg values: String): Boolean {
         }
         val localNameExpr = "//*[local-name()='Service']"
         val nodeList = xPath.evaluate(localNameExpr, this, XPathConstants.NODESET) as NodeList
-        for (i in 0 until nodeList.length) {
-            val node = nodeList.item(i)
-            if (node is Element && values.any { it == node.textContent }) {
-                return true
-            }
+        return if (nodeList.length == 1) {
+            nodeList.item(0).textContent
+        } else {
+            "Unknown"
         }
-        false
     } catch (e: Exception) {
         log.warn("Failed to check XML for element 'Service': ${e.message}")
-        false
+        "ExceptionThrown"
     }
 }
 
