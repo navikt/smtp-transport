@@ -8,8 +8,6 @@ import jakarta.mail.MessagingException
 import jakarta.mail.Store
 import jakarta.mail.internet.MimeMessage
 import jakarta.mail.internet.MimeMultipart
-import net.logstash.logback.marker.LogstashMarker
-import net.logstash.logback.marker.Markers
 import no.nav.emottak.configuration.Mail
 import no.nav.emottak.log
 import no.nav.emottak.util.ForwardingSystem
@@ -103,11 +101,7 @@ class MailReader(
             is MimeMultipart -> logMimeMultipartMessage(wrapper.mimeMessage)
             else -> logMimeMessage(wrapper.mimeMessage)
         }
-        val headerXMailer = wrapper.mimeMessage.getHeader("X-Mailer")
-            ?.toList()
-            ?.firstOrNull()
-        val headerMarker = createHeaderMarker(headerXMailer)
-        log.debug(headerMarker, "From: <{}> Subject: <{}>", wrapper.mimeMessage.from[0], wrapper.mimeMessage.subject)
+        log.debug("From: <{}> Subject: <{}>", wrapper.mimeMessage.from[0], wrapper.mimeMessage.subject)
         setDeletedFlagOnMimeMessage(wrapper.mimeMessage)
     }
 
@@ -149,11 +143,6 @@ class MailReader(
     private fun getInbox() = store.isConnected
         .let { connected -> if (!connected) store.connect() }
         .run { store.getFolder("INBOX").apply { if (!isOpen) open(READ_WRITE) } }
-
-    private fun createHeaderMarker(xMailer: String?): LogstashMarker = Markers
-        .appendEntries(
-            mutableMapOf("system source" to (xMailer ?: "-"))
-        )
 
     private fun registerEvent(wrapper: MimeMessageWrapper) = eventLoggingService
         .registerEvent(

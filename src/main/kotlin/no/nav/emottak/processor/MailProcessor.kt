@@ -80,8 +80,9 @@ class MailProcessor(
             mapOf(
                 "requestId" to emailMsg.requestId.toString(),
                 "smtpSender" to emailMsg.senderAddress,
-                "smtpSubject" to (emailMsg.headers["Subject"] ?: ""),
-                "forwardingSystem" to emailMsg.forwardableMimeMessage.forwardingSystem
+                "smtpSubject" to (emailMsg.headers["Subject"] ?: "-"),
+                "forwardingSystem" to emailMsg.forwardableMimeMessage.forwardingSystem,
+                "sourceSystem" to (emailMsg.headers["X-Mailer"] ?: "-")
             )
         )
         log.info(marker, "Forwarded message in ${(Clock.System.now() - start).inWholeMilliseconds} ms")

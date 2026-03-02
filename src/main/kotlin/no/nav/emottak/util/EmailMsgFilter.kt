@@ -23,9 +23,10 @@ fun EmailMsg.filterMessageForwarding(): ForwardableMimeMessage {
         mapOf(
             "requestId" to this.requestId.toString(),
             "smtpSender" to this.senderAddress,
-            "smtpSubject" to (this.headers["Subject"] ?: ""),
+            "smtpSubject" to (this.headers["Subject"] ?: "-"),
             "service" to serviceName,
-            "forwardingSystem" to forwardingSystem
+            "forwardingSystem" to forwardingSystem,
+            "sourceSystem" to (this.headers["X-Mailer"] ?: "-")
         )
     )
     log.info(marker, "Message forwarding system identified")
