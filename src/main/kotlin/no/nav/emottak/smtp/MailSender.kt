@@ -27,6 +27,7 @@ import no.nav.emottak.util.addEbXMLMimeHeaders
 import no.nav.emottak.utils.kafka.model.EventType.ERROR_WHILE_SENDING_MESSAGE_VIA_SMTP
 import no.nav.emottak.utils.kafka.model.EventType.MESSAGE_SENT_VIA_SMTP
 import org.bouncycastle.jce.provider.BouncyCastleProvider
+import java.io.Closeable
 import java.security.Security
 import kotlin.uuid.Uuid
 
@@ -40,23 +41,31 @@ private const val ENCODING_BASE64 = "base64"
 class MailSender(
     private val session: Session,
     private val eventLoggingService: ScopedEventLoggingService
-) {
+) : Closeable {
     private val smtp = config().smtp
+    private val forwardTransport: Transport = session.getTransport("smtp")
 
     init {
         Security.addProvider(BouncyCastleProvider())
     }
 
+    @Synchronized
+    private fun connectForwardingTransport() {
+        if (!forwardTransport.isConnected) {
+            forwardTransport.connect()
+        }
+    }
+
+    override fun close() {
+        if (forwardTransport.isConnected) forwardTransport.close()
+    }
+
     suspend fun rawForward(mimeMessage: MimeMessage, address: InternetAddress = InternetAddress(config().smtp.smtpT1EmottakAddress)) =
         withContext(Dispatchers.IO) {
             catch({
-                Transport
-                    .send(
-                        mimeMessage,
-                        arrayOf(address)
-                    ).also {
-                        log.info("Message forwarded to ${config().smtp.smtpT1EmottakAddress}")
-                    }
+                connectForwardingTransport()
+                forwardTransport.sendMessage(mimeMessage, arrayOf(address))
+                log.info("Message forwarded to ${config().smtp.smtpT1EmottakAddress}")
             }) { error: MessagingException ->
                 log.error("Failed to forward message: ${error.localizedMessage}", error)
             }
