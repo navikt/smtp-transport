@@ -1,0 +1,58 @@
+X-Original-To: nyebmsbcc@test-es.nav.no
+Delivered-To: nyebmsbcc@test-es.nav.no
+From: "no-reply@nav.no" <no-reply@nav.no>
+Date: Thu, 12 Feb 2026 12:00:38 +0000
+Subject: InntektsForesporsel
+Message-Id: <OO2R1I6MHSU4.L13WVN153AMT1@sender-7c6d6fb6c9-gnmwq>
+To: "mottak-qass@test-es.nav.no" <mottak-qass@test-es.nav.no>
+SOAPAction: "ebXML"
+MIME-Version: 1.0
+Content-Type: multipart/related; boundary="=-m/5aQmgtBfSwyFxBpLeITA=="
+
+--=-m/5aQmgtBfSwyFxBpLeITA==
+Content-Type: text/xml
+Content-Id: <ref0>
+Content-Transfer-Encoding: 7bit
+
+<?xml version="1.0" encoding="utf-8"?>
+<SOAP:Envelope xmlns:eb="http://www.oasis-open.org/committees/ebxml-msg/schema/msg-header-2_0.xsd" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:SOAP="http://schemas.xmlsoap.org/soap/envelope/">
+	<SOAP:Header>
+		<eb:MessageHeader SOAP:mustUnderstand="1" eb:version="2.0">
+			<eb:From>
+				<eb:PartyId eb:type="commonname">DIPS test</eb:PartyId>
+				<eb:PartyId eb:type="DN">CN=DIPS test,O=DIPS AS,C=NO</eb:PartyId>
+				<eb:Role>Fordringshaver</eb:Role>
+			</eb:From>
+			<eb:To>
+				<eb:PartyId eb:type="commonname">ARBEIDS- OG VELFERDSETATEN TEST</eb:PartyId>
+				<eb:PartyId eb:type="DN">CN=ARBEIDS- OG VELFERDSETATEN TEST,O=ARBEIDS- OG VELFERDSETATEN,C=NO</eb:PartyId>
+				<eb:Role>Ytelsesutbetaler</eb:Role>
+			</eb:To>
+			<eb:CPAId>nav:qass:34961</eb:CPAId>
+			<eb:ConversationId>c6d0b534-5d7b-4a8e-b549-fbfa1769302f</eb:ConversationId>
+			<eb:Action>Foresporsel</eb:Action>
+			<eb:MessageData>
+				<eb:MessageId>35dde971-53c6-47fb-9a11-030c6aa4ef98</eb:MessageId>
+				<eb:Timestamp>2026-02-12T12:00:33</eb:Timestamp>
+			</eb:MessageData>
+			<eb:DuplicateElimination />
+			<eb:Description xml:lang="NO">{"MSH-system":"CFC","MSH-versjon":"7.8.28","fagsystem":"CFC Azure dev"}</eb:Description>
+		</eb:MessageHeader>
+		<eb:AckRequested SOAP:actor="urn:oasis:names:tc:ebxml-msg:actor:toPartyMSH" SOAP:mustUnderstand="1" eb:signed="true" eb:version="2.0"> </eb:AckRequested>
+	</SOAP:Header>
+	<SOAP:Body>
+		<eb:Manifest eb:version="2.0">
+			<eb:Reference xlink:href="cid:ref1" xlink:type="simple" />
+		</eb:Manifest>
+	</SOAP:Body>
+</SOAP:Envelope>
+
+--=-m/5aQmgtBfSwyFxBpLeITA==
+Content-Type: application/pkcs7-mime; smime-type=enveloped-data
+Content-Id: <ref1>
+Content-Transfer-Encoding: base64
+
+MIIfhQYJKoZIhvcNAQcDoIIfdjCCH3ICAQAxggIZMIICFQIBADB9MG4xCzAJBgNVBAYTAk5PMRgw
+SbS5CoPJjk1FFOzuE8teR4mV0MnTEirXep2YSvmpvU6mtn/Z
+
+--=-m/5aQmgtBfSwyFxBpLeITA==--

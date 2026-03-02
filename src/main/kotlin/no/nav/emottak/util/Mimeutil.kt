@@ -29,7 +29,7 @@ fun MimeMessage.addEbXMLMimeHeaders() {
     setHeader(X_MAILER, "NAV EBMS")
 }
 
-private fun EmailMsg.getEnvelope() = parts
+fun EmailMsg.getEnvelope() = parts
     .first()
     .bytes
 

@@ -38,8 +38,12 @@ internal val log = LoggerFactory.getLogger("no.nav.emottak.smtp")
 fun main() = SuspendApp {
     result {
         resourceScope {
+            log.info("Starting application, initializing dependencies...")
             val deps = initDependencies()
+            log.info("Dependencies initialized.")
+            log.info("Starting flyway migrations...")
             deps.migrationService.migrate()
+            log.info("Flyway migration successfully.")
 
             val scope = coroutineScope(coroutineContext)
             val eventScope = coroutineScope(Dispatchers.IO)
