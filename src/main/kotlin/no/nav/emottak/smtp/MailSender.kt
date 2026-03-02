@@ -59,6 +59,7 @@ class MailSender(
                     }
             }) { error: MessagingException ->
                 log.error("Failed to forward message: ${error.localizedMessage}", error)
+                throw error
             }
         }
 

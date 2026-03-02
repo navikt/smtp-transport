@@ -105,7 +105,9 @@ class MailReaderSpec : StringSpec({
             val inboxLimit100 = config.mail.copy(inboxLimit = 100)
             val reader = MailReader(inboxLimit100, store, false, eventLoggingService)
 
-            reader.readMailBatches(3).size shouldBe 3
+            val batch1 = reader.readMailBatches(3)
+            batch1.size shouldBe 3
+            batch1.forEach { reader.markDeleted(it.originalMimeMessage) }
             reader.readMailBatches(3).size shouldBe 0
             reader.close()
 
@@ -114,7 +116,9 @@ class MailReaderSpec : StringSpec({
             val inboxLimitNegative1 = config.mail.copy(inboxLimit = -1)
             val reader2 = MailReader(inboxLimitNegative1, store, false, eventLoggingService)
 
-            reader2.readMailBatches(3).size shouldBe 3
+            val batch2 = reader2.readMailBatches(3)
+            batch2.size shouldBe 3
+            batch2.forEach { reader2.markDeleted(it.originalMimeMessage) }
             reader2.readMailBatches(3).size shouldBe 0
             reader2.close()
 
@@ -172,20 +176,39 @@ class MailReaderSpec : StringSpec({
 
             val mailConfig = config.mail
 
-            val reader = MailReader(mailConfig, store, true, eventLoggingService)
-            reader.count() shouldBe 3
-            reader.readMailBatches(1).size shouldBe 1
-            reader.close()
+            // Read 1 email per batch. Should be one less email per batch retrieval
+            // Inbox starts with 3 messages
+            with(MailReader(mailConfig, store, true, eventLoggingService)) {
+                this.count() shouldBe 3
+                val batch1 = this.readMailBatches(1)
+                batch1.size shouldBe 1
+                batch1.forEach { this.markDeleted(it.originalMimeMessage) }
+                this.close()
+            }
 
-            val reader2 = MailReader(mailConfig, store, true, eventLoggingService)
-            reader2.count() shouldBe 2
-            reader2.readMailBatches(1).size shouldBe 1
-            reader2.close()
+            with(MailReader(mailConfig, store, true, eventLoggingService)) {
+                this.count() shouldBe 2
+                val batch2 = this.readMailBatches(1)
+                batch2.size shouldBe 1
+                batch2.forEach { this.markDeleted(it.originalMimeMessage) }
+                this.close()
+            }
 
-            val reader3 = MailReader(mailConfig, store, true, eventLoggingService)
-            reader3.count() shouldBe 1
-            reader3.readMailBatches(1).size shouldBe 1
-            reader3.close()
+            with(MailReader(mailConfig, store, true, eventLoggingService)) {
+                this.count() shouldBe 1
+                val batch3 = this.readMailBatches(1)
+                batch3.size shouldBe 1
+                batch3.forEach { this.markDeleted(it.originalMimeMessage) }
+                this.close()
+            }
+
+            with(MailReader(mailConfig, store, true, eventLoggingService)) {
+                this.count() shouldBe 0
+                val batch4 = this.readMailBatches(1)
+                batch4.size shouldBe 0
+                batch4.forEach { this.markDeleted(it.originalMimeMessage) }
+                this.close()
+            }
         }
     }
 })

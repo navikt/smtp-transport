@@ -3,14 +3,11 @@ package no.nav.emottak.processor
 import arrow.autoCloseScope
 import arrow.core.raise.fold
 import jakarta.mail.Store
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.emptyFlow
-import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import net.logstash.logback.marker.LogstashMarker
 import net.logstash.logback.marker.Markers
@@ -27,7 +24,6 @@ import no.nav.emottak.util.ForwardingSystem
 import no.nav.emottak.util.ScopedEventLoggingService
 import no.nav.emottak.util.toPayloadMessage
 import no.nav.emottak.util.toSignalMessage
-import org.apache.kafka.clients.producer.RecordMetadata
 import kotlin.math.min
 
 class MailProcessor(
@@ -37,32 +33,40 @@ class MailProcessor(
     private val eventLoggingService: ScopedEventLoggingService,
     private val mailSender: MailSender
 ) {
-    fun processMessages(scope: CoroutineScope) =
-        readMessages()
-            .onEach(::processMessage)
-            .flowOn(Dispatchers.IO)
-            .launchIn(scope)
-
-    private fun readMessages(): Flow<EmailMsg> = autoCloseScope {
-        val mailReader = install(
-            MailReader(
-                config().mail,
-                store,
-                config().mail.inboxExpunge,
-                eventLoggingService
+    fun processMessages(scope: CoroutineScope): Job = scope.launch(Dispatchers.IO) {
+        autoCloseScope {
+            val mailReader = install(
+                MailReader(
+                    config().mail,
+                    store,
+                    config().mail.inboxExpunge,
+                    eventLoggingService
+                )
             )
-        )
-        val messageCount = mailReader.count()
-        val batchSize = min(config().mail.inboxBatchReadLimit, messageCount)
+            val messageCount = mailReader.count()
+            val batchSize = min(config().mail.inboxBatchReadLimit, messageCount)
 
-        if (messageCount > 0) {
-            log.info("Starting to read $batchSize of $messageCount messages from inbox")
-            mailReader.readMailBatches(batchSize)
-                .asFlow()
-                .also { log.info("Finished reading $batchSize of $messageCount messages from inbox") }
-        } else {
-            log.info("No messages found in inbox")
-            emptyFlow()
+            if (messageCount > 0) {
+                log.info("Starting to read $batchSize of $messageCount messages from inbox")
+                mailReader.readMailBatches(batchSize).forEach { emailMsg ->
+                    try {
+                        processMessage(emailMsg)
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        log.error("Failed to process message, leaving in inbox for retry", e)
+                        return@forEach
+                    }
+                    try {
+                        mailReader.markDeleted(emailMsg.originalMimeMessage)
+                    } catch (e: Exception) {
+                        log.warn("Message processed successfully but failed to mark as deleted", e)
+                    }
+                }
+                log.info("Finished processing $batchSize of $messageCount messages from inbox")
+            } else {
+                log.info("No messages found in inbox")
+            }
         }
     }
 
@@ -104,10 +108,11 @@ class MailProcessor(
             fold(
                 { insert(payloadMessage.payloads) },
                 { log.error("Could not insert payloads: ${payloadMessage.payloads.map { it }}") }
-            ) { mailPublisher.publishPayloadMessage(payloadMessage, senderAddress) }
+            ) { mailPublisher.publishPayloadMessage(payloadMessage, senderAddress).getOrThrow() }
         }
     }
 
-    private suspend fun publishSignalMessage(signalMessage: SignalMessage, senderAddress: String): Result<RecordMetadata> =
-        mailPublisher.publishSignalMessage(signalMessage, senderAddress)
+    private suspend fun publishSignalMessage(signalMessage: SignalMessage, senderAddress: String) {
+        mailPublisher.publishSignalMessage(signalMessage, senderAddress).getOrThrow()
+    }
 }
