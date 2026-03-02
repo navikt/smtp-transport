@@ -211,4 +211,30 @@ class MailReaderSpec : StringSpec({
             }
         }
     }
+
+    "MailReader expunges only messages marked for deletion" {
+        resourceScope {
+            val store = store(config.smtp)
+            val eventLoggingService = fakeEventLoggingService()
+
+            val mailConfig = config.mail
+
+            val reader1 = MailReader(mailConfig, store, true, eventLoggingService)
+            reader1.count() shouldBe 3
+            val batch1 = reader1.readMailBatches(3)
+            batch1.size shouldBe 3
+            batch1[0].headers["Message-ID"] shouldBe "<f3da7fd6-5262-4383-9ed8-ec68936e8f55@link.visma.no>"
+            batch1[1].headers["Message-ID"] shouldBe "<20231121144547.5CB191829F67@a01drvl071.adeo.no>"
+            batch1[2].headers["Message-ID"] shouldBe "f3d09378-4f14-4ab9-abea-bd415606283f"
+            reader1.markDeleted(batch1[1].originalMimeMessage)
+            reader1.close()
+
+            val reader2 = MailReader(mailConfig, store, true, eventLoggingService)
+            reader2.count() shouldBe 2
+            val batch2 = reader2.readMailBatches(3)
+            batch2.size shouldBe 2
+            batch2[0].headers["Message-ID"] shouldBe "<f3da7fd6-5262-4383-9ed8-ec68936e8f55@link.visma.no>"
+            batch2[1].headers["Message-ID"] shouldBe "f3d09378-4f14-4ab9-abea-bd415606283f"
+        }
+    }
 })
