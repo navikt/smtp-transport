@@ -51,9 +51,7 @@ class MailSender(
 
     @Synchronized
     private fun connectForwardingTransport() {
-        if (!forwardTransport.isConnected) {
-            forwardTransport.connect()
-        }
+        if (!forwardTransport.isConnected) forwardTransport.connect()
     }
 
     override fun close() {
