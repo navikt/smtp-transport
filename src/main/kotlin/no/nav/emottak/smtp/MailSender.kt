@@ -2,6 +2,7 @@ package no.nav.emottak.smtp
 
 import arrow.core.raise.catch
 import jakarta.activation.DataHandler
+import jakarta.mail.Address
 import jakarta.mail.Message.RecipientType.TO
 import jakarta.mail.MessagingException
 import jakarta.mail.Session
@@ -43,26 +44,26 @@ class MailSender(
     private val eventLoggingService: ScopedEventLoggingService
 ) : Closeable {
     private val smtp = config().smtp
-    private val forwardTransport: Transport = session.getTransport("smtp")
+    private val transport: Transport = session.getTransport("smtp")
 
     init {
         Security.addProvider(BouncyCastleProvider())
     }
 
     @Synchronized
-    private fun connectForwardingTransport() {
-        if (!forwardTransport.isConnected) forwardTransport.connect()
+    private fun sendSynchronized(message: MimeMessage, addresses: Array<out Address>) {
+        if (!transport.isConnected) transport.connect()
+        transport.sendMessage(message, addresses)
     }
 
     override fun close() {
-        if (forwardTransport.isConnected) forwardTransport.close()
+        if (transport.isConnected) transport.close()
     }
 
     suspend fun rawForward(mimeMessage: MimeMessage, address: InternetAddress = InternetAddress(config().smtp.smtpT1EmottakAddress)) =
         withContext(Dispatchers.IO) {
             catch({
-                connectForwardingTransport()
-                forwardTransport.sendMessage(mimeMessage, arrayOf(address))
+                sendSynchronized(mimeMessage, arrayOf(address))
                 log.info("Message forwarded to ${config().smtp.smtpT1EmottakAddress}")
             }) { error: MessagingException ->
                 log.error("Failed to forward message: ${error.localizedMessage}", error)
@@ -84,7 +85,7 @@ class MailSender(
     private suspend fun sendMessage(wrapper: MimeMessageWrapper, messageType: MessageType) =
         withContext(Dispatchers.IO) {
             catch({
-                Transport.send(wrapper.mimeMessage)
+                sendSynchronized(wrapper.mimeMessage, wrapper.mimeMessage.allRecipients)
                 eventLoggingService.registerEvent(
                     MESSAGE_SENT_VIA_SMTP,
                     wrapper.mimeMessage,
@@ -105,7 +106,7 @@ class MailSender(
             MimeMessage(session).apply {
                 addEbXMLMimeHeaders()
                 setFrom(getSender(metadata))
-                addRecipients(TO, getRecipients(metadata))
+                setRecipients(TO, getRecipients(metadata))
                 subject = metadata.subject
                 setDataHandler(
                     DataHandler(
@@ -122,7 +123,7 @@ class MailSender(
             MimeMessage(session).apply {
                 addEbXMLMimeHeaders()
                 setFrom(getSender(metadata))
-                addRecipients(TO, getRecipients(metadata))
+                setRecipients(TO, getRecipients(metadata))
                 subject = metadata.subject
                 val mainContentId = Uuid.random().toString()
                 val mimeMultipart = MimeMultipart("related").apply {
