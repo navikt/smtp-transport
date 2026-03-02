@@ -14,8 +14,8 @@ import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.xpath.XPathConstants
 import javax.xml.xpath.XPathFactory
 
-private val ebmsServices = config().ebmsFilter.ebmsMessageTypes
-private val bothServices = config().ebmsFilter.bothMessageTypes
+private val typesToEbms = config().ebmsFilter.typesToEbms
+private val typesToBoth = config().ebmsFilter.typesToBoth
 
 fun EmailMsg.filterMessageForwarding(): ForwardableMimeMessage {
     val (forwardingSystem, serviceName) = this.filterMimeMessage()
@@ -39,14 +39,12 @@ fun EmailMsg.filterMessageForwarding(): ForwardableMimeMessage {
 
 fun EmailMsg.filterMimeMessage(): Pair<ForwardingSystem, String> {
     val envelopeServiceName = getEnvelope().toXmlDocument()?.getEbxmlServiceName() ?: "Unparseable"
-    if (senderAddress.isNotBlank()) {
-        if (isFromAcceptedAddress(senderAddress)) {
-            if (bothServices.contains(envelopeServiceName)) {
-                return ForwardingSystem.BOTH to envelopeServiceName
-            }
-            if (ebmsServices.contains(envelopeServiceName)) {
-                return ForwardingSystem.EBMS to envelopeServiceName
-            }
+    if (isFromAcceptedAddress(senderAddress)) {
+        if (typesToBoth.contains(envelopeServiceName)) {
+            return ForwardingSystem.BOTH to envelopeServiceName
+        }
+        if (typesToEbms.contains(envelopeServiceName)) {
+            return ForwardingSystem.EBMS to envelopeServiceName
         }
     }
     return ForwardingSystem.EMOTTAK to envelopeServiceName
