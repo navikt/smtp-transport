@@ -15,7 +15,7 @@ import jakarta.mail.internet.MimeMultipart
 import jakarta.mail.util.ByteArrayDataSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import no.nav.emottak.config
+import no.nav.emottak.configuration.Smtp
 import no.nav.emottak.log
 import no.nav.emottak.model.MailMetadata
 import no.nav.emottak.model.MessageType
@@ -41,9 +41,9 @@ private const val ENCODING_BASE64 = "base64"
 
 class MailSender(
     private val session: Session,
-    private val eventLoggingService: ScopedEventLoggingService
+    private val eventLoggingService: ScopedEventLoggingService,
+    private val smtp: Smtp
 ) : Closeable {
-    private val smtp = config().smtp
     private val transport: Transport = session.getTransport("smtp")
 
     init {
@@ -60,11 +60,11 @@ class MailSender(
         if (transport.isConnected) transport.close()
     }
 
-    suspend fun rawForward(mimeMessage: MimeMessage, address: InternetAddress = InternetAddress(config().smtp.smtpT1EmottakAddress)) =
+    suspend fun rawForward(mimeMessage: MimeMessage, address: InternetAddress = InternetAddress(smtp.smtpT1EmottakAddress)) =
         withContext(Dispatchers.IO) {
             catch({
                 sendSynchronized(mimeMessage, arrayOf(address))
-                log.info("Message forwarded to ${config().smtp.smtpT1EmottakAddress}")
+                log.info("Message forwarded to ${smtp.smtpT1EmottakAddress}")
             }) { error: MessagingException ->
                 log.error("Failed to forward message: ${error.localizedMessage}", error)
             }
