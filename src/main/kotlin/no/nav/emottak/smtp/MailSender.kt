@@ -64,7 +64,7 @@ class MailSender(
         withContext(Dispatchers.IO) {
             catch({
                 sendSynchronized(mimeMessage, arrayOf(address))
-                log.info("Message forwarded to ${smtp.smtpT1EmottakAddress}")
+                log.info("Message forwarded to $address")
             }) { error: MessagingException ->
                 log.error("Failed to forward message: ${error.localizedMessage}", error)
             }
