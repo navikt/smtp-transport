@@ -11,7 +11,7 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import net.logstash.logback.marker.LogstashMarker
 import net.logstash.logback.marker.Markers
-import no.nav.emottak.config
+import no.nav.emottak.configuration.Mail
 import no.nav.emottak.log
 import no.nav.emottak.model.PayloadMessage
 import no.nav.emottak.model.SignalMessage
@@ -31,20 +31,21 @@ class MailProcessor(
     private val mailPublisher: MailPublisher,
     private val payloadRepository: PayloadRepository,
     private val eventLoggingService: ScopedEventLoggingService,
-    private val mailSender: MailSender
+    private val mailSender: MailSender,
+    private val mail: Mail
 ) {
     fun processMessages(scope: CoroutineScope): Job = scope.launch(Dispatchers.IO) {
         autoCloseScope {
             val mailReader = install(
                 MailReader(
-                    config().mail,
+                    mail,
                     store,
-                    config().mail.inboxExpunge,
+                    mail.inboxExpunge,
                     eventLoggingService
                 )
             )
             val messageCount = mailReader.count()
-            val batchSize = min(config().mail.inboxBatchReadLimit, messageCount)
+            val batchSize = min(mail.inboxBatchReadLimit, messageCount)
 
             if (messageCount > 0) {
                 log.info("Starting to read $batchSize of $messageCount messages from inbox")
