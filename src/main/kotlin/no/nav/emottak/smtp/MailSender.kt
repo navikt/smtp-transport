@@ -2,6 +2,7 @@ package no.nav.emottak.smtp
 
 import arrow.core.raise.catch
 import jakarta.activation.DataHandler
+import jakarta.mail.Address
 import jakarta.mail.Message.RecipientType.TO
 import jakarta.mail.MessagingException
 import jakarta.mail.Session
@@ -14,7 +15,7 @@ import jakarta.mail.internet.MimeMultipart
 import jakarta.mail.util.ByteArrayDataSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import no.nav.emottak.config
+import no.nav.emottak.configuration.Smtp
 import no.nav.emottak.log
 import no.nav.emottak.model.MailMetadata
 import no.nav.emottak.model.MessageType
@@ -27,6 +28,7 @@ import no.nav.emottak.util.addEbXMLMimeHeaders
 import no.nav.emottak.utils.kafka.model.EventType.ERROR_WHILE_SENDING_MESSAGE_VIA_SMTP
 import no.nav.emottak.utils.kafka.model.EventType.MESSAGE_SENT_VIA_SMTP
 import org.bouncycastle.jce.provider.BouncyCastleProvider
+import java.io.Closeable
 import java.security.Security
 import kotlin.uuid.Uuid
 
@@ -39,24 +41,30 @@ private const val ENCODING_BASE64 = "base64"
 
 class MailSender(
     private val session: Session,
-    private val eventLoggingService: ScopedEventLoggingService
-) {
-    private val smtp = config().smtp
+    private val eventLoggingService: ScopedEventLoggingService,
+    private val smtp: Smtp
+) : Closeable {
+    private val transport: Transport = session.getTransport("smtp")
 
     init {
         Security.addProvider(BouncyCastleProvider())
     }
 
-    suspend fun rawForward(mimeMessage: MimeMessage, address: InternetAddress = InternetAddress(config().smtp.smtpT1EmottakAddress)) =
+    @Synchronized
+    private fun sendSynchronized(message: MimeMessage, addresses: Array<out Address>) {
+        if (!transport.isConnected) transport.connect()
+        transport.sendMessage(message, addresses)
+    }
+
+    override fun close() {
+        if (transport.isConnected) transport.close()
+    }
+
+    suspend fun rawForward(mimeMessage: MimeMessage, address: InternetAddress = InternetAddress(smtp.smtpT1EmottakAddress)) =
         withContext(Dispatchers.IO) {
             catch({
-                Transport
-                    .send(
-                        mimeMessage,
-                        arrayOf(address)
-                    ).also {
-                        log.info("Message forwarded to ${config().smtp.smtpT1EmottakAddress}")
-                    }
+                sendSynchronized(mimeMessage, arrayOf(address))
+                log.info("Message forwarded to $address")
             }) { error: MessagingException ->
                 log.error("Failed to forward message: ${error.localizedMessage}", error)
                 throw error
@@ -78,7 +86,7 @@ class MailSender(
     private suspend fun sendMessage(wrapper: MimeMessageWrapper, messageType: MessageType) =
         withContext(Dispatchers.IO) {
             catch({
-                Transport.send(wrapper.mimeMessage)
+                sendSynchronized(wrapper.mimeMessage, wrapper.mimeMessage.allRecipients)
                 eventLoggingService.registerEvent(
                     MESSAGE_SENT_VIA_SMTP,
                     wrapper.mimeMessage,
@@ -99,7 +107,7 @@ class MailSender(
             MimeMessage(session).apply {
                 addEbXMLMimeHeaders()
                 setFrom(getSender(metadata))
-                addRecipients(TO, getRecipients(metadata))
+                setRecipients(TO, getRecipients(metadata))
                 subject = metadata.subject
                 setDataHandler(
                     DataHandler(
@@ -116,7 +124,7 @@ class MailSender(
             MimeMessage(session).apply {
                 addEbXMLMimeHeaders()
                 setFrom(getSender(metadata))
-                addRecipients(TO, getRecipients(metadata))
+                setRecipients(TO, getRecipients(metadata))
                 subject = metadata.subject
                 val mainContentId = Uuid.random().toString()
                 val mimeMultipart = MimeMultipart("related").apply {

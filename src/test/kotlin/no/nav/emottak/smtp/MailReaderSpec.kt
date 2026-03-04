@@ -53,7 +53,7 @@ class MailReaderSpec : StringSpec({
 
             greenMail.receivedMessages.size shouldBe 3
 
-            val mailSender = MailSender(session, fakeEventLoggingService())
+            val mailSender = MailSender(session, fakeEventLoggingService(), config.smtp)
 
             mailSender.rawForward(greenMail.receivedMessages[0])
 
