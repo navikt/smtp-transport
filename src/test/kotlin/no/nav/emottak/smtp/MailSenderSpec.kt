@@ -26,7 +26,7 @@ class MailSenderSpec : StringSpec({
             start()
             setUser(config.smtp.username.value, config.smtp.username.value, config.smtp.password.value)
         }
-        mailSender = MailSender(session, fakeEventLoggingService())
+        mailSender = MailSender(session, fakeEventLoggingService(), config.smtp)
     }
 
     afterEach {
