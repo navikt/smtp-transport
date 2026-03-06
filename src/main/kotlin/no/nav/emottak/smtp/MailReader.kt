@@ -96,17 +96,16 @@ class MailReader(
 
     private fun expunge(): Boolean = (expunge || count() > mail.inboxLimit)
 
+    fun markDeleted(mimeMessage: MimeMessage) {
+        mimeMessage.setFlag(DELETED, expunge())
+    }
+
     private fun processMimeMessage(wrapper: MimeMessageWrapper) {
         when (wrapper.mimeMessage.content) {
             is MimeMultipart -> logMimeMultipartMessage(wrapper.mimeMessage)
             else -> logMimeMessage(wrapper.mimeMessage)
         }
         log.debug("From: <{}> Subject: <{}>", wrapper.mimeMessage.from[0], wrapper.mimeMessage.subject)
-        setDeletedFlagOnMimeMessage(wrapper.mimeMessage)
-    }
-
-    private fun setDeletedFlagOnMimeMessage(mimeMessage: MimeMessage) {
-        mimeMessage.setFlag(DELETED, expunge())
     }
 
     private fun logMimeMessage(mimeMessage: MimeMessage) {

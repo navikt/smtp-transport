@@ -105,7 +105,9 @@ class MailReaderSpec : StringSpec({
             val inboxLimit100 = config.mail.copy(inboxLimit = 100)
             val reader = MailReader(inboxLimit100, store, false, eventLoggingService)
 
-            reader.readMailBatches(3).size shouldBe 3
+            val batch1 = reader.readMailBatches(3)
+            batch1.size shouldBe 3
+            batch1.forEach { reader.markDeleted(it.originalMimeMessage) }
             reader.readMailBatches(3).size shouldBe 0
             reader.close()
 
@@ -114,7 +116,9 @@ class MailReaderSpec : StringSpec({
             val inboxLimitNegative1 = config.mail.copy(inboxLimit = -1)
             val reader2 = MailReader(inboxLimitNegative1, store, false, eventLoggingService)
 
-            reader2.readMailBatches(3).size shouldBe 3
+            val batch2 = reader2.readMailBatches(3)
+            batch2.size shouldBe 3
+            batch2.forEach { reader2.markDeleted(it.originalMimeMessage) }
             reader2.readMailBatches(3).size shouldBe 0
             reader2.close()
 
@@ -172,20 +176,74 @@ class MailReaderSpec : StringSpec({
 
             val mailConfig = config.mail
 
-            val reader = MailReader(mailConfig, store, true, eventLoggingService)
-            reader.count() shouldBe 3
-            reader.readMailBatches(1).size shouldBe 1
-            reader.close()
+            // Read 1 email per batch. Should be one less email per batch retrieval
+            // Inbox starts with 3 messages
+            with(MailReader(mailConfig, store, true, eventLoggingService)) {
+                this.count() shouldBe 3
+                val batch1 = this.readMailBatches(1)
+                batch1.size shouldBe 1
+                batch1.forEach { this.markDeleted(it.originalMimeMessage) }
+                this.close()
+            }
+
+            with(MailReader(mailConfig, store, true, eventLoggingService)) {
+                this.count() shouldBe 2
+                val batch2 = this.readMailBatches(1)
+                batch2.size shouldBe 1
+                batch2.forEach { this.markDeleted(it.originalMimeMessage) }
+                this.close()
+            }
+
+            with(MailReader(mailConfig, store, true, eventLoggingService)) {
+                this.count() shouldBe 1
+                val batch3 = this.readMailBatches(1)
+                batch3.size shouldBe 1
+                batch3.forEach { this.markDeleted(it.originalMimeMessage) }
+                this.close()
+            }
+
+            with(MailReader(mailConfig, store, true, eventLoggingService)) {
+                this.count() shouldBe 0
+                val batch4 = this.readMailBatches(1)
+                batch4.size shouldBe 0
+                batch4.forEach { this.markDeleted(it.originalMimeMessage) }
+                this.close()
+            }
+        }
+    }
+
+    "MailReader expunges only messages marked for deletion" {
+        resourceScope {
+            val store = store(config.smtp)
+            val eventLoggingService = fakeEventLoggingService()
+            val mailConfig = config.mail
+
+            val reader1 = MailReader(mailConfig, store, true, eventLoggingService)
+            reader1.count() shouldBe 3
+            val batch1 = reader1.readMailBatches(3)
+            batch1.size shouldBe 3
+
+            val allMessageIds = batch1.map { it.headers["Message-ID"] }.toSet()
+            allMessageIds shouldBe setOf(
+                "<f3da7fd6-5262-4383-9ed8-ec68936e8f55@link.visma.no>",
+                "<20231121144547.5CB191829F67@a01drvl071.adeo.no>",
+                "f3d09378-4f14-4ab9-abea-bd415606283f"
+            )
+
+            val messageToDelete = batch1.first { it.headers["Message-ID"] == "<20231121144547.5CB191829F67@a01drvl071.adeo.no>" }
+            reader1.markDeleted(messageToDelete.originalMimeMessage)
+            reader1.close()
 
             val reader2 = MailReader(mailConfig, store, true, eventLoggingService)
             reader2.count() shouldBe 2
-            reader2.readMailBatches(1).size shouldBe 1
-            reader2.close()
+            val batch2 = reader2.readMailBatches(3)
+            batch2.size shouldBe 2
 
-            val reader3 = MailReader(mailConfig, store, true, eventLoggingService)
-            reader3.count() shouldBe 1
-            reader3.readMailBatches(1).size shouldBe 1
-            reader3.close()
+            val remainingMessageIds = batch2.map { it.headers["Message-ID"] }.toSet()
+            remainingMessageIds shouldBe setOf(
+                "<f3da7fd6-5262-4383-9ed8-ec68936e8f55@link.visma.no>",
+                "f3d09378-4f14-4ab9-abea-bd415606283f"
+            )
         }
     }
 })
