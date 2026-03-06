@@ -67,6 +67,7 @@ class MailSender(
                 log.info("Message forwarded to $address")
             }) { error: MessagingException ->
                 log.error("Failed to forward message: ${error.localizedMessage}", error)
+                throw error
             }
         }
 
