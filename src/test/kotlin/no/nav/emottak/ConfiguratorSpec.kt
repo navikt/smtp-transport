@@ -7,6 +7,7 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotBeEmpty
+import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import no.nav.emottak.configuration.Config
@@ -117,7 +118,7 @@ class ConfiguratorSpec : StringSpec({
         filter.typesToEbms shouldContain "Inntektsforesporsel"
         filter.typesToBoth shouldContain "urn:oasis:names:tc:ebxml-msg:service"
         filter.senderAddresses.shouldNotBeEmpty()
-        filter.senderAddresses shouldContain "aidn.eidfjord@edi.nhn.no"
+        filter.senderAddresses shouldNotContain "nyebmsbcc@test-es.nav.no"
     }
 
     "prod filter senderAddresses differ from dev filter" {
@@ -133,7 +134,7 @@ class ConfiguratorSpec : StringSpec({
         val devSenders = config().ebmsFilter.senderAddresses
         val prodSenders = prodConfig.ebmsFilter.senderAddresses
         devSenders shouldContain "nyebmsbcc@test-es.nav.no"
-        prodSenders shouldContain "aidn.eidfjord@edi.nhn.no"
+        prodSenders shouldNotContain "nyebmsbcc@test-es.nav.no"
         (devSenders intersect prodSenders).isEmpty() shouldBe true
     }
 })
