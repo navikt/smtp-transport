@@ -19,7 +19,6 @@ import no.nav.emottak.util.EbmsAsyncClient
 import no.nav.emottak.util.SENDER_ADDRESS
 import no.nav.emottak.util.ScopedEventLoggingService
 import no.nav.emottak.util.getHeaderValueAsString
-import no.nav.emottak.utils.kafka.model.EventType.ERROR_WHILE_READING_MESSAGE_FROM_QUEUE
 import no.nav.emottak.utils.kafka.model.EventType.ERROR_WHILE_RECEIVING_PAYLOAD_VIA_HTTP
 import no.nav.emottak.utils.kafka.model.EventType.MESSAGE_READ_FROM_QUEUE
 import no.nav.emottak.utils.kafka.model.EventType.PAYLOAD_RECEIVED_VIA_HTTP
@@ -35,14 +34,14 @@ class PayloadReceiver(
     fun receiveMailRoutingMessages(): Flow<MailRoutingPayloadMessage> = kafkaReceiver
         .receive(kafka.payloadOutTopic)
         .catch { error ->
-            eventLoggingService.registerEvent(
-                ERROR_WHILE_READING_MESSAGE_FROM_QUEUE,
-                Exception(error)
-            )
-
+            log.error("Failed to receive message from ${kafka.payloadOutTopic}: ", error)
             throw error
         }
-        .map(::toMailRoutingMessage)
+        .map { record ->
+            toMailRoutingMessage(record).also {
+                record.offset.acknowledge()
+            }
+        }
 
     private suspend fun toMailRoutingMessage(record: ReceiverRecord<String, ByteArray>): MailRoutingPayloadMessage {
         val mailMetadata = MailMetadata(
