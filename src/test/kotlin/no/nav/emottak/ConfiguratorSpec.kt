@@ -98,10 +98,10 @@ class ConfiguratorSpec : StringSpec({
         typesToBoth shouldContain "Trekkopplysning"
     }
 
-    "dev filter senderAddresses are populated" {
-        val senderAddresses = config().ebmsFilter.senderAddresses
-        senderAddresses.shouldNotBeEmpty()
-        senderAddresses shouldContain "nyebmsbcc@test-es.nav.no"
+    "dev filter senderCPAs are populated" {
+        val senderCPAs = config().ebmsFilter.cpa
+        senderCPAs.shouldNotBeEmpty()
+        senderCPAs shouldContain "nav:qass:36666"
     }
 
     "prod filter can be loaded directly and has expected values" {
@@ -117,11 +117,11 @@ class ConfiguratorSpec : StringSpec({
         val filter = prodConfig.ebmsFilter
         filter.typesToEbms shouldContain "Inntektsforesporsel"
         filter.typesToBoth shouldContain "urn:oasis:names:tc:ebxml-msg:service"
-        filter.senderAddresses.shouldNotBeEmpty()
-        filter.senderAddresses shouldNotContain "nyebmsbcc@test-es.nav.no"
+        filter.cpa.shouldNotBeEmpty()
+        filter.cpa shouldNotContain "nav:qass:36666"
     }
 
-    "prod filter senderAddresses differ from dev filter" {
+    "prod filter senderCPAs differ from dev filter" {
         @OptIn(ExperimentalHoplite::class)
         val prodConfig = ConfigLoader.builder()
             .addResourceSource("/kafka_common.conf")
@@ -131,10 +131,10 @@ class ConfiguratorSpec : StringSpec({
             .build()
             .loadConfigOrThrow<Config>()
 
-        val devSenders = config().ebmsFilter.senderAddresses
-        val prodSenders = prodConfig.ebmsFilter.senderAddresses
-        devSenders shouldContain "nyebmsbcc@test-es.nav.no"
-        prodSenders shouldNotContain "nyebmsbcc@test-es.nav.no"
-        (devSenders intersect prodSenders).isEmpty() shouldBe true
+        val devCpa = config().ebmsFilter.cpa
+        val prodCpa = prodConfig.ebmsFilter.cpa
+        devCpa shouldContain "nav:qass:36666"
+        prodCpa shouldNotContain "nav:qass:36666"
+        (devCpa intersect prodCpa).isEmpty() shouldBe true
     }
 })
