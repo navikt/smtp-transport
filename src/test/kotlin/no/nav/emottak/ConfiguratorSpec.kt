@@ -99,7 +99,7 @@ class ConfiguratorSpec : StringSpec({
     }
 
     "dev filter senderCPAs are populated" {
-        val senderCPAs = config().ebmsFilter.cpa
+        val senderCPAs = config().ebmsFilter.cpaId
         senderCPAs.shouldNotBeEmpty()
         senderCPAs shouldContain "nav:qass:36666"
     }
@@ -117,8 +117,8 @@ class ConfiguratorSpec : StringSpec({
         val filter = prodConfig.ebmsFilter
         filter.typesToEbms shouldContain "Inntektsforesporsel"
         filter.typesToBoth shouldContain "urn:oasis:names:tc:ebxml-msg:service"
-        filter.cpa.shouldNotBeEmpty()
-        filter.cpa shouldNotContain "nav:qass:36666"
+        filter.cpaId.shouldNotBeEmpty()
+        filter.cpaId shouldNotContain "nav:qass:36666"
     }
 
     "prod filter senderCPAs differ from dev filter" {
@@ -131,8 +131,8 @@ class ConfiguratorSpec : StringSpec({
             .build()
             .loadConfigOrThrow<Config>()
 
-        val devCpa = config().ebmsFilter.cpa
-        val prodCpa = prodConfig.ebmsFilter.cpa
+        val devCpa = config().ebmsFilter.cpaId
+        val prodCpa = prodConfig.ebmsFilter.cpaId
         devCpa shouldContain "nav:qass:36666"
         prodCpa shouldNotContain "nav:qass:36666"
         (devCpa intersect prodCpa).isEmpty() shouldBe true

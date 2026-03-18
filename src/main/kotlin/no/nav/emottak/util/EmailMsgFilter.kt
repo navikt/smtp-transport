@@ -26,9 +26,9 @@ fun EmailMsg.filterMessageForwarding(): ForwardableMimeMessage {
 }
 
 fun EmailMsg.filterMimeMessage(): ForwardingSystem {
-    val ebxmlDocument = getEnvelope().toXmlDocument() ?: return ForwardingSystem.EMOTTAK
-    val envelopeServiceName = ebxmlDocument.getEbxmlServiceName()
-    val envelopeCpaId = ebxmlDocument.getEbxmlCpaId()
+    val ebxmlDocument = getEnvelope().toXmlDocument()
+    val envelopeServiceName = ebxmlDocument?.getEbxmlServiceName() ?: "UnparsableService"
+    val envelopeCpaId = ebxmlDocument?.getEbxmlCpaId() ?: "UnparsableCpaId"
 
     return if (isAcceptedCpaId(envelopeCpaId)) {
         if (typesToBoth.contains(envelopeServiceName)) {
@@ -56,7 +56,7 @@ fun EmailMsg.filterMimeMessage(): ForwardingSystem {
     }
 }
 
-private fun isAcceptedCpaId(cpaId: String) = config().ebmsFilter.cpa.any { it.equals(cpaId, ignoreCase = true) }
+private fun isAcceptedCpaId(cpaId: String) = config().ebmsFilter.cpaId.any { it.equals(cpaId, ignoreCase = true) }
 
 private fun ByteArray.toXmlDocument(): Document? {
     return try {
