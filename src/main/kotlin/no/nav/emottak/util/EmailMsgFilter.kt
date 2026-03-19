@@ -16,6 +16,7 @@ import javax.xml.xpath.XPathFactory
 
 private val typesToEbms = config().ebmsFilter.typesToEbms
 private val typesToBoth = config().ebmsFilter.typesToBoth
+private val cpaIds = config().ebmsFilter.cpaId
 
 fun EmailMsg.filterMessageForwarding(): ForwardableMimeMessage {
     return when (val forwardingSystem = this.filterMimeMessage()) {
@@ -56,7 +57,7 @@ fun EmailMsg.filterMimeMessage(): ForwardingSystem {
     }
 }
 
-private fun isAcceptedCpaId(cpaId: String) = config().ebmsFilter.cpaId.any { it.equals(cpaId, ignoreCase = true) }
+private fun isAcceptedCpaId(cpaId: String) = cpaIds.any { it.equals(cpaId, ignoreCase = true) }
 
 private fun ByteArray.toXmlDocument(): Document? {
     return try {
