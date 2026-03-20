@@ -4,17 +4,21 @@ import arrow.core.raise.Raise
 import arrow.core.raise.ensure
 import arrow.core.raise.ensureNotNull
 import arrow.core.raise.recover
+import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.auth.authenticate
+import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
+import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import io.micrometer.prometheus.PrometheusMeterRegistry
 import no.nav.emottak.InvalidReferenceId
+import no.nav.emottak.PayloadAlreadyExists
 import no.nav.emottak.ReferenceIdEmpty
 import no.nav.emottak.ReferenceIdMissing
 import no.nav.emottak.RetrievePayloadError
@@ -23,6 +27,7 @@ import no.nav.emottak.model.Payload
 import no.nav.emottak.repository.PayloadRepository
 import no.nav.emottak.toContent
 import no.nav.emottak.util.isValidUuid
+import no.nav.emottak.utils.environment.isProdEnv
 import kotlin.uuid.Uuid
 
 private const val REFERENCE_ID = "referenceId"
@@ -61,6 +66,15 @@ fun Route.externalRoutes(payloadRepository: PayloadRepository) {
                 val payload = retrievePayload(call, payloadRepository)
                 call.respond(payload)
             }) { e: RetrievePayloadError -> call.respond(e.toContent()) }
+        }
+        if (!isProdEnv()) {
+            post("/payloads") {
+                recover({
+                    val payloads = call.receive<List<Payload>>()
+                    with(payloadRepository) { insert(payloads) }
+                    call.respond(HttpStatusCode.OK)
+                }) { e: PayloadAlreadyExists -> call.respond(HttpStatusCode.Conflict, "Payload already exists with content id: ${e.contentId}") }
+            }
         }
     }
 }
