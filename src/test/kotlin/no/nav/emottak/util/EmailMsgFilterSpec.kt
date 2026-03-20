@@ -27,38 +27,38 @@ class EmailMsgFilterSpec : StringSpec({
             requestId = Uuid.random()
         ).mapEmailMsg()
 
-    "Returns BOTH when CPAId is valid and signal message" {
-        val forwardingSystem = SIGNAL_MESSAGE.emlToEmailMsg().filterMimeMessage()
+    "getForwardingSystem returns BOTH when CPAId is valid and signal message" {
+        val forwardingSystem = SIGNAL_MESSAGE.emlToEmailMsg().getForwardingSystem()
         forwardingSystem shouldBe ForwardingSystem.BOTH
     }
 
-    "Returns EBMS when CPAId is valid and accepted type" {
-        val forwardingSystem = PAYLOAD_MESSAGE.emlToEmailMsg().filterMimeMessage()
+    "getForwardingSystem returns EBMS when CPAId is valid and accepted type" {
+        val forwardingSystem = PAYLOAD_MESSAGE.emlToEmailMsg().getForwardingSystem()
         forwardingSystem shouldBe ForwardingSystem.EBMS
     }
 
-    "Returns EMOTTAK when CPAId is missing" {
-        val forwardingSystem = EBXML_NO_CPAID.emlToEmailMsg().filterMimeMessage()
+    "getForwardingSystem returns EMOTTAK when CPAId is missing" {
+        val forwardingSystem = EBXML_NO_CPAID.emlToEmailMsg().getForwardingSystem()
         forwardingSystem shouldBe ForwardingSystem.EMOTTAK
     }
 
-    "Returns EMOTTAK when CPAId is not accepted" {
-        val forwardingSystem = PAYLOAD_MESSAGE_INVALID_CPAID.emlToEmailMsg().filterMimeMessage()
+    "getForwardingSystem returns EMOTTAK when CPAId is not accepted" {
+        val forwardingSystem = PAYLOAD_MESSAGE_INVALID_CPAID.emlToEmailMsg().getForwardingSystem()
         forwardingSystem shouldBe ForwardingSystem.EMOTTAK
     }
 
-    "Returns EMOTTAK when Service Type is not accepted" {
-        val forwardingSystem = PAYLOAD_MESSAGE_INVALID_SERVICE.emlToEmailMsg().filterMimeMessage()
+    "getForwardingSystem returns EMOTTAK when Service Type is not accepted" {
+        val forwardingSystem = PAYLOAD_MESSAGE_INVALID_SERVICE.emlToEmailMsg().getForwardingSystem()
         forwardingSystem shouldBe ForwardingSystem.EMOTTAK
     }
 
-    "Returns EMOTTAK when Service Type is not found" {
-        val forwardingSystem = EBXML_NO_SERVICE.emlToEmailMsg().filterMimeMessage()
+    "getForwardingSystem returns EMOTTAK when Service Type is not found" {
+        val forwardingSystem = EBXML_NO_SERVICE.emlToEmailMsg().getForwardingSystem()
         forwardingSystem shouldBe ForwardingSystem.EMOTTAK
     }
 
-    "Returns EMOTTAK when document is unparsable" {
-        val forwardingSystem = NOT_EBXML_MESSAGE.emlToEmailMsg().filterMimeMessage()
+    "getForwardingSystem returns EMOTTAK when document is unparsable" {
+        val forwardingSystem = NOT_EBXML_MESSAGE.emlToEmailMsg().getForwardingSystem()
         forwardingSystem shouldBe ForwardingSystem.EMOTTAK
     }
 

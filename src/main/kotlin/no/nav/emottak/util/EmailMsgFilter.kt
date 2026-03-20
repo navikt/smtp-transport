@@ -19,14 +19,14 @@ private val typesToBoth = config().ebmsFilter.typesToBoth
 private val cpaIds = config().ebmsFilter.cpaId
 
 fun EmailMsg.filterMessageForwarding(): ForwardableMimeMessage {
-    return when (val forwardingSystem = this.filterMimeMessage()) {
+    return when (val forwardingSystem = this.getForwardingSystem()) {
         ForwardingSystem.EBMS -> ForwardableMimeMessage(forwardingSystem, null)
         ForwardingSystem.EMOTTAK -> ForwardableMimeMessage(forwardingSystem, MimeMessage(originalMimeMessage))
         ForwardingSystem.BOTH -> ForwardableMimeMessage(forwardingSystem, MimeMessage(originalMimeMessage))
     }
 }
 
-fun EmailMsg.filterMimeMessage(): ForwardingSystem {
+fun EmailMsg.getForwardingSystem(): ForwardingSystem {
     val ebxmlDocument = getEnvelope().toXmlDocument()
     val envelopeServiceName = ebxmlDocument?.getEbxmlServiceName() ?: "UnparsableService"
     val envelopeCpaId = ebxmlDocument?.getEbxmlCpaId() ?: "UnparsableCpaId"
