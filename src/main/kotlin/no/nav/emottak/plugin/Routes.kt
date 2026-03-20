@@ -27,6 +27,7 @@ import no.nav.emottak.model.Payload
 import no.nav.emottak.repository.PayloadRepository
 import no.nav.emottak.toContent
 import no.nav.emottak.util.isValidUuid
+import no.nav.emottak.utils.environment.isProdEnv
 import kotlin.uuid.Uuid
 
 private const val REFERENCE_ID = "referenceId"
@@ -66,12 +67,14 @@ fun Route.externalRoutes(payloadRepository: PayloadRepository) {
                 call.respond(payload)
             }) { e: RetrievePayloadError -> call.respond(e.toContent()) }
         }
-        post("/payloads") {
-            recover({
-                val payloads = call.receive<List<Payload>>()
-                with(payloadRepository) { insert(payloads) }
-                call.respond(HttpStatusCode.OK)
-            }) { e: PayloadAlreadyExists -> call.respond(HttpStatusCode.Conflict, "Payload already exists with content id: ${e.contentId}") }
+        if (!isProdEnv()) {
+            post("/payloads") {
+                recover({
+                    val payloads = call.receive<List<Payload>>()
+                    with(payloadRepository) { insert(payloads) }
+                    call.respond(HttpStatusCode.OK)
+                }) { e: PayloadAlreadyExists -> call.respond(HttpStatusCode.Conflict, "Payload already exists with content id: ${e.contentId}") }
+            }
         }
     }
 }
