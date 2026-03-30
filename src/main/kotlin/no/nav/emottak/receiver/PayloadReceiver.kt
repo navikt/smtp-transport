@@ -6,6 +6,7 @@ import io.github.nomisRev.kafka.receiver.ReceiverRecord
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.json.Json
 import no.nav.emottak.PayloadError
 import no.nav.emottak.config
 import no.nav.emottak.log
@@ -13,6 +14,7 @@ import no.nav.emottak.model.MailMetadata
 import no.nav.emottak.model.MailRoutingPayloadMessage
 import no.nav.emottak.model.Payload
 import no.nav.emottak.model.PayloadMessage
+import no.nav.emottak.model.SoapWithAttachments
 import no.nav.emottak.util.EMAIL_ADDRESSES
 import no.nav.emottak.util.EbmsAsyncClient
 import no.nav.emottak.util.ScopedEventLoggingService
@@ -47,11 +49,12 @@ class PayloadReceiver(
         val mailMetadata = MailMetadata(mailAddresses)
 
         val referenceId = Uuid.parse(record.key())
-        val payloadMessage = PayloadMessage(
-            referenceId,
-            record.value(),
-            getPayloads(referenceId)
-        )
+        val payloadMessage = parseSoapWithAttachments(record)
+            ?: PayloadMessage(
+                referenceId,
+                record.value(),
+                getPayloads(referenceId)
+            )
 
         eventLoggingService.registerEvent(
             MESSAGE_READ_FROM_QUEUE,
@@ -59,6 +62,31 @@ class PayloadReceiver(
         )
 
         return MailRoutingPayloadMessage(mailMetadata, payloadMessage)
+    }
+
+    private fun parseSoapWithAttachments(record: ReceiverRecord<String, ByteArray>): PayloadMessage? {
+        val formatHeader = record.headers().lastHeader(SoapWithAttachments.MESSAGE_FORMAT_HEADER)
+            ?: return null
+        if (String(formatHeader.value()) != SoapWithAttachments.MESSAGE_FORMAT_VALUE) return null
+
+        val soapWithAttachments = Json.decodeFromString<SoapWithAttachments>(String(record.value()))
+        val referenceId = Uuid.parse(record.key())
+        val attachment = soapWithAttachments.attachment
+        val payloads = if (attachment != null) {
+            listOf(
+                Payload(
+                    referenceId = referenceId,
+                    contentId = "attachment",
+                    contentType = "application/octet-stream",
+                    content = attachment
+                )
+            )
+        } else {
+            emptyList()
+        }
+
+        log.info("Parsed SoapWithAttachments message for reference id: $referenceId")
+        return PayloadMessage(referenceId, soapWithAttachments.envelope, payloads)
     }
 
     private suspend fun getPayloads(uuid: Uuid): List<Payload> =
