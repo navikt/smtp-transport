@@ -48,8 +48,7 @@ spec:
     cpuThresholdPercentage: 50
   resources:
     limits:
-      cpu: "1000m"
-      memory: "1024Mi"
+      memory: "512Mi"
     requests:
       cpu: "200m"
       memory: "512Mi"
@@ -90,8 +89,12 @@ spec:
       value: "pop3"
     - name: SMTP_INCOMING_USERNAME
       value: "nyebmstest@test-es.nav.no"
-    - name: SMTP_REDIRECT_ADDRESS
-      value: "kristian.frohlich@nav.no"
+#    - name: SMTP_REDIRECT_ADDRESS
+#      value: "devnull@example.com"
+    - name: SMTP_FROM_ADDRESS
+      value: "nyebmstest@test-es.nav.no"
+    - name: SMTP_T1_EMOTTAK_ADDRESS
+      value: "mottak-b27wasl00837.preprod.local@test-es.nav.no"
     - name: POSTGRES_JDBC_URL
       value: "jdbc:postgresql://b27dbvl035.preprod.local:5432/emottak-smtp-transport-payload"
     - name: POSTGRES_MOUNT_PATH
@@ -100,3 +103,11 @@ spec:
       value: "emottak-smtp-transport-payload-user"
     - name: POSTGRES_ADMIN_ROLE
       value: "emottak-smtp-transport-payload-admin"
+    - name: EMOTTAK_LOGGING_LEVEL
+      value: "DEBUG"
+    - name: INBOX_EXPUNGE
+      value: "true"
+    - name: SMTP_READ_INTERVAL
+      value: "30s"
+    - name: INBOX_BATCH_READ_LIMIT
+      value: "10"

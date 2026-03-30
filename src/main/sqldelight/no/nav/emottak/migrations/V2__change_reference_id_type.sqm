@@ -2,7 +2,7 @@ ALTER TABLE payload
 RENAME COLUMN reference_id TO reference_id_old;
 
 ALTER TABLE payload
-ADD COLUMN reference_id UUID;
+ADD COLUMN reference_id UUID AS kotlin.uuid.Uuid;
 
 UPDATE payload
 SET reference_id = CAST(reference_id_old AS uuid);

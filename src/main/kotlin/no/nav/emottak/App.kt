@@ -4,6 +4,7 @@ import arrow.continuations.SuspendApp
 import arrow.continuations.ktor.server
 import arrow.core.raise.result
 import arrow.fx.coroutines.ResourceScope
+import arrow.fx.coroutines.autoCloseable
 import arrow.fx.coroutines.resourceScope
 import arrow.resilience.Schedule
 import io.ktor.server.application.Application
@@ -12,6 +13,7 @@ import io.ktor.utils.io.CancellationException
 import io.micrometer.prometheus.PrometheusMeterRegistry
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.awaitCancellation
+import kotlinx.datetime.Clock
 import no.nav.emottak.plugin.configureAuthentication
 import no.nav.emottak.plugin.configureCallLogging
 import no.nav.emottak.plugin.configureContentNegotiation
@@ -37,8 +39,12 @@ internal val log = LoggerFactory.getLogger("no.nav.emottak.smtp")
 fun main() = SuspendApp {
     result {
         resourceScope {
+            log.info("Starting application, initializing dependencies...")
             val deps = initDependencies()
+            log.info("Dependencies initialized.")
+            log.info("Starting flyway migrations...")
             deps.migrationService.migrate()
+            log.info("Flyway migration successfully.")
 
             val scope = coroutineScope(coroutineContext)
             val eventScope = coroutineScope(Dispatchers.IO)
@@ -52,8 +58,8 @@ fun main() = SuspendApp {
             val payloadReceiver = PayloadReceiver(deps.kafkaReceiver, ebmsAsyncClient, eventLoggingService)
             val signalReceiver = SignalReceiver(deps.kafkaReceiver, eventLoggingService)
             val payloadRepository = PayloadRepository(deps.payloadDatabase, eventLoggingService)
-            val mailProcessor = MailProcessor(deps.store, mailPublisher, payloadRepository, eventLoggingService)
-            val mailSender = MailSender(deps.session, eventLoggingService)
+            val mailSender = autoCloseable { MailSender(deps.session, eventLoggingService, config().smtp) }
+            val mailProcessor = MailProcessor(deps.store, mailPublisher, payloadRepository, eventLoggingService, mailSender, config().mail)
             val messageProcessor = MessageProcessor(payloadReceiver, signalReceiver, mailSender)
 
             val server = config().server
@@ -97,7 +103,11 @@ private suspend fun ResourceScope.scheduleProcessMailMessages(processor: MailPro
     val scope = coroutineScope(coroutineContext)
     return Schedule
         .spaced<Unit>(config().job.fixedInterval)
-        .repeat { processor.processMessages(scope) }
+        .repeat {
+            val start = Clock.System.now()
+            processor.processMessages(scope)
+            log.info("Scheduled message batch executed in ${(Clock.System.now() - start).inWholeMilliseconds} ms")
+        }
 }
 
 private fun logError(t: Throwable) = log.error("Shutdown smtp-transport due to: ${t.stackTraceToString()}")

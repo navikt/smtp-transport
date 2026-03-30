@@ -1,5 +1,6 @@
 package no.nav.emottak.util
 
+import jakarta.mail.internet.MimeMessage
 import no.nav.emottak.model.Payload
 import no.nav.emottak.model.PayloadMessage
 import no.nav.emottak.model.SignalMessage
@@ -9,6 +10,8 @@ import kotlin.uuid.Uuid
 
 private const val CONTENT_ID = "Content-Id"
 private const val CONTENT_TYPE = "Content-Type"
+private const val SOAP_ACTION = "SOAPAction"
+private const val X_MAILER = "X-Mailer"
 
 fun EmailMsg.toSignalMessage(messageId: Uuid): SignalMessage = SignalMessage(
     messageId,
@@ -21,7 +24,12 @@ fun EmailMsg.toPayloadMessage(messageId: Uuid): PayloadMessage = PayloadMessage(
     getPayloads(messageId)
 )
 
-private fun EmailMsg.getEnvelope() = parts
+fun MimeMessage.addEbXMLMimeHeaders() {
+    setHeader(SOAP_ACTION, "\"ebXML\"")
+    setHeader(X_MAILER, "NAV EBMS")
+}
+
+fun EmailMsg.getEnvelope() = parts
     .first()
     .bytes
 

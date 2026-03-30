@@ -15,8 +15,10 @@ import no.nav.emottak.model.MailRoutingPayloadMessage
 import no.nav.emottak.model.Payload
 import no.nav.emottak.model.PayloadMessage
 import no.nav.emottak.model.SoapWithAttachments
+import no.nav.emottak.util.EBXML_SERVICE
 import no.nav.emottak.util.EMAIL_ADDRESSES
 import no.nav.emottak.util.EbmsAsyncClient
+import no.nav.emottak.util.SENDER_ADDRESS
 import no.nav.emottak.util.ScopedEventLoggingService
 import no.nav.emottak.util.getHeaderValueAsString
 import no.nav.emottak.utils.kafka.model.EventType.ERROR_WHILE_READING_MESSAGE_FROM_QUEUE
@@ -45,8 +47,11 @@ class PayloadReceiver(
         .map(::toMailRoutingMessage)
 
     private suspend fun toMailRoutingMessage(record: ReceiverRecord<String, ByteArray>): MailRoutingPayloadMessage {
-        val mailAddresses = record.getHeaderValueAsString(EMAIL_ADDRESSES)
-        val mailMetadata = MailMetadata(mailAddresses)
+        val mailMetadata = MailMetadata(
+            recipientAddress = record.getHeaderValueAsString(EMAIL_ADDRESSES),
+            subject = record.getHeaderValueAsString(EBXML_SERVICE),
+            senderAddress = record.getHeaderValueAsString(SENDER_ADDRESS)
+        )
 
         val referenceId = Uuid.parse(record.key())
         val payloadMessage = parseSoapWithAttachments(record)
@@ -89,11 +94,11 @@ class PayloadReceiver(
         return PayloadMessage(referenceId, soapWithAttachments.envelope, payloads)
     }
 
-    private suspend fun getPayloads(uuid: Uuid): List<Payload> =
+    private suspend fun getPayloads(referenceId: Uuid): List<Payload> =
         with(ebmsAsyncClient) {
             recover({
-                val payloads = getPayloads(uuid)
-                    .also { log.info("Retrieved ${it.size} payload(s) for reference id: $uuid") }
+                val payloads = getPayloads(referenceId)
+                    .also { log.info("Retrieved ${it.size} payload(s) for reference id: $referenceId") }
 
                 payloads.map {
                     eventLoggingService.registerEvent(
@@ -106,7 +111,8 @@ class PayloadReceiver(
             }) { error: PayloadError ->
                 eventLoggingService.registerEvent(
                     ERROR_WHILE_RECEIVING_PAYLOAD_VIA_HTTP,
-                    Exception(error.toString())
+                    Exception(error.toString()),
+                    referenceId
                 )
                 emptyList<Payload>().also { log.error("$error") }
             }

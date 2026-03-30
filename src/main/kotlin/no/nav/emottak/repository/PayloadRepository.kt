@@ -17,8 +17,6 @@ import org.postgresql.util.PSQLException
 import org.postgresql.util.PSQLState.UNIQUE_VIOLATION
 import java.sql.SQLException
 import kotlin.uuid.Uuid
-import kotlin.uuid.toJavaUuid
-import kotlin.uuid.toKotlinUuid
 
 class PayloadRepository(
     payloadDatabase: PayloadDatabase,
@@ -36,19 +34,20 @@ class PayloadRepository(
         withContext(IO) { retrievePayload(referenceId, contentId) }
 
     private fun Raise<PayloadNotFound>.retrievePayloads(referenceId: Uuid): List<Payload> {
-        val payloads = payloadQueries.retrievePayloads(referenceId.toJavaUuid()).executeAsList()
+        val payloads = payloadQueries.retrievePayloads(referenceId).executeAsList()
         return when (payloads.isEmpty()) {
             true -> {
                 eventLoggingService.registerEvent(
                     ERROR_WHILE_READING_PAYLOAD_FROM_DATABASE,
-                    Exception("Payload not found for reference id: $referenceId")
+                    Exception("Payload not found for reference id: $referenceId"),
+                    referenceId
                 )
                 raise(PayloadNotFound(referenceId.toString()))
             }
 
             else -> payloads.map {
                 val payload = Payload(
-                    it.reference_id.toKotlinUuid(),
+                    it.reference_id,
                     it.content_id,
                     it.content_type,
                     it.content
@@ -65,10 +64,10 @@ class PayloadRepository(
     }
 
     private fun Raise<PayloadNotFound>.retrievePayload(referenceId: Uuid, contentId: String) =
-        when (val payload = payloadQueries.retrievePayload(referenceId.toJavaUuid(), contentId).executeAsOneOrNull()) {
+        when (val payload = payloadQueries.retrievePayload(referenceId, contentId).executeAsOneOrNull()) {
             null -> raise(PayloadNotFound(referenceId.toString()))
             else -> Payload(
-                payload.reference_id.toKotlinUuid(),
+                payload.reference_id,
                 payload.content_id,
                 payload.content_type,
                 payload.content
@@ -78,7 +77,7 @@ class PayloadRepository(
     private fun Raise<PayloadAlreadyExists>.insertPayload(payload: Payload): Pair<Uuid, String> =
         catch({
             val inserted = payloadQueries.insertPayload(
-                reference_id = payload.referenceId.toJavaUuid(),
+                reference_id = payload.referenceId,
                 content_id = payload.contentId,
                 content_type = payload.contentType,
                 content = payload.content
@@ -91,14 +90,15 @@ class PayloadRepository(
             )
 
             return Pair(
-                inserted.reference_id.toKotlinUuid(),
+                inserted.reference_id,
                 inserted.content_id
             )
         }) { error: SQLException ->
             if (error is PSQLException && UNIQUE_VIOLATION.state == error.sqlState) {
                 eventLoggingService.registerEvent(
                     ERROR_WHILE_SAVING_PAYLOAD_INTO_DATABASE,
-                    error
+                    error,
+                    payload.referenceId
                 )
 
                 raise(

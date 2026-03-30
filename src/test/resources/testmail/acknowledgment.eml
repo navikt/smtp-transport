@@ -1,28 +1,14 @@
-Return-Path: <sykehusapotekNord.Tromso.Test@edi.nhn.no>
 X-Original-To: mottak-qass@test-es.nav.no
 Delivered-To: nyebmstest@test-es.nav.no
-Received: from a01drvl071.adeo.no (a01drvl071.adeo.no [10.1.80.105])
-	by d32mxvl002.oera-t.local (Postfix) with ESMTP id 60B7330002CE
-	for <mottak-qass@test-es.nav.no>; Tue, 21 Nov 2023 15:45:47 +0100 (CET)
-Received: from p-edi-fe0006 (unknown [10.144.9.190])
-	by a01drvl071.adeo.no (Postfix) with ESMTP id 5CB191829F67
-	for <mottak-qass@test-es.nav.no>; Tue, 21 Nov 2023 15:45:47 +0100 (CET)
-Received: from adc19362-14f3-4482-42f4-5975 (unknown [10.154.5.24])
-	(using TLSv1.3 with cipher TLS_AES_256_GCM_SHA384 (256/256 bits)
-	 key-exchange X25519 server-signature RSA-PSS (2048 bits) server-digest SHA256)
-	(No client certificate requested)
-	(Authenticated sender: sykehusapoteknord.tromso.test@edi.nhn.no)
-	by p-edi-fe0006 (Postfix) with ESMTPSA id 4SZRy327T1z54wF1
-	for <mottak-qass@test-es.nav.no>; Tue, 21 Nov 2023 15:45:47 +0100 (CET)
 SOAPAction: "ebXML"
-From: sykehusapotekNord.Tromso.Test@edi.nhn.no
+From: no-reply@nav.no
 To: mottak-qass@test-es.nav.no
 Subject: ebXml acknowledgment
 Date: Tue, 21 Nov 2023 14:45:47 +0000
 MIME-Version: 1.0
 Content-Type: text/xml; charset=utf-8
 Content-Transfer-Encoding: base64
-Message-ID: <20231121144547.5CB191829F67@a01drvl071.adeo.no>
+Message-Id: <20231121144547.5CB191829F67@a01drvl071.adeo.no>
 
 PFNPQVA6RW52ZWxvcGUgeG1sbnM6ZWI9Imh0dHA6Ly93d3cub2FzaXMtb3Blbi5vcmcvY29tbWl0
 dGVlcy9lYnhtbC1tc2cvc2NoZW1hL21zZy1oZWFkZXItMl8wLnhzZCIgeG1sbnM6eHNpPSJodHRw

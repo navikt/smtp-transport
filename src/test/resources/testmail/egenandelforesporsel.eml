@@ -1,22 +1,12 @@
-Return-Path: <hbe.stage@edi.nhn.no>
 X-Original-To: mottak-qass@test-es.nav.no
 Delivered-To: nyebmstest@test-es.nav.no
-Received: from a01drvl070.adeo.no (a01drvl070.adeo.no [10.1.80.104])
-	by d32mxvl002.oera-t.local (Postfix) with ESMTP id DBC8030002DF
-	for <mottak-qass@test-es.nav.no>; Thu, 30 Nov 2023 13:15:29 +0100 (CET)
-Received: from p-edi-fe0003 (unknown [10.144.9.190])
-	by a01drvl070.adeo.no (Postfix) with ESMTP id D6F51183E1C0
-	for <mottak-qass@test-es.nav.no>; Thu, 30 Nov 2023 13:15:29 +0100 (CET)
-Received: from VIR-APP5821 (unknown [161.4.82.246])
-	by p-edi-fe0003 (Postfix) with SMTP id 4SgwBT4QsTz2XX6K
-	for <mottak-qass@test-es.nav.no>; Thu, 30 Nov 2023 13:15:29 +0100 (CET)
 SOAPACTION: "ebxml"
 From: hbe.stage@edi.nhn.no
 To: mottak-qass@test-es.nav.no
 Subject: EgenandelForesporsel
 Date: Thu, 30 Nov 2023 13:15:29 +1
 X-Mailer: CommunicateSMTPClient
-Message-ID: f3d09378-4f14-4ab9-abea-bd415606283f
+Message-Id: f3d09378-4f14-4ab9-abea-bd415606283f
 MIME-Version: 1.0
 Content-Type: multipart/related;
 	type="text/xml";

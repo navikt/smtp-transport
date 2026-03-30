@@ -1,0 +1,39 @@
+X-Original-To: nyebmsbcc@test-es.nav.no
+Delivered-To: nyebmsbcc@test-es.nav.no
+From: "no-reply@nav.no" <no-reply@nav.no>
+Date: Thu, 12 Feb 2026 12:00:38 +0000
+Subject: InntektsForesporsel
+Message-Id: <OO2R1I6MHSU4.L13WVN153AMT1@sender-7c6d6fb6c9-gnmwq>
+To: "mottak-qass@test-es.nav.no" <mottak-qass@test-es.nav.no>
+SOAPAction: "ebXML"
+MIME-Version: 1.0
+Content-Type: multipart/related; boundary="=-m/5aQmgtBfSwyFxBpLeITA=="
+
+--=-m/5aQmgtBfSwyFxBpLeITA==
+Content-Type: text/xml
+Content-Id: <ref0>
+Content-Transfer-Encoding: base64
+
+PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0idXRmLTgiPz4KPFNPQVA6RW52ZWxvcGUgeG1s
+bnM6ZWI9Imh0dHA6Ly93d3cub2FzaXMtb3Blbi5vcmcvY29tbWl0dGVlcy9lYnhtbC1tc2cvc2No
+ZW1hL21zZy1oZWFkZXItMl8wLnhzZCIgeG1sbnM6ZHM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAv
+MDkveG1sZHNpZyMiIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB4
+dmtVN1FZV1JmekxQKzAxS2x5NG5uZ3hGZ1haNUtvV0ZDSmhBUWo1V1pPY2l0R3NPVW9HYWRTOG5I
+V2EwMVdzUnBDMW5MY3ZLQ04xZmEyMXRhWUxna2NPVHpBM2lJZHJoaHIwK3piZDZmay9XbTRjTTRS
+czUwbk1qaWd5WGVtLzRadGQxYTZjVmpPSk52NndmUEhYN3lpWGdvWS9OMFVrY1diK1BQSlFSVFVw
+T21XV1lTRGUvRTF1c0tCak1URFBWQUlaZVhrcG94eXpQN2dYR0lFNGVKY0g4Yk1oNHdCWnB5MGEx
+TUk5UjFRTXFsdnFlQk1JOUtZTEhBczY8L1g1MDlDZXJ0aWZpY2F0ZT48L1g1MDlEYXRhPjwvS2V5
+SW5mbz48L1NpZ25hdHVyZT48L1NPQVA6SGVhZGVyPgoJPFNPQVA6Qm9keT4KCQk8ZWI6TWFuaWZl
+c3QgZWI6dmVyc2lvbj0iMi4wIj4KCQkJPGViOlJlZmVyZW5jZSB4bGluazpocmVmPSJjaWQ6cmVm
+MSIgeGxpbms6dHlwZT0ic2ltcGxlIiAvPgoJCTwvZWI6TWFuaWZlc3Q+Cgk8L1NPQVA6Qm9keT4K
+PC9TT0FQOkVudmVsb3BlPg==
+
+--=-m/5aQmgtBfSwyFxBpLeITA==
+Content-Type: application/pkcs7-mime; smime-type=enveloped-data
+Content-Id: <ref1>
+Content-Transfer-Encoding: base64
+
+MIIfhQYJKoZIhvcNAQcDoIIfdjCCH3ICAQAxggIZMIICFQIBADB9MG4xCzAJBgNVBAYTAk5PMRgw
+SbS5CoPJjk1FFOzuE8teR4mV0MnTEirXep2YSvmpvU6mtn/Z
+
+--=-m/5aQmgtBfSwyFxBpLeITA==--
