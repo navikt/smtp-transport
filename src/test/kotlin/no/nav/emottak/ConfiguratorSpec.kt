@@ -90,12 +90,12 @@ class ConfiguratorSpec : StringSpec({
 
     "dev filter is loaded by default and contains expected typesToEbms" {
         config().ebmsFilter.typesToEbms shouldContain "Inntektsforesporsel"
+        config().ebmsFilter.typesToEbms shouldContain "Trekkopplysning"
     }
 
-    "dev filter typesToBoth includes both ebXML service and Trekkopplysning" {
+    "dev filter typesToBoth includes ebXML service" {
         val typesToBoth = config().ebmsFilter.typesToBoth
         typesToBoth shouldContain "urn:oasis:names:tc:ebxml-msg:service"
-        typesToBoth shouldContain "Trekkopplysning"
     }
 
     "dev filter senderAddresses are populated" {
