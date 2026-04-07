@@ -1,10 +1,10 @@
 package no.nav.emottak
 
 import com.sksamuel.hoplite.ConfigLoader
-import com.sksamuel.hoplite.ExperimentalHoplite
 import com.sksamuel.hoplite.addResourceSource
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.booleans.shouldBeFalse
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.collections.shouldNotContain
@@ -13,6 +13,14 @@ import io.kotest.matchers.types.shouldBeSameInstanceAs
 import no.nav.emottak.configuration.Config
 
 class ConfiguratorSpec : StringSpec({
+
+    val prodConfig = ConfigLoader.builder()
+        .addResourceSource("/kafka_common.conf")
+        .addResourceSource("/application.conf")
+        .addResourceSource("/filter-prod.conf")
+        .withExplicitSealedTypes()
+        .build()
+        .loadConfigOrThrow<Config>()
 
     "config() loads without throwing an exception" {
         config()
@@ -98,6 +106,12 @@ class ConfiguratorSpec : StringSpec({
         typesToBoth shouldContain "urn:oasis:names:tc:ebxml-msg:service"
     }
 
+    "dev filter typesToBoth and typesToEbms should not contain the same types" {
+        val typesToBoth = config().ebmsFilter.typesToBoth
+        val typesToEbms = config().ebmsFilter.typesToEbms
+        (typesToBoth.toSet() intersect typesToEbms.toSet()).shouldBeEmpty()
+    }
+
     "dev filter senderAddresses are populated" {
         val senderAddresses = config().ebmsFilter.senderAddresses
         senderAddresses.shouldNotBeEmpty()
@@ -105,15 +119,6 @@ class ConfiguratorSpec : StringSpec({
     }
 
     "prod filter can be loaded directly and has expected values" {
-        @OptIn(ExperimentalHoplite::class)
-        val prodConfig = ConfigLoader.builder()
-            .addResourceSource("/kafka_common.conf")
-            .addResourceSource("/application.conf")
-            .addResourceSource("/filter-prod.conf")
-            .withExplicitSealedTypes()
-            .build()
-            .loadConfigOrThrow<Config>()
-
         val filter = prodConfig.ebmsFilter
         filter.typesToEbms shouldContain "Inntektsforesporsel"
         filter.typesToBoth shouldContain "urn:oasis:names:tc:ebxml-msg:service"
@@ -122,19 +127,16 @@ class ConfiguratorSpec : StringSpec({
     }
 
     "prod filter senderAddresses differ from dev filter" {
-        @OptIn(ExperimentalHoplite::class)
-        val prodConfig = ConfigLoader.builder()
-            .addResourceSource("/kafka_common.conf")
-            .addResourceSource("/application.conf")
-            .addResourceSource("/filter-prod.conf")
-            .withExplicitSealedTypes()
-            .build()
-            .loadConfigOrThrow<Config>()
-
         val devSenders = config().ebmsFilter.senderAddresses
         val prodSenders = prodConfig.ebmsFilter.senderAddresses
         devSenders shouldContain "nyebmsbcc@test-es.nav.no"
         prodSenders shouldNotContain "nyebmsbcc@test-es.nav.no"
         (devSenders intersect prodSenders).isEmpty() shouldBe true
+    }
+
+    "prod filter typesToBoth and typesToEbms should not contain the same types" {
+        val typesToBoth = prodConfig.ebmsFilter.typesToBoth
+        val typesToEbms = prodConfig.ebmsFilter.typesToEbms
+        (typesToBoth.toSet() intersect typesToEbms.toSet()).shouldBeEmpty()
     }
 })
