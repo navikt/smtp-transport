@@ -131,7 +131,7 @@ class ConfiguratorSpec : StringSpec({
         val prodSenders = prodConfig.ebmsFilter.senderAddresses
         devSenders shouldContain "nyebmsbcc@test-es.nav.no"
         prodSenders shouldNotContain "nyebmsbcc@test-es.nav.no"
-        (devSenders intersect prodSenders).isEmpty() shouldBe true
+        (devSenders intersect prodSenders).shouldBeEmpty()
     }
 
     "prod filter typesToBoth and typesToEbms should not contain the same types" {
