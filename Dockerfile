@@ -7,4 +7,4 @@ WORKDIR /app
 ENV TZ="Europe/Oslo"
 EXPOSE 8080
 USER nonroot
-CMD [ "app.jar" ]
+ENTRYPOINT ["java", "-jar", "app.jar"]
