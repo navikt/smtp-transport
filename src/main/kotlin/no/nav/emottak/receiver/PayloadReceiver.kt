@@ -76,18 +76,13 @@ class PayloadReceiver(
 
         val soapWithAttachments = Json.decodeFromString<SoapWithAttachments>(String(record.value()))
         val referenceId = Uuid.parse(record.key())
-        val attachment = soapWithAttachments.attachment
-        val payloads = if (attachment != null) {
-            listOf(
-                Payload(
-                    referenceId = referenceId,
-                    contentId = "attachment",
-                    contentType = "application/octet-stream",
-                    content = attachment
-                )
+        val payloads = soapWithAttachments.attachments.map { attachment ->
+            Payload(
+                referenceId = referenceId,
+                contentId = attachment.contentId,
+                contentType = attachment.contentType,
+                content = attachment.content
             )
-        } else {
-            emptyList()
         }
 
         log.info("Parsed SoapWithAttachments message for reference id: $referenceId")
