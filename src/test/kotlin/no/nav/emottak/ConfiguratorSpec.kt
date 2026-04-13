@@ -112,26 +112,26 @@ class ConfiguratorSpec : StringSpec({
         (typesToBoth.toSet() intersect typesToEbms.toSet()).shouldBeEmpty()
     }
 
-    "dev filter senderAddresses are populated" {
-        val senderAddresses = config().ebmsFilter.senderAddresses
-        senderAddresses.shouldNotBeEmpty()
-        senderAddresses shouldContain "nyebmsbcc@test-es.nav.no"
+    "dev filter senderCPAs are populated" {
+        val senderCPAs = config().ebmsFilter.cpaId
+        senderCPAs.shouldNotBeEmpty()
+        senderCPAs shouldContain "nav:qass:36666"
     }
 
     "prod filter can be loaded directly and has expected values" {
         val filter = prodConfig.ebmsFilter
         filter.typesToEbms shouldContain "Inntektsforesporsel"
         filter.typesToBoth shouldContain "urn:oasis:names:tc:ebxml-msg:service"
-        filter.senderAddresses.shouldNotBeEmpty()
-        filter.senderAddresses shouldNotContain "nyebmsbcc@test-es.nav.no"
+        filter.cpaId.shouldNotBeEmpty()
+        filter.cpaId shouldNotContain "nav:qass:36666"
     }
 
-    "prod filter senderAddresses differ from dev filter" {
-        val devSenders = config().ebmsFilter.senderAddresses
-        val prodSenders = prodConfig.ebmsFilter.senderAddresses
-        devSenders shouldContain "nyebmsbcc@test-es.nav.no"
-        prodSenders shouldNotContain "nyebmsbcc@test-es.nav.no"
-        (devSenders intersect prodSenders).shouldBeEmpty()
+    "prod filter senderCPAs differ from dev filter" {
+        val devCpa = config().ebmsFilter.cpaId
+        val prodCpa = prodConfig.ebmsFilter.cpaId
+        devCpa shouldContain "nav:qass:36666"
+        prodCpa shouldNotContain "nav:qass:36666"
+        (devCpa intersect prodCpa).shouldBeEmpty()
     }
 
     "prod filter typesToBoth and typesToEbms should not contain the same types" {
