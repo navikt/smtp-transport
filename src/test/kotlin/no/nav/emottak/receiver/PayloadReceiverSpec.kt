@@ -8,25 +8,30 @@ import io.github.nomisRev.kafka.receiver.AutoOffsetReset
 import io.github.nomisRev.kafka.receiver.KafkaReceiver
 import io.github.nomisRev.kafka.receiver.Offset
 import io.github.nomisRev.kafka.receiver.ReceiverRecord
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.shouldBe
 import io.ktor.client.HttpClient
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.defaultRequest
+import io.ktor.client.request.url
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headers
+import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.serialization.json.Json
 import no.nav.emottak.KafkaSpec
 import no.nav.emottak.config
 import no.nav.emottak.configuration.Config
 import no.nav.emottak.configuration.withKafka
-import no.nav.emottak.httpClient
-import no.nav.emottak.httpTokenClient
 import no.nav.emottak.kafkaReceiver
 import no.nav.emottak.model.Attachment
 import no.nav.emottak.model.SoapWithAttachments
@@ -72,11 +77,7 @@ class PayloadReceiverSpec : KafkaSpec(
                         )
                     }
 
-                    val clientEngine = getFakeEngine(jsonResponse(referenceId))
-                    val tokenClientEngine = getFakeEngine(jsonTokenResponse())
-                    val httpTokenClient = httpTokenClient(tokenClientEngine, config)
-                    val httpClient = httpClient(clientEngine, httpTokenClient, config)
-                    val ebmsAsyncClient = EbmsAsyncClient(httpClient)
+                    val ebmsAsyncClient = EbmsAsyncClient(jsonHttpClient(getFakeEngine(jsonResponse(referenceId))))
                     val receiver = PayloadReceiver(
                         kafkaReceiver(config.kafka, AutoOffsetReset.Earliest),
                         ebmsAsyncClient,
@@ -126,7 +127,13 @@ class PayloadReceiverSpec : KafkaSpec(
 
             val ebmsAsyncClient = EbmsAsyncClient(HttpClient(getFailingEngine()))
             val receiver = PayloadReceiver(
-                kafkaReceiver(receiverRecord(referenceId, content, withSoapWithAttachmentsHeader = true)),
+                kafkaReceiver(
+                    receiverRecord(
+                        referenceId = referenceId,
+                        content = content,
+                        messageFormatHeaders = listOf(SoapWithAttachments.MESSAGE_FORMAT_VALUE)
+                    )
+                ),
                 ebmsAsyncClient,
                 fakeEventLoggingService()
             )
@@ -161,7 +168,13 @@ class PayloadReceiverSpec : KafkaSpec(
 
             val ebmsAsyncClient = EbmsAsyncClient(HttpClient(getFailingEngine()))
             val receiver = PayloadReceiver(
-                kafkaReceiver(receiverRecord(referenceId, content, withSoapWithAttachmentsHeader = true)),
+                kafkaReceiver(
+                    receiverRecord(
+                        referenceId = referenceId,
+                        content = content,
+                        messageFormatHeaders = listOf(SoapWithAttachments.MESSAGE_FORMAT_VALUE)
+                    )
+                ),
                 ebmsAsyncClient,
                 fakeEventLoggingService()
             )
@@ -173,6 +186,142 @@ class PayloadReceiverSpec : KafkaSpec(
                 payloadMessage.payloads.shouldBeEmpty()
                 awaitComplete()
             }
+        }
+
+        "Fail when SoapWithAttachments payload is malformed JSON" {
+            val referenceId = Uuid.random()
+            val receiver = payloadReceiver(
+                receiverRecord(
+                    referenceId = referenceId,
+                    content = """{"envelope": [1, 2], "attachments": [}""".toByteArray(),
+                    messageFormatHeaders = listOf(SoapWithAttachments.MESSAGE_FORMAT_VALUE)
+                )
+            )
+
+            val error = shouldThrow<IllegalArgumentException> {
+                receiver.receiveMailRoutingMessages().first()
+            }
+
+            error.message shouldContain "Invalid ${SoapWithAttachments.MESSAGE_FORMAT_VALUE} payload"
+        }
+
+        "Fail when SoapWithAttachments envelope is empty" {
+            val referenceId = Uuid.random()
+            val receiver = payloadReceiver(
+                receiverRecord(
+                    referenceId = referenceId,
+                    content = soapWithAttachmentsJson(SoapWithAttachments(envelope = byteArrayOf())).toByteArray(),
+                    messageFormatHeaders = listOf(SoapWithAttachments.MESSAGE_FORMAT_VALUE)
+                )
+            )
+
+            val error = shouldThrow<IllegalArgumentException> {
+                receiver.receiveMailRoutingMessages().first()
+            }
+
+            error.message shouldContain "Envelope cannot be empty"
+        }
+
+        "Fail when SoapWithAttachments attachment contentId is blank" {
+            val referenceId = Uuid.random()
+            val receiver = payloadReceiver(
+                receiverRecord(
+                    referenceId = referenceId,
+                    content = soapWithAttachmentsJson(
+                        SoapWithAttachments(
+                            envelope = "envelope".toByteArray(),
+                            attachments = listOf(
+                                Attachment(
+                                    content = "data".toByteArray(),
+                                    contentId = " ",
+                                    contentType = "application/pdf"
+                                )
+                            )
+                        )
+                    ).toByteArray(),
+                    messageFormatHeaders = listOf(SoapWithAttachments.MESSAGE_FORMAT_VALUE)
+                )
+            )
+
+            val error = shouldThrow<IllegalArgumentException> {
+                receiver.receiveMailRoutingMessages().first()
+            }
+
+            error.message shouldContain "missing contentId"
+        }
+
+        "Fail when SoapWithAttachments attachment contentIds are duplicated" {
+            val referenceId = Uuid.random()
+            val receiver = payloadReceiver(
+                receiverRecord(
+                    referenceId = referenceId,
+                    content = soapWithAttachmentsJson(
+                        SoapWithAttachments(
+                            envelope = "envelope".toByteArray(),
+                            attachments = listOf(
+                                Attachment(
+                                    content = "first".toByteArray(),
+                                    contentId = "duplicate",
+                                    contentType = "application/pdf"
+                                ),
+                                Attachment(
+                                    content = "second".toByteArray(),
+                                    contentId = "duplicate",
+                                    contentType = "text/plain"
+                                )
+                            )
+                        )
+                    ).toByteArray(),
+                    messageFormatHeaders = listOf(SoapWithAttachments.MESSAGE_FORMAT_VALUE)
+                )
+            )
+
+            val error = shouldThrow<IllegalArgumentException> {
+                receiver.receiveMailRoutingMessages().first()
+            }
+
+            error.message shouldContain "must be unique"
+        }
+
+        "Fail when messageFormat header is repeated" {
+            val referenceId = Uuid.random()
+            val receiver = payloadReceiver(
+                receiverRecord(
+                    referenceId = referenceId,
+                    content = soapWithAttachmentsJson(
+                        SoapWithAttachments(envelope = "envelope".toByteArray())
+                    ).toByteArray(),
+                    messageFormatHeaders = listOf(
+                        SoapWithAttachments.MESSAGE_FORMAT_VALUE,
+                        SoapWithAttachments.MESSAGE_FORMAT_VALUE
+                    )
+                )
+            )
+
+            val error = shouldThrow<IllegalArgumentException> {
+                receiver.receiveMailRoutingMessages().first()
+            }
+
+            error.message shouldContain "Expected exactly one"
+        }
+
+        "Fail when messageFormat header has unsupported value" {
+            val referenceId = Uuid.random()
+            val receiver = payloadReceiver(
+                receiverRecord(
+                    referenceId = referenceId,
+                    content = soapWithAttachmentsJson(
+                        SoapWithAttachments(envelope = "envelope".toByteArray())
+                    ).toByteArray(),
+                    messageFormatHeaders = listOf("soapwithattachments")
+                )
+            )
+
+            val error = shouldThrow<IllegalArgumentException> {
+                receiver.receiveMailRoutingMessages().first()
+            }
+
+            error.message shouldContain "Unsupported ${SoapWithAttachments.MESSAGE_FORMAT_HEADER}"
         }
     }
 )
@@ -193,8 +342,23 @@ private fun getFailingEngine(): MockEngine =
         error("Unexpected HTTP request in SoapWithAttachments path: ${request.url}")
     }
 
+private fun jsonHttpClient(engine: MockEngine): HttpClient =
+    HttpClient(engine) {
+        install(ContentNegotiation) { json() }
+        defaultRequest {
+            url("http://localhost/")
+        }
+    }
+
 private fun soapWithAttachmentsJson(soapWithAttachments: SoapWithAttachments): String =
     Json.encodeToString(soapWithAttachments)
+
+private fun payloadReceiver(record: ReceiverRecord<String, ByteArray>): PayloadReceiver =
+    PayloadReceiver(
+        kafkaReceiver(record),
+        EbmsAsyncClient(HttpClient(getFailingEngine())),
+        fakeEventLoggingService()
+    )
 
 private fun kafkaReceiver(record: ReceiverRecord<String, ByteArray>): KafkaReceiver<String, ByteArray> =
     object : KafkaReceiver<String, ByteArray> {
@@ -211,13 +375,13 @@ private fun kafkaReceiver(record: ReceiverRecord<String, ByteArray>): KafkaRecei
 private fun receiverRecord(
     referenceId: Uuid,
     content: ByteArray,
-    withSoapWithAttachmentsHeader: Boolean
+    messageFormatHeaders: List<String> = emptyList()
 ): ReceiverRecord<String, ByteArray> {
     val headers = RecordHeaders().apply {
-        if (withSoapWithAttachmentsHeader) {
+        messageFormatHeaders.forEach { headerValue ->
             add(
                 SoapWithAttachments.MESSAGE_FORMAT_HEADER,
-                SoapWithAttachments.MESSAGE_FORMAT_VALUE.toByteArray()
+                headerValue.toByteArray()
             )
         }
     }
