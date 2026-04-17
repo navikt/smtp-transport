@@ -51,6 +51,9 @@ spec:
     - access: write
       application: smtp-transport
       team: team-emottak
+    - access: write
+      application: emottak-test-client-backend
+      team: team-emottak
     - access: read
       application: emottak-kafka-manager
       team: team-emottak
