@@ -28,7 +28,7 @@ dependencyResolutionManagement {
             version("prometheus", "1.12.4")
             version("logback", "1.5.19")
             version("logstash", "7.4")
-            version("emottak-utils", "0.3.3")
+            version("emottak-utils", "0.3.6")
             version("bouncycastle", "1.82")
 
             library("arrow-core", "io.arrow-kt", "arrow-core").versionRef("arrow")
@@ -129,6 +129,14 @@ dependencyResolutionManagement {
 
     repositories {
         mavenCentral()
+        maven {
+            name = "Ebxml protokoll"
+            url = uri("https://maven.pkg.github.com/navikt/ebxml-protokoll")
+            credentials {
+                username = "token"
+                password = System.getenv("GITHUB_TOKEN")
+            }
+        }
         maven {
             name = "Nav token-support"
             url = uri("https://maven.pkg.github.com/navikt/token-support")
