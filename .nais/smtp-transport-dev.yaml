@@ -70,6 +70,7 @@ spec:
     inbound:
       rules:
         - application: ebms-async
+        - application: emottak-test-client-backend
         - application: azure-token-generator
         - application: tokenx-token-generator
           namespace: aura

@@ -14,7 +14,7 @@ spec:
     partitions: 1
     replication: 3
     retentionBytes: -1
-    retentionHours: 4380
+    retentionHours: 672
     segmentHours: 168
   acl:
     - access: write
@@ -45,7 +45,7 @@ spec:
     partitions: 1
     replication: 3
     retentionBytes: -1
-    retentionHours: 4380
+    retentionHours: 672
     segmentHours: 168
   acl:
     - access: write
