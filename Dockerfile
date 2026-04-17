@@ -1,4 +1,4 @@
-FROM gcr.io/distroless/java21-debian12@sha256:e9ed0a9d3a0114f2d471e8fbbc7fd76b80dbf59890831814281506c1e81aee43
+FROM europe-north1-docker.pkg.dev/cgr-nav/pull-through/nav.no/jre:openjdk-21@sha256:b94f658ff7573b0da43df76d9c5bdc82375cd243789df7cad0fe473b71b147ab
 
 COPY build/libs/app.jar /app/app.jar
 COPY build/generated/migrations /app/migrations
@@ -7,4 +7,4 @@ WORKDIR /app
 ENV TZ="Europe/Oslo"
 EXPOSE 8080
 USER nonroot
-CMD [ "app.jar" ]
+ENTRYPOINT ["java", "-jar", "app.jar"]
