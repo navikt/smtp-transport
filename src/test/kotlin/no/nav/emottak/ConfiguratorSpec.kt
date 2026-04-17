@@ -101,6 +101,19 @@ class ConfiguratorSpec : StringSpec({
         config().ebmsFilter.typesToEbms shouldContain "Trekkopplysning"
     }
 
+    "dev filter typesToEbms contains expected services" {
+        val typesToEbms = config().ebmsFilter.typesToEbms
+        typesToEbms.size shouldBe 2
+        typesToEbms shouldContain "Inntektsforesporsel"
+        typesToEbms shouldContain "Trekkopplysning"
+    }
+
+    "dev filter typesToBoth contains expected services" {
+        val typesToBoth = config().ebmsFilter.typesToBoth
+        typesToBoth.size shouldBe 1
+        typesToBoth shouldContain "urn:oasis:names:tc:ebxml-msg:service"
+    }
+
     "dev filter typesToBoth includes ebXML service" {
         val typesToBoth = config().ebmsFilter.typesToBoth
         typesToBoth shouldContain "urn:oasis:names:tc:ebxml-msg:service"
@@ -138,5 +151,18 @@ class ConfiguratorSpec : StringSpec({
         val typesToBoth = prodConfig.ebmsFilter.typesToBoth
         val typesToEbms = prodConfig.ebmsFilter.typesToEbms
         (typesToBoth.toSet() intersect typesToEbms.toSet()).shouldBeEmpty()
+    }
+
+    "prod filter typesToEbms contains expected services" {
+        val typesToEbms = prodConfig.ebmsFilter.typesToEbms
+        typesToEbms.size shouldBe 2
+        typesToEbms shouldContain "Inntektsforesporsel"
+        typesToEbms shouldContain "Trekkopplysning"
+    }
+
+    "prod filter typesToBoth contains expected services" {
+        val typesToBoth = prodConfig.ebmsFilter.typesToBoth
+        typesToBoth.size shouldBe 1
+        typesToBoth shouldContain "urn:oasis:names:tc:ebxml-msg:service"
     }
 })
