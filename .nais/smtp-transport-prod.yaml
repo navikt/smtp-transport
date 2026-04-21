@@ -55,6 +55,7 @@ spec:
     pool: nav-prod
   envFrom:
     - secret: smtp-transport-secrets
+    - configmap: smtp-transport-config
   vault:
     enabled: true
     paths:
@@ -98,9 +99,3 @@ spec:
       value: "emottak-smtp-transport-payload-admin"
     - name: INBOX_EXPUNGE
       value: "true"
-    - name: SMTP_READ_INTERVAL
-      value: "30s"
-    - name: SMTP_READ_INITIAL_DELAY
-      value: "5s"
-    - name: INBOX_BATCH_READ_LIMIT
-      value: "20"
