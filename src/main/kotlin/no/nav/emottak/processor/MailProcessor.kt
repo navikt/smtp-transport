@@ -39,7 +39,7 @@ class MailProcessor(
             install(object : AutoCloseable {
                 val starTime = Clock.System.now()
                 override fun close() {
-                    log.info("Scheduled message batch executed in ${(Clock.System.now() - starTime).inWholeMilliseconds} ms")
+                    log.info("Scheduled message read batch executed in ${(Clock.System.now() - starTime).inWholeMilliseconds} ms")
                 }
             })
             val mailReader = install(
@@ -72,7 +72,7 @@ class MailProcessor(
                 }
                 log.info("Finished processing $batchSize of $messageCount messages from inbox")
             } else {
-                log.info("No messages found in inbox")
+                log.debug("No messages found in inbox")
             }
         }
     }
