@@ -36,7 +36,12 @@ class MailProcessor(
 ) {
     fun processMessages(scope: CoroutineScope): Job = scope.launch(Dispatchers.IO) {
         autoCloseScope {
-            val start = Clock.System.now()
+           install( object : AutoCloseable {
+                val starTime = Clock.System.now()
+                override fun close() {
+                    log.info("Scheduled message batch executed in ${(Clock.System.now() - starTime).inWholeMilliseconds} ms")
+                }
+            })
             val mailReader = install(
                 MailReader(
                     mail,
@@ -69,7 +74,6 @@ class MailProcessor(
             } else {
                 log.info("No messages found in inbox")
             }
-            log.info("Scheduled message batch executed in ${(Clock.System.now() - start).inWholeMilliseconds} ms")
         }
     }
 
