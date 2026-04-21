@@ -50,11 +50,11 @@ fun Application.configureRoutes(
 fun Route.mailReaderActivationRoutes() {
     get("/mail/incoming/activate") {
         mailReaderActive.set(true)
-        call.respondText { "Mail reading activated! :)" }
+        call.respondText { "Mail reading activated! 👀" }
     }
     get("/mail/incoming/deactivate") {
         mailReaderActive.set(false)
-        call.respondText { "Mail reading deactivated! :(" }
+        call.respondText { "Mail reading deactivated! 😭" }
     }
 }
 
