@@ -14,7 +14,6 @@ import io.micrometer.prometheus.PrometheusMeterRegistry
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
-import kotlinx.datetime.Clock
 import no.nav.emottak.plugin.configureAuthentication
 import no.nav.emottak.plugin.configureCallLogging
 import no.nav.emottak.plugin.configureContentNegotiation
@@ -113,13 +112,11 @@ private suspend fun ResourceScope.scheduleProcessMailMessages(processor: MailPro
     return Schedule
         .spaced<Unit>(config().job.fixedInterval)
         .repeat {
-            val start = Clock.System.now()
             if (mailReaderActive.get()) {
                 processor.processMessages(scope)
             } else {
                 log.info("Mail reading is disabled, reactivate to process messages")
             }
-            log.info("Scheduled message batch executed in ${(Clock.System.now() - start).inWholeMilliseconds} ms")
         }
 }
 
