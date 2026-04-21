@@ -26,7 +26,10 @@ data class Config(
 
 fun Config.withKafka(update: Kafka.() -> Kafka) = copy(kafka = kafka.update())
 
-data class Job(val fixedInterval: Duration)
+data class Job(
+    val fixedInterval: Duration,
+    val initialDelay: Duration
+)
 
 data class Mail(
     val inboxLimit: Int,
