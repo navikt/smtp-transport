@@ -23,6 +23,7 @@ import no.nav.emottak.ReferenceIdEmpty
 import no.nav.emottak.ReferenceIdMissing
 import no.nav.emottak.RetrievePayloadError
 import no.nav.emottak.config
+import no.nav.emottak.mailReaderActive
 import no.nav.emottak.model.Payload
 import no.nav.emottak.repository.PayloadRepository
 import no.nav.emottak.toContent
@@ -39,9 +40,21 @@ fun Application.configureRoutes(
     val config = config()
     routing {
         internalRoutes(registry)
+        mailReaderActivationRoutes()
         authenticate(config.azureAuth.azureAdAuth.value) {
             externalRoutes(payloadRepository)
         }
+    }
+}
+
+fun Route.mailReaderActivationRoutes() {
+    get("/mail/incoming/activate") {
+        mailReaderActive.set(true)
+        call.respondText { "Mail reading activated! 👀" }
+    }
+    get("/mail/incoming/deactivate") {
+        mailReaderActive.set(false)
+        call.respondText { "Mail reading deactivated! 😭" }
     }
 }
 
