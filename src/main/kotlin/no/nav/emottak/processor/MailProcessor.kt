@@ -51,6 +51,7 @@ class MailProcessor(
                 )
             )
             val messageCount = mailReader.count()
+            if (messageCount > mail.inboxWarningThreshold) { log.warn("Inbox size above critical threshold: $messageCount") }
             val batchSize = min(mail.inboxBatchReadLimit, messageCount)
 
             if (messageCount > 0) {

@@ -34,7 +34,8 @@ data class Job(
 data class Mail(
     val inboxLimit: Int,
     val inboxBatchReadLimit: Int,
-    val inboxExpunge: Boolean
+    val inboxExpunge: Boolean,
+    val inboxWarningThreshold: Int
 )
 
 data class EbmsAsync(val baseUrl: String, val apiUrl: String)
