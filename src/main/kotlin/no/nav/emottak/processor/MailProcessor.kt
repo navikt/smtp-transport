@@ -36,7 +36,7 @@ class MailProcessor(
 ) {
     fun processMessages(scope: CoroutineScope): Job = scope.launch(Dispatchers.IO) {
         autoCloseScope {
-           install( object : AutoCloseable {
+            install(object : AutoCloseable {
                 val starTime = Clock.System.now()
                 override fun close() {
                     log.info("Scheduled message batch executed in ${(Clock.System.now() - starTime).inWholeMilliseconds} ms")
