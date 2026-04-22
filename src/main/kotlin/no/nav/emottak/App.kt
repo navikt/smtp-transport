@@ -3,7 +3,6 @@ package no.nav.emottak
 import arrow.continuations.SuspendApp
 import arrow.continuations.ktor.server
 import arrow.core.raise.result
-import arrow.fx.coroutines.ResourceScope
 import arrow.fx.coroutines.autoCloseable
 import arrow.fx.coroutines.resourceScope
 import arrow.resilience.Schedule
@@ -102,8 +101,7 @@ internal fun smtpTransportModule(
     }
 }
 
-private suspend fun ResourceScope.scheduleProcessMailMessages(processor: MailProcessor): Long {
-    val scope = coroutineScope(coroutineContext)
+private suspend fun scheduleProcessMailMessages(processor: MailProcessor): Long {
     val initialDelay = config().job.initialDelay
     if (initialDelay > Duration.ZERO) {
         log.info("Delaying initial mail processing by $initialDelay")
@@ -113,7 +111,7 @@ private suspend fun ResourceScope.scheduleProcessMailMessages(processor: MailPro
         .spaced<Unit>(config().job.fixedInterval)
         .repeat {
             if (mailReaderActive.get()) {
-                processor.processMessages(scope)
+                processor.processMessages()
             } else {
                 log.info("Mail reading is disabled, reactivate to process messages")
             }

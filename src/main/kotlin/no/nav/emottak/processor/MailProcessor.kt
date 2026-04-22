@@ -4,10 +4,8 @@ import arrow.autoCloseScope
 import arrow.core.raise.fold
 import jakarta.mail.Store
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
 import net.logstash.logback.marker.LogstashMarker
 import net.logstash.logback.marker.Markers
@@ -34,7 +32,7 @@ class MailProcessor(
     private val mailSender: MailSender,
     private val mail: Mail
 ) {
-    fun processMessages(scope: CoroutineScope): Job = scope.launch(Dispatchers.IO) {
+    suspend fun processMessages() = withContext(Dispatchers.IO) {
         autoCloseScope {
             install(object : AutoCloseable {
                 val starTime = Clock.System.now()
@@ -97,7 +95,7 @@ class MailProcessor(
                 "sourceSystem" to (emailMsg.headers["X-Mailer"] ?: "-")
             )
         )
-        log.info(marker, "Forwarded message in ${(Clock.System.now() - start).inWholeMilliseconds} ms")
+        log.debug(marker, "Forwarded message in ${(Clock.System.now() - start).inWholeMilliseconds} ms")
     }
 
     private suspend fun forwardToT1(emailMsg: EmailMsg) {
