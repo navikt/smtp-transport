@@ -13,7 +13,7 @@ import io.ktor.utils.io.CancellationException
 import io.micrometer.prometheus.PrometheusMeterRegistry
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.awaitCancellation
-import kotlinx.datetime.Clock
+import kotlinx.coroutines.delay
 import no.nav.emottak.plugin.configureAuthentication
 import no.nav.emottak.plugin.configureCallLogging
 import no.nav.emottak.plugin.configureContentNegotiation
@@ -32,9 +32,12 @@ import no.nav.emottak.util.eventLoggingService
 import no.nav.emottak.utils.kafka.client.EventPublisherClient
 import no.nav.emottak.utils.kafka.service.EventLoggingService
 import org.slf4j.LoggerFactory
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.coroutineContext
+import kotlin.time.Duration
 
 internal val log = LoggerFactory.getLogger("no.nav.emottak.smtp")
+val mailReaderActive = AtomicBoolean(true)
 
 fun main() = SuspendApp {
     result {
@@ -101,12 +104,19 @@ internal fun smtpTransportModule(
 
 private suspend fun ResourceScope.scheduleProcessMailMessages(processor: MailProcessor): Long {
     val scope = coroutineScope(coroutineContext)
+    val initialDelay = config().job.initialDelay
+    if (initialDelay > Duration.ZERO) {
+        log.info("Delaying initial mail processing by $initialDelay")
+        delay(initialDelay)
+    }
     return Schedule
         .spaced<Unit>(config().job.fixedInterval)
         .repeat {
-            val start = Clock.System.now()
-            processor.processMessages(scope)
-            log.info("Scheduled message batch executed in ${(Clock.System.now() - start).inWholeMilliseconds} ms")
+            if (mailReaderActive.get()) {
+                processor.processMessages(scope)
+            } else {
+                log.info("Mail reading is disabled, reactivate to process messages")
+            }
         }
 }
 

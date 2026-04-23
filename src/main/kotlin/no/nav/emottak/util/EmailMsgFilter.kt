@@ -16,41 +16,48 @@ import javax.xml.xpath.XPathFactory
 
 private val typesToEbms = config().ebmsFilter.typesToEbms
 private val typesToBoth = config().ebmsFilter.typesToBoth
+private val cpaIds = config().ebmsFilter.cpaId
 
 fun EmailMsg.filterMessageForwarding(): ForwardableMimeMessage {
-    val (forwardingSystem, serviceName) = this.filterMimeMessage()
-    val marker: LogstashMarker = Markers.appendEntries(
-        mapOf(
-            "requestId" to this.requestId.toString(),
-            "smtpSender" to this.senderAddress,
-            "smtpSubject" to (this.headers["Subject"] ?: "-"),
-            "service" to serviceName,
-            "forwardingSystem" to forwardingSystem,
-            "sourceSystem" to (this.headers["X-Mailer"] ?: "-")
-        )
-    )
-    log.info(marker, "Message forwarding system identified")
-    return when (forwardingSystem) {
+    return when (val forwardingSystem = this.getForwardingSystem()) {
         ForwardingSystem.EBMS -> ForwardableMimeMessage(forwardingSystem, null)
         ForwardingSystem.EMOTTAK -> ForwardableMimeMessage(forwardingSystem, MimeMessage(originalMimeMessage))
         ForwardingSystem.BOTH -> ForwardableMimeMessage(forwardingSystem, MimeMessage(originalMimeMessage))
     }
 }
 
-fun EmailMsg.filterMimeMessage(): Pair<ForwardingSystem, String> {
-    val envelopeServiceName = getEnvelope().toXmlDocument()?.getEbxmlServiceName() ?: "Unparseable"
-    if (isFromAcceptedAddress(senderAddress)) {
+fun EmailMsg.getForwardingSystem(): ForwardingSystem {
+    val ebxmlDocument = getEnvelope().toXmlDocument()
+    val envelopeServiceName = ebxmlDocument?.getEbxmlServiceName() ?: "UnparsableService"
+    val envelopeCpaId = ebxmlDocument?.getEbxmlCpaId() ?: "UnparsableCpaId"
+
+    return if (isAcceptedCpaId(envelopeCpaId)) {
         if (typesToBoth.contains(envelopeServiceName)) {
-            return ForwardingSystem.BOTH to envelopeServiceName
+            ForwardingSystem.BOTH
+        } else if (typesToEbms.contains(envelopeServiceName)) {
+            ForwardingSystem.EBMS
+        } else {
+            ForwardingSystem.EMOTTAK
         }
-        if (typesToEbms.contains(envelopeServiceName)) {
-            return ForwardingSystem.EBMS to envelopeServiceName
-        }
+    } else {
+        ForwardingSystem.EMOTTAK
+    }.also {
+        val marker: LogstashMarker = Markers.appendEntries(
+            mapOf(
+                "requestId" to this.requestId.toString(),
+                "smtpSender" to this.senderAddress,
+                "smtpSubject" to (this.headers["Subject"] ?: "-"),
+                "service" to envelopeServiceName,
+                "cpaId" to envelopeCpaId,
+                "forwardingSystem" to it,
+                "sourceSystem" to (this.headers["X-Mailer"] ?: "-")
+            )
+        )
+        log.info(marker, "Message forwarding system identified")
     }
-    return ForwardingSystem.EMOTTAK to envelopeServiceName
 }
 
-private fun isFromAcceptedAddress(from: String) = config().ebmsFilter.senderAddresses.any { it.equals(from, ignoreCase = true) }
+private fun isAcceptedCpaId(cpaId: String) = cpaIds.any { it.equals(cpaId, ignoreCase = true) }
 
 private fun ByteArray.toXmlDocument(): Document? {
     return try {
@@ -67,7 +74,10 @@ private fun ByteArray.toXmlDocument(): Document? {
     }
 }
 
-private fun Document.getEbxmlServiceName(): String {
+private fun Document.getEbxmlServiceName(): String = this.getXmlElementValue("Service")
+private fun Document.getEbxmlCpaId(): String = this.getXmlElementValue("CPAId")
+
+private fun Document.getXmlElementValue(elementName: String): String {
     return try {
         val nsUri = this.documentElement.namespaceURI
         val xPath = XPathFactory.newInstance().newXPath()
@@ -78,7 +88,7 @@ private fun Document.getEbxmlServiceName(): String {
                 override fun getPrefixes(namespaceURI: String?): MutableIterator<String> = mutableListOf<String>().iterator()
             }
         }
-        val localNameExpr = "//*[local-name()='Service']"
+        val localNameExpr = "//*[local-name()='$elementName']"
         val nodeList = xPath.evaluate(localNameExpr, this, XPathConstants.NODESET) as NodeList
         return if (nodeList.length == 1) {
             nodeList.item(0).textContent
@@ -86,8 +96,8 @@ private fun Document.getEbxmlServiceName(): String {
             "Unknown"
         }
     } catch (e: Exception) {
-        log.warn("Failed to check XML for element 'Service': ${e.message}")
-        "ExceptionThrown"
+        log.warn("Failed to check XML for element '$elementName': ${e.message}")
+        e::class.simpleName ?: "UnknownError"
     }
 }
 

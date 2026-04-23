@@ -36,6 +36,12 @@ class MailProcessor(
 ) {
     fun processMessages(scope: CoroutineScope): Job = scope.launch(Dispatchers.IO) {
         autoCloseScope {
+            install(object : AutoCloseable {
+                val starTime = Clock.System.now()
+                override fun close() {
+                    log.info("Scheduled message read batch executed in ${(Clock.System.now() - starTime).inWholeMilliseconds} ms")
+                }
+            })
             val mailReader = install(
                 MailReader(
                     mail,
@@ -45,6 +51,7 @@ class MailProcessor(
                 )
             )
             val messageCount = mailReader.count()
+            if (messageCount > mail.inboxWarningThreshold) { log.warn("Inbox size above critical threshold: $messageCount") }
             val batchSize = min(mail.inboxBatchReadLimit, messageCount)
 
             if (messageCount > 0) {
@@ -66,7 +73,7 @@ class MailProcessor(
                 }
                 log.info("Finished processing $batchSize of $messageCount messages from inbox")
             } else {
-                log.info("No messages found in inbox")
+                log.debug("No messages found in inbox")
             }
         }
     }

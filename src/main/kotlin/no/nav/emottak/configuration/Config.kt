@@ -26,12 +26,16 @@ data class Config(
 
 fun Config.withKafka(update: Kafka.() -> Kafka) = copy(kafka = kafka.update())
 
-data class Job(val fixedInterval: Duration)
+data class Job(
+    val fixedInterval: Duration,
+    val initialDelay: Duration
+)
 
 data class Mail(
     val inboxLimit: Int,
     val inboxBatchReadLimit: Int,
-    val inboxExpunge: Boolean
+    val inboxExpunge: Boolean,
+    val inboxWarningThreshold: Int
 )
 
 data class EbmsAsync(val baseUrl: String, val apiUrl: String)
@@ -187,5 +191,5 @@ data class AzureAuth(
 data class EbmsFilter(
     val typesToEbms: List<String>,
     val typesToBoth: List<String>,
-    val senderAddresses: Set<String>
+    val cpaId: Set<String>
 )

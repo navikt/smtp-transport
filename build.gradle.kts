@@ -55,7 +55,9 @@ tasks {
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().all {
     compilerOptions {
         jvmTarget = JvmTarget.JVM_21
-        freeCompilerArgs = listOf("-opt-in=kotlin.uuid.ExperimentalUuidApi,arrow.fx.coroutines.await.ExperimentalAwaitAllApi")
+        optIn.add("kotlin.uuid.ExperimentalUuidApi")
+        optIn.add("arrow.fx.coroutines.await.ExperimentalAwaitAllApi")
+        optIn.add("com.sksamuel.hoplite.ExperimentalHoplite")
     }
 }
 
