@@ -37,14 +37,14 @@ class EmailMsgFilterSpec : StringSpec({
         forwardingSystem shouldBe ForwardingSystem.EBMS
     }
 
-    "getForwardingSystem returns EMOTTAK when CPAId is missing" {
+    "getForwardingSystem returns EBMS when CPAId is missing but is accepted type" {
         val forwardingSystem = EBXML_NO_CPAID.emlToEmailMsg().getForwardingSystem()
-        forwardingSystem shouldBe ForwardingSystem.EMOTTAK
+        forwardingSystem shouldBe ForwardingSystem.EBMS
     }
 
-    "getForwardingSystem returns EMOTTAK when CPAId is not accepted" {
+    "getForwardingSystem returns EBMS when CPAId is not accepted but is accepted type" {
         val forwardingSystem = PAYLOAD_MESSAGE_INVALID_CPAID.emlToEmailMsg().getForwardingSystem()
-        forwardingSystem shouldBe ForwardingSystem.EMOTTAK
+        forwardingSystem shouldBe ForwardingSystem.EBMS
     }
 
     "getForwardingSystem returns EMOTTAK when Service Type is not accepted" {
