@@ -113,7 +113,10 @@ private suspend fun ResourceScope.scheduleProcessMailMessages(processor: MailPro
         .spaced<Unit>(config().job.fixedInterval)
         .repeat {
             if (mailReaderActive.get()) {
-                processor.processMessages(scope)
+                var inboxStatus = MailProcessor.InboxStatus.UNKNOWN
+                while (inboxStatus != MailProcessor.InboxStatus.EMPTY)
+                    inboxStatus = processor.processMessages(scope).await()
+                // TODO kan gjøre andre ting dersom critical
             } else {
                 log.info("Mail reading is disabled, reactivate to process messages")
             }
