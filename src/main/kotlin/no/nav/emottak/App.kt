@@ -62,7 +62,14 @@ fun main() = SuspendApp {
             val signalReceiver = SignalReceiver(deps.kafkaReceiver, eventLoggingService)
             val payloadRepository = PayloadRepository(deps.payloadDatabase, eventLoggingService)
             val mailSender = autoCloseable { MailSender(deps.session, eventLoggingService, config().smtp) }
-            val mailProcessor = MailProcessor(deps.store, mailPublisher, payloadRepository, eventLoggingService, mailSender, config().mail)
+            val mailProcessor = MailProcessor(
+                deps.store,
+                mailPublisher,
+                payloadRepository,
+                eventLoggingService,
+                mailSender,
+                config().mail
+            )
             val messageProcessor = MessageProcessor(payloadReceiver, signalReceiver, mailSender)
 
             val server = config().server
@@ -112,14 +119,15 @@ private suspend fun ResourceScope.scheduleProcessMailMessages(processor: MailPro
     return Schedule
         .spaced<Unit>(config().job.fixedInterval)
         .repeat {
-            if (mailReaderActive.get()) {
-                var inboxStatus = MailProcessor.InboxStatus.UNKNOWN
-                while (inboxStatus != MailProcessor.InboxStatus.EMPTY)
-                    inboxStatus = processor.processMessages(scope).await()
-                // TODO kan gjøre andre ting dersom critical
-            } else {
-                log.info("Mail reading is disabled, reactivate to process messages")
+            var inboxStatus = MailProcessor.InboxStatus.UNKNOWN
+            while (inboxStatus != MailProcessor.InboxStatus.EMPTY) {
+                if (!mailReaderActive.get()) {
+                    log.info("Mail reading is disabled, reactivate to process messages")
+                    return@repeat
+                }
+                inboxStatus = processor.processMessages(scope).await()
             }
+            // TODO kan gjøre andre ting dersom critical
         }
 }
 
