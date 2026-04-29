@@ -140,9 +140,6 @@ private fun httpClient(clientEngine: HttpClientEngine, httpTokenClient: HttpClie
         install(HttpTimeout) { connectTimeoutMillis = config.httpClient.connectionTimeout.value }
         install(ContentNegotiation) { json() }
         install(HttpRequestRetry) {
-            retryIf { request, response ->
-                !response.status.isSuccess() // Retry if response is not 2xx
-            }
             delayMillis {
                 5000L
             }
