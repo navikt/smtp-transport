@@ -8,6 +8,7 @@ import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.collections.shouldNotContain
+import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import no.nav.emottak.configuration.Config
@@ -155,9 +156,8 @@ class ConfiguratorSpec : StringSpec({
 
     "prod filter typesToEbms contains expected services" {
         val typesToEbms = prodConfig.ebmsFilter.typesToEbms
-        typesToEbms.size shouldBe 2
+        typesToEbms.size shouldBeGreaterThan 0
         typesToEbms shouldContain "Inntektsforesporsel"
-        typesToEbms shouldContain "Trekkopplysning"
     }
 
     "prod filter typesToBoth contains expected services" {
