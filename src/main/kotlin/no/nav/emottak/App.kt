@@ -35,6 +35,7 @@ import org.slf4j.LoggerFactory
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.coroutineContext
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 internal val log = LoggerFactory.getLogger("no.nav.emottak.smtp")
 val mailReaderActive = AtomicBoolean(true)
@@ -119,19 +120,18 @@ private suspend fun ResourceScope.scheduleProcessMailMessages(processor: MailPro
     return Schedule
         .spaced<Unit>(config().job.fixedInterval)
         .repeat {
-            if (!mailReaderActive.get()) {
-                log.info("Mail reading is disabled, reactivate to process messages")
-                delay(30.seconds)
-                return@repeat
-            }
-            processor.processMessages(scope).await().also { inboxStatus -> 
-                if (inboxStatus == MailProcessor.InboxStatus.EMPTY) {
-                    delay(30.seconds)
+            if (mailReaderActive.get()) {
+                when (processor.processMessages(scope).await()) {
+                    MailProcessor.InboxStatus.CRITICAL,
+                    MailProcessor.InboxStatus.STILL_LESS_THAN_WARNING_THRESHOLD -> {
+                        return@repeat
+                    }
+                    else -> { }
                 }
+            } else {
+                log.info("Mail reading is disabled, reactivate to process messages")
             }
-        }
-            }
-            // TODO kan gjøre andre ting dersom critical
+            delay(30.seconds)
         }
 }
 
