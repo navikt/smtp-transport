@@ -144,7 +144,7 @@ private fun httpClient(clientEngine: HttpClientEngine, httpTokenClient: HttpClie
                 !response.status.isSuccess() // Retry if response is not 2xx
             }
             delayMillis {
-                500L
+                5000L
             }
             retryOnException(maxRetries = 30, retryOnTimeout = true)
         }
