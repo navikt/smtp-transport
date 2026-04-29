@@ -7,6 +7,8 @@ import arrow.fx.coroutines.ResourceScope
 import arrow.fx.coroutines.autoCloseable
 import arrow.fx.coroutines.resourceScope
 import arrow.resilience.Schedule
+import io.ktor.client.request.get
+import io.ktor.client.statement.bodyAsText
 import io.ktor.server.application.Application
 import io.ktor.server.netty.Netty
 import io.ktor.utils.io.CancellationException
@@ -48,7 +50,11 @@ fun main() = SuspendApp {
             log.info("Starting flyway migrations...")
             deps.migrationService.migrate()
             log.info("Flyway migration successfully.")
-
+            log.info("Deactivating old pod process...")
+            deps.httpClient.get (config().smtp.smtpStopUrl)
+                .also {
+                    log.info("Deactivation response: " + it.bodyAsText())
+                }
             val scope = coroutineScope(coroutineContext)
             val eventScope = coroutineScope(Dispatchers.IO)
             val eventLoggingService = eventLoggingService(
