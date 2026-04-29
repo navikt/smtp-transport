@@ -27,7 +27,6 @@ import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.request.forms.submitForm
 import io.ktor.client.statement.HttpResponse
-import io.ktor.http.isSuccess
 import io.ktor.http.parameters
 import io.ktor.http.path
 import io.ktor.serialization.kotlinx.json.json
