@@ -5,9 +5,9 @@ import arrow.core.raise.fold
 import jakarta.mail.Store
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.async
 import kotlinx.datetime.Clock
 import net.logstash.logback.marker.LogstashMarker
 import net.logstash.logback.marker.Markers
@@ -34,7 +34,16 @@ class MailProcessor(
     private val mailSender: MailSender,
     private val mail: Mail
 ) {
-    fun processMessages(scope: CoroutineScope): Job = scope.launch(Dispatchers.IO) {
+
+    enum class InboxStatus {
+        EMPTY,
+        STILL_LESS_THAN_WARNING_THRESHOLD,
+        CRITICAL,
+        UNKNOWN
+    }
+
+    fun processMessages(scope: CoroutineScope): Deferred<InboxStatus> = scope.async(Dispatchers.IO) {
+        var inboxState = InboxStatus.UNKNOWN
         autoCloseScope {
             install(object : AutoCloseable {
                 val starTime = Clock.System.now()
@@ -51,8 +60,14 @@ class MailProcessor(
                 )
             )
             val messageCount = mailReader.count()
-            if (messageCount > mail.inboxWarningThreshold) { log.warn("Inbox size above critical threshold: $messageCount") }
             val batchSize = min(mail.inboxBatchReadLimit, messageCount)
+            if (messageCount > mail.inboxBatchReadLimit) {
+                inboxState = InboxStatus.STILL_LESS_THAN_WARNING_THRESHOLD
+            }
+            if (messageCount > mail.inboxWarningThreshold) {
+                inboxState = InboxStatus.CRITICAL
+                log.warn("Inbox size above critical threshold: $messageCount")
+            }
 
             if (messageCount > 0) {
                 log.info("Starting to read $batchSize of $messageCount messages from inbox")
@@ -73,9 +88,11 @@ class MailProcessor(
                 }
                 log.info("Finished processing $batchSize of $messageCount messages from inbox")
             } else {
+                inboxState = InboxStatus.EMPTY
                 log.debug("No messages found in inbox")
             }
         }
+        return@async inboxState
     }
 
     private suspend fun processMessage(emailMsg: EmailMsg) {

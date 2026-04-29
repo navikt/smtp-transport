@@ -38,6 +38,7 @@ import org.slf4j.LoggerFactory
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.coroutineContext
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 internal val log = LoggerFactory.getLogger("no.nav.emottak.smtp")
 val mailReaderActive = AtomicBoolean(config().mail.inboxReadActive)
@@ -75,7 +76,14 @@ fun main() = SuspendApp {
             val signalReceiver = SignalReceiver(deps.kafkaReceiver, eventLoggingService)
             val payloadRepository = PayloadRepository(deps.payloadDatabase, eventLoggingService)
             val mailSender = autoCloseable { MailSender(deps.session, eventLoggingService, config().smtp) }
-            val mailProcessor = MailProcessor(deps.store, mailPublisher, payloadRepository, eventLoggingService, mailSender, config().mail)
+            val mailProcessor = MailProcessor(
+                deps.store,
+                mailPublisher,
+                payloadRepository,
+                eventLoggingService,
+                mailSender,
+                config().mail
+            )
             val messageProcessor = MessageProcessor(payloadReceiver, signalReceiver, mailSender)
 
             val server = config().server
@@ -126,10 +134,17 @@ private suspend fun ResourceScope.scheduleProcessMailMessages(processor: MailPro
         .spaced<Unit>(config().job.fixedInterval)
         .repeat {
             if (mailReaderActive.get()) {
-                processor.processMessages(scope)
+                when (processor.processMessages(scope).await()) {
+                    MailProcessor.InboxStatus.CRITICAL,
+                    MailProcessor.InboxStatus.STILL_LESS_THAN_WARNING_THRESHOLD -> {
+                        return@repeat
+                    }
+                    else -> { }
+                }
             } else {
                 log.info("Mail reading is disabled, reactivate to process messages")
             }
+            delay(30.seconds)
         }
 }
 
