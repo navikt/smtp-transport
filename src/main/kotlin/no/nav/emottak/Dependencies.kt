@@ -146,7 +146,7 @@ private fun httpClient(clientEngine: HttpClientEngine, httpTokenClient: HttpClie
             delayMillis {
                 5000L
             }
-            retryOnException(maxRetries = 30, retryOnTimeout = true)
+            retryOnException(maxRetries = 720, retryOnTimeout = true)
         }
         install(Auth) {
             bearer {
