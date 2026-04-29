@@ -7,6 +7,9 @@ import arrow.fx.coroutines.ResourceScope
 import arrow.fx.coroutines.autoCloseable
 import arrow.fx.coroutines.resourceScope
 import arrow.resilience.Schedule
+import io.ktor.client.request.get
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.isSuccess
 import io.ktor.server.application.Application
 import io.ktor.server.netty.Netty
 import io.ktor.utils.io.CancellationException
@@ -38,7 +41,7 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 internal val log = LoggerFactory.getLogger("no.nav.emottak.smtp")
-val mailReaderActive = AtomicBoolean(true)
+val mailReaderActive = AtomicBoolean(config().mail.inboxReadActive)
 
 fun main() = SuspendApp {
     result {
@@ -49,7 +52,17 @@ fun main() = SuspendApp {
             log.info("Starting flyway migrations...")
             deps.migrationService.migrate()
             log.info("Flyway migration successfully.")
-
+            if (!config().smtp.smtpStopUrl.contains("localhost")) {
+                log.info("Deactivating old pod process...")
+                deps.httpClient.get(config().smtp.smtpStopUrl)
+                    .also {
+                        if (it.status.isSuccess()) {
+                            log.info("Deactivation successful: " + it.bodyAsText())
+                        } else {
+                            log.warn("Deactivation unsuccesful: " + it.bodyAsText())
+                        }
+                    }
+            }
             val scope = coroutineScope(coroutineContext)
             val eventScope = coroutineScope(Dispatchers.IO)
             val eventLoggingService = eventLoggingService(

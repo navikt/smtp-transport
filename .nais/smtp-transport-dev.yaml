@@ -77,6 +77,8 @@ spec:
           namespace: aura
           cluster: dev-gcp
   env:
+    - name: SMTP_STOP_URL
+    - value: "https://smtp-transport.intern.dev.nav.no/mail/incoming/deactivate"
     - name: SMTP_HOST
       value: "d32mxvl002.oera-t.local"
     - name: SMTP_PORT

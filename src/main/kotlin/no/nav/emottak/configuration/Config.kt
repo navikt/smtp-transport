@@ -35,7 +35,8 @@ data class Mail(
     val inboxLimit: Int,
     val inboxBatchReadLimit: Int,
     val inboxExpunge: Boolean,
-    val inboxWarningThreshold: Int
+    val inboxWarningThreshold: Int,
+    val inboxReadActive: Boolean
 )
 
 data class EbmsAsync(val baseUrl: String, val apiUrl: String)
@@ -64,6 +65,7 @@ value class Protocol(val value: String)
 data class Smtp(
     val username: Username,
     val password: Masked,
+    val smtpStopUrl: String,
     val smtpPort: Port,
     val smtpHost: Host,
     val pop3Port: Port,
