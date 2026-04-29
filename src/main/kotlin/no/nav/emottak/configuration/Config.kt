@@ -65,6 +65,7 @@ value class Protocol(val value: String)
 data class Smtp(
     val username: Username,
     val password: Masked,
+    val smtpStopUrl: String,
     val smtpPort: Port,
     val smtpHost: Host,
     val pop3Port: Port,

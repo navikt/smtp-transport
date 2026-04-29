@@ -69,6 +69,8 @@ spec:
       rules:
         - application: ebms-async
   env:
+    - name: SMTP_STOP_URL
+      value: "https://smtp-transport.intern.nav.no/mail/incoming/deactivate"
     - name: SMTP_HOST
       value: "a30mxvl002.oera.no"
     - name: SMTP_PORT
