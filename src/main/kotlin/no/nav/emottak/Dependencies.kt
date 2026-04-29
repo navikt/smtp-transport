@@ -18,6 +18,7 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.engine.cio.CIO
+import io.ktor.client.plugins.HttpRequestRetry
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.auth.Auth
 import io.ktor.client.plugins.auth.providers.BearerTokens
@@ -26,6 +27,7 @@ import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.request.forms.submitForm
 import io.ktor.client.statement.HttpResponse
+import io.ktor.http.isSuccess
 import io.ktor.http.parameters
 import io.ktor.http.path
 import io.ktor.serialization.kotlinx.json.json
@@ -137,6 +139,15 @@ private fun httpClient(clientEngine: HttpClientEngine, httpTokenClient: HttpClie
     HttpClient(clientEngine) {
         install(HttpTimeout) { connectTimeoutMillis = config.httpClient.connectionTimeout.value }
         install(ContentNegotiation) { json() }
+        install(HttpRequestRetry) {
+            retryIf { request, response ->
+                !response.status.isSuccess() // Retry if response is not 2xx
+            }
+            delayMillis {
+                500L
+            }
+            retryOnException(maxRetries = 30, retryOnTimeout = true)
+        }
         install(Auth) {
             bearer {
                 refreshTokens {
