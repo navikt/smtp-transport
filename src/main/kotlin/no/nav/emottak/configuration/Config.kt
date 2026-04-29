@@ -35,7 +35,8 @@ data class Mail(
     val inboxLimit: Int,
     val inboxBatchReadLimit: Int,
     val inboxExpunge: Boolean,
-    val inboxWarningThreshold: Int
+    val inboxWarningThreshold: Int,
+    val inboxReadActive: Boolean
 )
 
 data class EbmsAsync(val baseUrl: String, val apiUrl: String)

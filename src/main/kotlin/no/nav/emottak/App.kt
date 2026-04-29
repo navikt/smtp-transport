@@ -37,7 +37,7 @@ import kotlin.coroutines.coroutineContext
 import kotlin.time.Duration
 
 internal val log = LoggerFactory.getLogger("no.nav.emottak.smtp")
-val mailReaderActive = AtomicBoolean(true)
+val mailReaderActive = AtomicBoolean(config().mail.inboxReadActive)
 
 fun main() = SuspendApp {
     result {
