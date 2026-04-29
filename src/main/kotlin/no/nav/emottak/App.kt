@@ -51,7 +51,7 @@ fun main() = SuspendApp {
             log.info("Starting flyway migrations...")
             deps.migrationService.migrate()
             log.info("Flyway migration successfully.")
-            if(!config().smtp.smtpStopUrl.contains("localhost")) {
+            if (!config().smtp.smtpStopUrl.contains("localhost")) {
                 log.info("Deactivating old pod process...")
                 deps.httpClient.get(config().smtp.smtpStopUrl)
                     .also {
