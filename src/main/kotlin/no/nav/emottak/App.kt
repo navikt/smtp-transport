@@ -51,15 +51,17 @@ fun main() = SuspendApp {
             log.info("Starting flyway migrations...")
             deps.migrationService.migrate()
             log.info("Flyway migration successfully.")
-            log.info("Deactivating old pod process...")
-            deps.httpClient.get(config().smtp.smtpStopUrl)
-                .also {
-                    if (it.status.isSuccess()) {
-                        log.info("Deactivation successful: " + it.bodyAsText())
-                    } else {
-                        log.warn("Deactivation unsuccesful: " + it.bodyAsText())
+            if(!config().smtp.smtpStopUrl.contains("localhost")) {
+                log.info("Deactivating old pod process...")
+                deps.httpClient.get(config().smtp.smtpStopUrl)
+                    .also {
+                        if (it.status.isSuccess()) {
+                            log.info("Deactivation successful: " + it.bodyAsText())
+                        } else {
+                            log.warn("Deactivation unsuccesful: " + it.bodyAsText())
+                        }
                     }
-                }
+            }
             val scope = coroutineScope(coroutineContext)
             val eventScope = coroutineScope(Dispatchers.IO)
             val eventLoggingService = eventLoggingService(
