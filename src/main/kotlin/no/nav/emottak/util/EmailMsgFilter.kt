@@ -19,19 +19,30 @@ private val typesToBoth = config().ebmsFilter.typesToBoth
 private val cpaIds = config().ebmsFilter.cpaId
 
 fun EmailMsg.filterMessageForwarding(): ForwardableMimeMessage {
-    return when (val forwardingSystem = this.getForwardingSystem()) {
-        ForwardingSystem.EBMS -> ForwardableMimeMessage(forwardingSystem, null)
-        ForwardingSystem.EMOTTAK -> ForwardableMimeMessage(forwardingSystem, MimeMessage(originalMimeMessage))
-        ForwardingSystem.BOTH -> ForwardableMimeMessage(forwardingSystem, MimeMessage(originalMimeMessage))
+    val (forwardingSystem, service, cpaId, action) = this.computeForwardingDecision()
+    return when (forwardingSystem) {
+        ForwardingSystem.EBMS -> ForwardableMimeMessage(forwardingSystem, null, service, cpaId, action)
+        ForwardingSystem.EMOTTAK -> ForwardableMimeMessage(forwardingSystem, MimeMessage(originalMimeMessage), service, cpaId, action)
+        ForwardingSystem.BOTH -> ForwardableMimeMessage(forwardingSystem, MimeMessage(originalMimeMessage), service, cpaId, action)
     }
 }
 
-fun EmailMsg.getForwardingSystem(): ForwardingSystem {
+fun EmailMsg.getForwardingSystem(): ForwardingSystem = computeForwardingDecision().forwardingSystem
+
+private data class ForwardingDecision(
+    val forwardingSystem: ForwardingSystem,
+    val service: String,
+    val cpaId: String,
+    val action: String
+)
+
+private fun EmailMsg.computeForwardingDecision(): ForwardingDecision {
     val ebxmlDocument = getEnvelope().toXmlDocument()
     val envelopeServiceName = ebxmlDocument?.getEbxmlServiceName() ?: "UnparsableService"
     val envelopeCpaId = ebxmlDocument?.getEbxmlCpaId() ?: "UnparsableCpaId"
+    val envelopeAction = ebxmlDocument?.getEbxmlAction() ?: "UnparsableAction"
 
-    return if (isAcceptedCpaId(envelopeCpaId)) {
+    val forwardingSystem = if (isAcceptedCpaId(envelopeCpaId)) {
         if (typesToBoth.contains(envelopeServiceName)) {
             ForwardingSystem.BOTH
         } else if (typesToEbms.contains(envelopeServiceName)) {
@@ -41,20 +52,23 @@ fun EmailMsg.getForwardingSystem(): ForwardingSystem {
         }
     } else {
         ForwardingSystem.EMOTTAK
-    }.also {
-        val marker: LogstashMarker = Markers.appendEntries(
-            mapOf(
-                "requestId" to this.requestId.toString(),
-                "smtpSender" to this.senderAddress,
-                "smtpSubject" to (this.headers["Subject"] ?: "-"),
-                "service" to envelopeServiceName,
-                "cpaId" to envelopeCpaId,
-                "forwardingSystem" to it,
-                "sourceSystem" to (this.headers["X-Mailer"] ?: "-")
-            )
-        )
-        log.info(marker, "Message forwarding system identified")
     }
+
+    val marker: LogstashMarker = Markers.appendEntries(
+        mapOf(
+            "requestId" to this.requestId.toString(),
+            "smtpSender" to this.senderAddress,
+            "smtpSubject" to (this.headers["Subject"] ?: "-"),
+            "service" to envelopeServiceName,
+            "cpaId" to envelopeCpaId,
+            "action" to envelopeAction,
+            "forwardingSystem" to forwardingSystem,
+            "sourceSystem" to (this.headers["X-Mailer"] ?: "-")
+        )
+    )
+    log.info(marker, "Message forwarding system identified")
+
+    return ForwardingDecision(forwardingSystem, envelopeServiceName, envelopeCpaId, envelopeAction)
 }
 
 private fun isAcceptedCpaId(cpaId: String) = cpaIds.any { it.equals(cpaId, ignoreCase = true) }
@@ -76,6 +90,7 @@ private fun ByteArray.toXmlDocument(): Document? {
 
 private fun Document.getEbxmlServiceName(): String = this.getXmlElementValue("Service")
 private fun Document.getEbxmlCpaId(): String = this.getXmlElementValue("CPAId")
+private fun Document.getEbxmlAction(): String = this.getXmlElementValue("Action")
 
 private fun Document.getXmlElementValue(elementName: String): String {
     return try {

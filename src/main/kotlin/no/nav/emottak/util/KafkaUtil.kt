@@ -10,6 +10,6 @@ const val SENDER_ADDRESS = "senderAddress"
 
 fun <K, V> ReceiverRecord<K, V>.getHeaderValueAsString(value: String): String =
     when (val header = headers().lastHeader(value)) {
-        null -> "".also { log.warn("Kafka header missing: $value") }
+        null -> "".also { log.info("Kafka header missing: $value") }
         else -> String(header.value())
     }

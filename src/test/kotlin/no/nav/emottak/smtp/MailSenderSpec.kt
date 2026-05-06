@@ -6,6 +6,8 @@ import com.icegreen.greenmail.util.ServerSetupTest.SMTP_POP3
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
+import io.micrometer.prometheus.PrometheusConfig
+import io.micrometer.prometheus.PrometheusMeterRegistry
 import no.nav.emottak.config
 import no.nav.emottak.model.MailMetadata
 import no.nav.emottak.model.Payload
@@ -26,7 +28,7 @@ class MailSenderSpec : StringSpec({
             start()
             setUser(config.smtp.username.value, config.smtp.username.value, config.smtp.password.value)
         }
-        mailSender = MailSender(session, fakeEventLoggingService(), config.smtp)
+        mailSender = MailSender(session, fakeEventLoggingService(), config.smtp, PrometheusMeterRegistry(PrometheusConfig.DEFAULT))
     }
 
     afterEach {
