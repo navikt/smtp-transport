@@ -17,6 +17,7 @@ import no.nav.emottak.model.MailRoutingPayloadMessage
 import no.nav.emottak.model.Payload
 import no.nav.emottak.model.PayloadMessage
 import no.nav.emottak.model.SoapWithAttachments
+import no.nav.emottak.util.EBXML_ACTION
 import no.nav.emottak.util.EBXML_SERVICE
 import no.nav.emottak.util.EMAIL_ADDRESSES
 import no.nav.emottak.util.EbmsAsyncClient
@@ -51,7 +52,9 @@ class PayloadReceiver(
         val mailMetadata = MailMetadata(
             recipientAddress = record.getHeaderValueAsString(EMAIL_ADDRESSES),
             subject = record.getHeaderValueAsString(EBXML_SERVICE),
-            senderAddress = record.getHeaderValueAsString(SENDER_ADDRESS)
+            senderAddress = record.getHeaderValueAsString(SENDER_ADDRESS),
+            service = record.getHeaderValueAsString(EBXML_SERVICE),
+            action = record.getHeaderValueAsString(EBXML_ACTION)
         )
 
         val referenceId = Uuid.parse(record.key())

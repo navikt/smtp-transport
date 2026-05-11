@@ -31,7 +31,10 @@ data class EmailMsg(
 
 data class ForwardableMimeMessage(
     val forwardingSystem: ForwardingSystem,
-    val forwardableMimeMessage: MimeMessage?
+    val forwardableMimeMessage: MimeMessage?,
+    val service: String,
+    val cpaId: String,
+    val action: String
 )
 
 data class Part(

@@ -1,6 +1,7 @@
 package no.nav.emottak.smtp
 
 import arrow.core.raise.catch
+import io.micrometer.core.instrument.MeterRegistry
 import jakarta.activation.DataHandler
 import jakarta.mail.Address
 import jakarta.mail.Message.RecipientType.TO
@@ -16,6 +17,7 @@ import jakarta.mail.util.ByteArrayDataSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import no.nav.emottak.configuration.Smtp
+import no.nav.emottak.incrementMessagesSent
 import no.nav.emottak.log
 import no.nav.emottak.model.MailMetadata
 import no.nav.emottak.model.MessageType
@@ -42,7 +44,8 @@ private const val ENCODING_BASE64 = "base64"
 class MailSender(
     private val session: Session,
     private val eventLoggingService: ScopedEventLoggingService,
-    private val smtp: Smtp
+    private val smtp: Smtp,
+    private val meterRegistry: MeterRegistry
 ) : Closeable {
     private val transport: Transport = session.getTransport("smtp")
 
@@ -74,19 +77,26 @@ class MailSender(
     suspend fun sendSignalMessage(metadata: MailMetadata, signalMessage: SignalMessage) =
         sendMessage(
             createMimeMessage(metadata, signalMessage),
-            SIGNAL
+            SIGNAL,
+            metadata.service,
+            metadata.action,
+            metadata.senderAddress
         )
 
     suspend fun sendPayloadMessage(metadata: MailMetadata, payloadMessage: PayloadMessage) =
         sendMessage(
             createMimeMultipartMessage(metadata, payloadMessage),
-            PAYLOAD
+            PAYLOAD,
+            metadata.service,
+            metadata.action,
+            metadata.senderAddress
         )
 
-    private suspend fun sendMessage(wrapper: MimeMessageWrapper, messageType: MessageType) =
+    private suspend fun sendMessage(wrapper: MimeMessageWrapper, messageType: MessageType, service: String, action: String, senderAddress: String) =
         withContext(Dispatchers.IO) {
             catch({
                 sendSynchronized(wrapper.mimeMessage, wrapper.mimeMessage.allRecipients)
+                meterRegistry.incrementMessagesSent(messageType.name, service, action, senderAddress)
                 eventLoggingService.registerEvent(
                     MESSAGE_SENT_VIA_SMTP,
                     wrapper.mimeMessage,

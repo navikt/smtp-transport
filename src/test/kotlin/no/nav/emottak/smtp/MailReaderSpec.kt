@@ -6,6 +6,8 @@ import com.icegreen.greenmail.util.ServerSetupTest.SMTP_POP3
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.equals.shouldBeEqual
 import io.kotest.matchers.shouldBe
+import io.micrometer.prometheus.PrometheusConfig
+import io.micrometer.prometheus.PrometheusMeterRegistry
 import jakarta.mail.internet.MimeMessage
 import no.nav.emottak.config
 import no.nav.emottak.session
@@ -53,7 +55,7 @@ class MailReaderSpec : StringSpec({
 
             greenMail.receivedMessages.size shouldBe 3
 
-            val mailSender = MailSender(session, fakeEventLoggingService(), config.smtp)
+            val mailSender = MailSender(session, fakeEventLoggingService(), config.smtp, PrometheusMeterRegistry(PrometheusConfig.DEFAULT))
 
             mailSender.rawForward(greenMail.receivedMessages[0])
 

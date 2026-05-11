@@ -2,6 +2,7 @@ package no.nav.emottak.processor
 
 import arrow.autoCloseScope
 import arrow.core.raise.fold
+import io.micrometer.core.instrument.MeterRegistry
 import jakarta.mail.Store
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -12,6 +13,7 @@ import kotlinx.datetime.Clock
 import net.logstash.logback.marker.LogstashMarker
 import net.logstash.logback.marker.Markers
 import no.nav.emottak.configuration.Mail
+import no.nav.emottak.incrementMessagesReceived
 import no.nav.emottak.log
 import no.nav.emottak.model.PayloadMessage
 import no.nav.emottak.model.SignalMessage
@@ -32,7 +34,8 @@ class MailProcessor(
     private val payloadRepository: PayloadRepository,
     private val eventLoggingService: ScopedEventLoggingService,
     private val mailSender: MailSender,
-    private val mail: Mail
+    private val mail: Mail,
+    private val meterRegistry: MeterRegistry
 ) {
 
     enum class InboxStatus {
@@ -97,7 +100,8 @@ class MailProcessor(
 
     private suspend fun processMessage(emailMsg: EmailMsg) {
         val start = Clock.System.now()
-        when (emailMsg.forwardableMimeMessage.forwardingSystem) {
+        val forwardableMimeMessage = emailMsg.forwardableMimeMessage
+        when (forwardableMimeMessage.forwardingSystem) {
             ForwardingSystem.EBMS -> publishToKafka(emailMsg)
             ForwardingSystem.EMOTTAK -> forwardToT1(emailMsg)
             ForwardingSystem.BOTH -> {
@@ -105,12 +109,16 @@ class MailProcessor(
                 forwardToT1(emailMsg)
             }
         }
+        meterRegistry.incrementMessagesReceived(forwardableMimeMessage)
         val marker: LogstashMarker = Markers.appendEntries(
             mapOf(
                 "requestId" to emailMsg.requestId.toString(),
                 "smtpSender" to emailMsg.senderAddress,
                 "smtpSubject" to (emailMsg.headers["Subject"] ?: "-"),
-                "forwardingSystem" to emailMsg.forwardableMimeMessage.forwardingSystem,
+                "forwardingSystem" to forwardableMimeMessage.forwardingSystem,
+                "service" to forwardableMimeMessage.service,
+                "cpaId" to forwardableMimeMessage.cpaId,
+                "action" to forwardableMimeMessage.action,
                 "sourceSystem" to (emailMsg.headers["X-Mailer"] ?: "-")
             )
         )
