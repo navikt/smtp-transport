@@ -7,18 +7,20 @@ import arrow.fx.coroutines.ResourceScope
 import arrow.fx.coroutines.autoCloseable
 import arrow.fx.coroutines.resourceScope
 import arrow.resilience.Schedule
+import io.ktor.client.plugins.HttpRequestTimeoutException
+import io.ktor.client.plugins.expectSuccess
+import io.ktor.client.plugins.retry
+import io.ktor.client.plugins.timeout
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsText
-import io.ktor.http.isSuccess
 import io.ktor.server.application.Application
+import io.ktor.server.engine.logError
 import io.ktor.server.netty.Netty
 import io.ktor.utils.io.CancellationException
 import io.micrometer.prometheus.PrometheusMeterRegistry
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.withTimeout
 import no.nav.emottak.plugin.configureAuthentication
 import no.nav.emottak.plugin.configureCallLogging
 import no.nav.emottak.plugin.configureContentNegotiation
@@ -41,7 +43,6 @@ import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.coroutineContext
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
-import kotlinx.coroutines.CancellationException as CoroutineCancellationException
 
 internal val log = LoggerFactory.getLogger("no.nav.emottak.smtp")
 val mailReaderActive = AtomicBoolean(config().mail.inboxReadActive)
@@ -57,24 +58,20 @@ fun main() = SuspendApp {
             log.info("Flyway migration successful")
             if (!config().smtp.smtpStopUrl.contains("localhost")) {
                 log.info("Deactivating old pod process...")
-                try {
-                    withTimeout(10.seconds) {
-                        deps.httpClient.get(config().smtp.smtpStopUrl)
-                            .also {
-                                if (it.status.isSuccess()) {
-                                    log.info("Deactivation successful: " + it.bodyAsText())
-                                } else {
-                                    log.warn("Deactivation unsuccesful: " + it.bodyAsText())
-                                }
-                            }
+                runCatching {
+                    deps.httpClient.get(config().smtp.smtpStopUrl) {
+                        timeout { requestTimeoutMillis = 10000 }
+                        retry { noRetry() }
+                        expectSuccess = true
                     }
-                } catch (e: TimeoutCancellationException) {
-                    log.warn("Deactivation timed out after 10 seconds, continuing startup")
-                } catch (e: CoroutineCancellationException) {
-                    log.warn("App shutdown initiated, startup halting", e)
-                    throw e
-                } catch (e: Exception) {
-                    log.warn("Deactivation failed: ${e.message}, continuing startup")
+                }.onSuccess {
+                    log.info("Deactivation successful: " + it.bodyAsText())
+                }.onFailure {
+                    when (it) {
+                        is CancellationException -> throw it
+                        is HttpRequestTimeoutException -> log.warn("Deactivation timed out after 10 seconds, continuing startup")
+                        else -> log.warn("Deactivation failed: ${it.message}, continuing startup")
+                    }
                 }
             }
             val scope = coroutineScope(coroutineContext)
