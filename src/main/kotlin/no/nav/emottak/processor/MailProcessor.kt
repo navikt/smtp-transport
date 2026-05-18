@@ -122,7 +122,7 @@ class MailProcessor(
                 "sourceSystem" to (emailMsg.headers["X-Mailer"] ?: "-")
             )
         )
-        log.info(marker, "Forwarded message in ${(Clock.System.now() - start).inWholeMilliseconds} ms")
+        log.debug(marker, "Forwarded message in ${(Clock.System.now() - start).inWholeMilliseconds} ms")
     }
 
     private suspend fun forwardToT1(emailMsg: EmailMsg) {
