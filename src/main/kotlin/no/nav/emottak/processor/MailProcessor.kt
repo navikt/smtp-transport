@@ -9,7 +9,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
-import kotlinx.datetime.Clock
 import net.logstash.logback.marker.LogstashMarker
 import net.logstash.logback.marker.Markers
 import no.nav.emottak.configuration.Mail
@@ -29,6 +28,7 @@ import no.nav.emottak.util.toPayloadMessage
 import no.nav.emottak.util.toSignalMessage
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.min
+import kotlin.time.Clock
 
 class MailProcessor(
     private val store: Store,
