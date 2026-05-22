@@ -7,6 +7,7 @@ import no.nav.emottak.config
 import no.nav.emottak.log
 import no.nav.emottak.smtp.EmailMsg
 import no.nav.emottak.smtp.ForwardableMimeMessage
+import no.nav.emottak.utils.environment.getEnvVar
 import org.w3c.dom.Document
 import org.w3c.dom.NodeList
 import javax.xml.namespace.NamespaceContext
@@ -17,6 +18,7 @@ import javax.xml.xpath.XPathFactory
 private val typesToEbms = config().ebmsFilter.typesToEbms
 private val typesToBoth = config().ebmsFilter.typesToBoth
 private val cpaIds = config().ebmsFilter.cpaId
+private val cpaFilterOff = getEnvVar("CPA_FILTER_OFF", "false").toBoolean()
 
 fun EmailMsg.filterMessageForwarding(): ForwardableMimeMessage {
     val (forwardingSystem, service, cpaId, action) = this.computeForwardingDecision()
@@ -71,7 +73,10 @@ private fun EmailMsg.computeForwardingDecision(): ForwardingDecision {
     return ForwardingDecision(forwardingSystem, envelopeServiceName, envelopeCpaId, envelopeAction)
 }
 
-private fun isAcceptedCpaId(cpaId: String) = cpaIds.any { it.equals(cpaId, ignoreCase = true) }
+private fun isAcceptedCpaId(cpaId: String): Boolean {
+    if (cpaFilterOff) return true
+    return cpaIds.any { it.equals(cpaId, ignoreCase = true) }
+}
 
 private fun ByteArray.toXmlDocument(): Document? {
     return try {
