@@ -110,8 +110,10 @@ class ConfiguratorSpec : StringSpec({
 
     "dev filter typesToBoth contains expected services" {
         val typesToBoth = config().ebmsFilter.typesToBoth
-        typesToBoth.size shouldBe 1
+        typesToBoth.size shouldBe 3
         typesToBoth shouldContain "urn:oasis:names:tc:ebxml-msg:service"
+        typesToBoth shouldContain "Sykmelding"
+        typesToBoth shouldContain "Legemelding"
     }
 
     "dev filter typesToBoth includes ebXML service" {
