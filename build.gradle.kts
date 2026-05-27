@@ -27,6 +27,7 @@ tasks {
         archiveFileName.set("app.jar")
         duplicatesStrategy = DuplicatesStrategy.INCLUDE
         mergeServiceFiles()
+        append("META-INF/mailcap")
     }
     test {
         useJUnitPlatform()
