@@ -87,7 +87,7 @@ private fun ByteArray.toXmlDocument(): Document? {
         val doc = dBuilder.parse(inputStream)
         doc.documentElement.normalize()
         doc
-    } catch (e: Exception) {
+    } catch (e: Throwable) {
         log.warn("Failed to parse XML: ${e.message}", e)
         null
     }
