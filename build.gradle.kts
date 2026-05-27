@@ -25,6 +25,8 @@ sqldelight {
 tasks {
     shadowJar {
         archiveFileName.set("app.jar")
+        duplicatesStrategy = DuplicatesStrategy.INCLUDE
+        mergeServiceFiles()
     }
     test {
         useJUnitPlatform()
