@@ -2,10 +2,10 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     application
-    kotlin("jvm") version "2.1.10"
-    kotlin("plugin.serialization") version "2.1.10"
+    kotlin("jvm") version "2.3.21"
+    kotlin("plugin.serialization") version "2.3.21"
     id("io.ktor.plugin") version "3.3.1"
-    id("app.cash.sqldelight") version "2.0.2"
+    id("app.cash.sqldelight") version "2.3.2"
     id("org.jlleitschuh.gradle.ktlint") version "11.6.1"
     id("com.gradleup.shadow") version "8.3.6"
 }
@@ -25,6 +25,9 @@ sqldelight {
 tasks {
     shadowJar {
         archiveFileName.set("app.jar")
+        duplicatesStrategy = DuplicatesStrategy.INCLUDE
+        mergeServiceFiles()
+        append("META-INF/mailcap")
     }
     test {
         useJUnitPlatform()
@@ -73,6 +76,7 @@ dependencies {
     implementation(libs.bundles.logging)
     implementation(libs.bundles.prometheus)
     implementation(libs.flyway.core)
+    implementation(libs.flyway.database.postgresql)
     implementation(libs.hikari)
     implementation(libs.hoplite.core)
     implementation(libs.hoplite.hocon)
