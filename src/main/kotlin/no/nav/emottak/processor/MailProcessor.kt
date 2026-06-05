@@ -18,6 +18,7 @@ import no.nav.emottak.log
 import no.nav.emottak.model.PayloadMessage
 import no.nav.emottak.model.SignalMessage
 import no.nav.emottak.publisher.MailPublisher
+import no.nav.emottak.registerInboxSizeGauge
 import no.nav.emottak.repository.PayloadRepository
 import no.nav.emottak.smtp.EmailMsg
 import no.nav.emottak.smtp.MailReader
@@ -26,6 +27,7 @@ import no.nav.emottak.util.ForwardingSystem
 import no.nav.emottak.util.ScopedEventLoggingService
 import no.nav.emottak.util.toPayloadMessage
 import no.nav.emottak.util.toSignalMessage
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.min
 
 class MailProcessor(
@@ -37,6 +39,12 @@ class MailProcessor(
     private val mail: Mail,
     private val meterRegistry: MeterRegistry
 ) {
+
+    private val inboxSize = AtomicInteger(0)
+
+    init {
+        meterRegistry.registerInboxSizeGauge(inboxSize)
+    }
 
     enum class InboxStatus {
         EMPTY,
@@ -63,6 +71,7 @@ class MailProcessor(
                 )
             )
             val messageCount = mailReader.count()
+            inboxSize.set(messageCount)
             val batchSize = min(mail.inboxBatchReadLimit, messageCount)
             if (messageCount > mail.inboxBatchReadLimit) {
                 inboxState = InboxStatus.STILL_LESS_THAN_WARNING_THRESHOLD
