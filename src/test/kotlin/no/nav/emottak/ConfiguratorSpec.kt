@@ -103,17 +103,17 @@ class ConfiguratorSpec : StringSpec({
 
     "dev filter typesToEbms contains expected services" {
         val typesToEbms = config().ebmsFilter.typesToEbms
-        typesToEbms.size shouldBe 2
+        typesToEbms.size shouldBe 4
         typesToEbms shouldContain "Inntektsforesporsel"
         typesToEbms shouldContain "Trekkopplysning"
+        typesToEbms shouldContain "Sykmelding"
+        typesToEbms shouldContain "Legemelding"
     }
 
     "dev filter typesToBoth contains expected services" {
         val typesToBoth = config().ebmsFilter.typesToBoth
-        typesToBoth.size shouldBe 3
+        typesToBoth.size shouldBe 1
         typesToBoth shouldContain "urn:oasis:names:tc:ebxml-msg:service"
-        typesToBoth shouldContain "Sykmelding"
-        typesToBoth shouldContain "Legemelding"
     }
 
     "dev filter typesToBoth includes ebXML service" {
