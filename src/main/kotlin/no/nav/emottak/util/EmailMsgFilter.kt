@@ -68,7 +68,7 @@ private fun EmailMsg.computeForwardingDecision(): ForwardingDecision {
             "sourceSystem" to (this.headers["X-Mailer"] ?: "-")
         )
     )
-    log.info(marker, "Message forwarding system identified: $forwardingSystem")
+    log.info(marker, "Message forwarding system identified")
 
     return ForwardingDecision(forwardingSystem, envelopeServiceName, envelopeCpaId, envelopeAction)
 }
