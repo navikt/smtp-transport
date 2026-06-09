@@ -103,11 +103,12 @@ class ConfiguratorSpec : StringSpec({
 
     "dev filter typesToEbms contains expected services" {
         val typesToEbms = config().ebmsFilter.typesToEbms
-        typesToEbms.size shouldBe 4
+        typesToEbms.size shouldBe 5
         typesToEbms shouldContain "Inntektsforesporsel"
         typesToEbms shouldContain "Trekkopplysning"
         typesToEbms shouldContain "Sykmelding"
         typesToEbms shouldContain "Legemelding"
+        typesToEbms shouldContain "HarBorgerFrikortMengde"
     }
 
     "dev filter typesToBoth contains expected services" {
