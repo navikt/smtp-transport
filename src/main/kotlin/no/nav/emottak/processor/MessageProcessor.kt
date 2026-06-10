@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import net.logstash.logback.marker.Markers
 import no.nav.emottak.log
 import no.nav.emottak.model.MailMetadata
 import no.nav.emottak.model.MailRoutingMessage
@@ -59,7 +60,12 @@ class MessageProcessor(
     ) = scope.launch {
         mailSender.sendSignalMessage(mailMetadata, signalMessage)
     }
-        .also { log.info("Processed and sent signal message with reference id: ${signalMessage.messageId}") }
+        .also {
+            log.info(
+                mailMetadata.marker.and(Markers.append("requestId", signalMessage.messageId)),
+                "Processed and sent signal message"
+            )
+        }
 
     private fun processAndSendPayloadMessage(
         scope: CoroutineScope,
@@ -68,5 +74,10 @@ class MessageProcessor(
     ) = scope.launch {
         mailSender.sendPayloadMessage(mailMetadata, payloadMessage)
     }
-        .also { log.info("Processed and sent payload message with reference id: ${payloadMessage.messageId}") }
+        .also {
+            log.info(
+                mailMetadata.marker.and(Markers.append("requestId", payloadMessage.messageId)),
+                "Processed and sent payload message"
+            )
+        }
 }
