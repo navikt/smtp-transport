@@ -62,7 +62,7 @@ class MessageProcessor(
     }
         .also {
             log.info(
-                mailMetadata.marker.and(Markers.append("requestId", signalMessage.messageId)),
+                mailMetadata.marker.and(Markers.append("requestId", signalMessage.messageId.toString())),
                 "Processed and sent signal message"
             )
         }
@@ -76,7 +76,7 @@ class MessageProcessor(
     }
         .also {
             log.info(
-                mailMetadata.marker.and(Markers.append("requestId", payloadMessage.messageId)),
+                mailMetadata.marker.and(Markers.append("requestId", payloadMessage.messageId.toString())),
                 "Processed and sent payload message"
             )
         }
