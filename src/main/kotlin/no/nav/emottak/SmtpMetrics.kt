@@ -1,7 +1,9 @@
 package no.nav.emottak
 
+import io.micrometer.core.instrument.Gauge
 import io.micrometer.core.instrument.MeterRegistry
 import no.nav.emottak.smtp.ForwardableMimeMessage
+import java.util.concurrent.atomic.AtomicInteger
 
 const val MESSAGES_RECEIVED_COUNTER = "smtp_transport_messages_received_total"
 const val TAG_FORWARDING_SYSTEM = "forwarding_system"
@@ -35,3 +37,10 @@ fun MeterRegistry.incrementMessagesSent(messageType: String, service: String, ac
         TAG_SENDER_ADDRESS,
         senderAddress
     ).increment()
+
+const val INBOX_SIZE_GAUGE = "smtp_transport_inbox_size"
+
+fun MeterRegistry.registerInboxSizeGauge(value: AtomicInteger): Gauge =
+    Gauge.builder(INBOX_SIZE_GAUGE) { value.get().toDouble() }
+        .description("Number of messages in the POP3 inbox at last poll")
+        .register(this)

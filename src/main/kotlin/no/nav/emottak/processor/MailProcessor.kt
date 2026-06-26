@@ -9,7 +9,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
-import kotlinx.datetime.Clock
 import net.logstash.logback.marker.LogstashMarker
 import net.logstash.logback.marker.Markers
 import no.nav.emottak.configuration.Mail
@@ -18,6 +17,7 @@ import no.nav.emottak.log
 import no.nav.emottak.model.PayloadMessage
 import no.nav.emottak.model.SignalMessage
 import no.nav.emottak.publisher.MailPublisher
+import no.nav.emottak.registerInboxSizeGauge
 import no.nav.emottak.repository.PayloadRepository
 import no.nav.emottak.smtp.EmailMsg
 import no.nav.emottak.smtp.MailReader
@@ -26,7 +26,9 @@ import no.nav.emottak.util.ForwardingSystem
 import no.nav.emottak.util.ScopedEventLoggingService
 import no.nav.emottak.util.toPayloadMessage
 import no.nav.emottak.util.toSignalMessage
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.min
+import kotlin.time.Clock
 
 class MailProcessor(
     private val store: Store,
@@ -37,6 +39,12 @@ class MailProcessor(
     private val mail: Mail,
     private val meterRegistry: MeterRegistry
 ) {
+
+    private val inboxSize = AtomicInteger(0)
+
+    init {
+        meterRegistry.registerInboxSizeGauge(inboxSize)
+    }
 
     enum class InboxStatus {
         EMPTY,
@@ -63,6 +71,7 @@ class MailProcessor(
                 )
             )
             val messageCount = mailReader.count()
+            inboxSize.set(messageCount)
             val batchSize = min(mail.inboxBatchReadLimit, messageCount)
             if (messageCount > mail.inboxBatchReadLimit) {
                 inboxState = InboxStatus.STILL_LESS_THAN_WARNING_THRESHOLD
