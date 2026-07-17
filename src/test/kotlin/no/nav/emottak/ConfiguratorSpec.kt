@@ -80,6 +80,13 @@ class ConfiguratorSpec : StringSpec({
         db.migrationsPath.value shouldBe "filesystem:/app/migrations"
     }
 
+    "cleanupPayloadsJob defaults are loaded correctly" {
+        val cleanupPayloadsJob = config().cleanupPayloadsJob
+        cleanupPayloadsJob.keepPayloadsDays.value shouldBe 90
+        cleanupPayloadsJob.batchSize.value shouldBe 10000
+        cleanupPayloadsJob.startAtTime.value shouldBe java.time.LocalTime.MIDNIGHT
+    }
+
     "azureAuth defaults are loaded correctly" {
         val auth = config().azureAuth
         auth.port.value shouldBe 3344

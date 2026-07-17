@@ -9,6 +9,7 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import no.nav.emottak.PayloadAlreadyExists
 import no.nav.emottak.PayloadNotFound
+import no.nav.emottak.backdatePayloads
 import no.nav.emottak.model.Payload
 import no.nav.emottak.payloadDatabase
 import no.nav.emottak.runMigrations
@@ -124,6 +125,44 @@ class PayloadRepositorySpec : StringSpec(
                         "duplicate-content-id"
                     )
                 )
+            }
+        }
+
+        "should delete payloads older than keepDays in batches" {
+            val referenceId = Uuid.random()
+            val contentIds = (1..7).map { "old-content-id-$it" }
+            val payloads = contentIds.map { contentId ->
+                Payload(referenceId, contentId, "text", "data".toByteArray())
+            }
+
+            with(repository) { either { insert(payloads) } }
+
+            val rowsBackdated = backdatePayloads(referenceId, contentIds, days = 100)
+            rowsBackdated shouldBe payloads.size
+
+            val deleted = repository.cleanupOldPayloads(keepDays = 90, batchSize = 3)
+            deleted shouldBe 7
+            with(repository) {
+                either { retrieve(referenceId) } shouldBe Left(PayloadNotFound(referenceId.toString()))
+            }
+        }
+
+        "should not delete payloads newer than keepDays" {
+            val referenceId = Uuid.random()
+            val contentId1 = "recent-content-id-1"
+            val contentId2 = "recent-content-id-2"
+            val payload1 = Payload(referenceId, contentId1, "text", "data".toByteArray())
+            val payload2 = Payload(referenceId, contentId2, "text", "data".toByteArray())
+
+            with(repository) { either { insert(listOf(payload1, payload2)) } }
+
+            val rowsBackdated = backdatePayloads(referenceId, listOf(contentId2), days = 6)
+            rowsBackdated shouldBe 1
+
+            val deleted = repository.cleanupOldPayloads(keepDays = 5, batchSize = 10)
+            deleted shouldBe 1
+            with(repository) {
+                either { retrieve(referenceId, contentId1) }.shouldBeRight()
             }
         }
     }

@@ -14,13 +14,13 @@ import io.ktor.client.plugins.timeout
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsText
 import io.ktor.server.application.Application
-import io.ktor.server.engine.logError
 import io.ktor.server.netty.Netty
 import io.ktor.utils.io.CancellationException
 import io.micrometer.prometheus.PrometheusMeterRegistry
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import no.nav.emottak.plugin.configureAuthentication
 import no.nav.emottak.plugin.configureCallLogging
 import no.nav.emottak.plugin.configureContentNegotiation
@@ -39,11 +39,14 @@ import no.nav.emottak.util.eventLoggingService
 import no.nav.emottak.utils.kafka.client.EventPublisherClient
 import no.nav.emottak.utils.kafka.service.EventLoggingService
 import org.slf4j.LoggerFactory
+import java.time.LocalDateTime
+import java.time.LocalTime
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.coroutineContext
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.toKotlinDuration
 
 internal val log = LoggerFactory.getLogger("no.nav.emottak.smtp")
 val mailReaderActive = AtomicBoolean(config().mail.inboxReadActive)
@@ -114,6 +117,7 @@ fun main() = SuspendApp {
 
             messageProcessor.processMailRoutingMessages(scope)
 
+            scope.launch { scheduleCleanupPayloads(payloadRepository) }
             scheduleProcessMailMessages(mailProcessor)
 
             awaitCancellation()
@@ -142,13 +146,13 @@ internal fun smtpTransportModule(
 
 private suspend fun ResourceScope.scheduleProcessMailMessages(processor: MailProcessor): Long {
     val scope = coroutineScope(coroutineContext)
-    val initialDelay = config().job.initialDelay
+    val initialDelay = config().mailJob.initialDelay
     if (initialDelay > Duration.ZERO) {
         log.info("Delaying initial mail processing by $initialDelay")
         delay(initialDelay)
     }
     return Schedule
-        .spaced<Unit>(config().job.fixedInterval)
+        .spaced<Unit>(config().mailJob.fixedInterval)
         .repeat {
             if (mailReaderActive.get()) {
                 when (processor.processMessages(scope).await()) {
@@ -163,6 +167,49 @@ private suspend fun ResourceScope.scheduleProcessMailMessages(processor: MailPro
             }
             delay(30.seconds)
         }
+}
+
+private suspend fun scheduleCleanupPayloads(payloadRepository: PayloadRepository): Long {
+    val cleanupPayloadsJob = config().cleanupPayloadsJob
+    val initialDelay = durationUntil(cleanupPayloadsJob.startAtTime.value)
+    val readableInterval = cleanupPayloadsJob.fixedInterval.readableInterval()
+    log.info("Delaying initial payload cleanup by $initialDelay, running every $readableInterval")
+    delay(initialDelay)
+    return Schedule
+        .spaced<Unit>(cleanupPayloadsJob.fixedInterval)
+        .repeat {
+            log.info("Starting job to delete payloads older than ${cleanupPayloadsJob.keepPayloadsDays.value} days")
+            try {
+                val deleted = payloadRepository.cleanupOldPayloads(
+                    cleanupPayloadsJob.keepPayloadsDays.value,
+                    cleanupPayloadsJob.batchSize.value
+                )
+                log.info("Cleaned up $deleted payload(s) older than ${cleanupPayloadsJob.keepPayloadsDays.value} days")
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                log.error("Failed to clean up old payloads", e)
+            }
+        }
+}
+
+/** Time remaining until the next occurrence of [runAtTime], today if not yet passed, otherwise tomorrow. */
+private fun durationUntil(runAtTime: LocalTime): Duration {
+    val now = LocalDateTime.now()
+    val nextRun = now.toLocalDate().atTime(runAtTime).let { todayRun ->
+        if (now.isBefore(todayRun)) todayRun else todayRun.plusDays(1)
+    }
+    return java.time.Duration.between(now, nextRun).toKotlinDuration()
+}
+
+internal fun Duration.readableInterval(): String {
+    this.toComponents { days, hours, minutes, seconds, nanoseconds ->
+        var readable = ""
+        if (days > 0) readable = "$days days"
+        if (hours > 0) readable = if (readable != "") "$readable, $hours hours" else "$hours hours"
+        if (minutes > 0) readable = if (readable != "") "$readable, $minutes minutes" else "$minutes minutes"
+        return readable
+    }
 }
 
 private fun logError(t: Throwable) = log.error("Shutdown smtp-transport due to: ${t.stackTraceToString()}")
