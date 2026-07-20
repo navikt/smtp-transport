@@ -117,7 +117,9 @@ fun main() = SuspendApp {
 
             messageProcessor.processMailRoutingMessages(scope)
 
-            scope.launch { scheduleCleanupPayloads(payloadRepository) }
+            if (config().cleanupPayloadsJob.enabled) {
+                scope.launch { scheduleCleanupPayloads(payloadRepository) }
+            }
             scheduleProcessMailMessages(mailProcessor)
 
             awaitCancellation()

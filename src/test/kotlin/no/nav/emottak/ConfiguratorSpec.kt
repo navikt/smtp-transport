@@ -11,6 +11,7 @@ import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeSameInstanceAs
+import kotlin.time.Duration
 import no.nav.emottak.configuration.Config
 
 class ConfiguratorSpec : StringSpec({
@@ -82,9 +83,11 @@ class ConfiguratorSpec : StringSpec({
 
     "cleanupPayloadsJob defaults are loaded correctly" {
         val cleanupPayloadsJob = config().cleanupPayloadsJob
+        cleanupPayloadsJob.enabled shouldBe false
+        cleanupPayloadsJob.fixedInterval shouldBe Duration.parse("24h")
+        cleanupPayloadsJob.startAtTime.value shouldBe java.time.LocalTime.MIDNIGHT
         cleanupPayloadsJob.keepPayloadsDays.value shouldBe 90
         cleanupPayloadsJob.batchSize.value shouldBe 10000
-        cleanupPayloadsJob.startAtTime.value shouldBe java.time.LocalTime.MIDNIGHT
     }
 
     "azureAuth defaults are loaded correctly" {

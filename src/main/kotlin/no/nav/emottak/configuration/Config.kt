@@ -199,6 +199,7 @@ data class EbmsFilter(
 )
 
 data class CleanupPayloadsJob(
+    val enabled: Boolean,
     val fixedInterval: Duration,
     val startAtTime: StartAtTime,
     val keepPayloadsDays: KeepDays,
