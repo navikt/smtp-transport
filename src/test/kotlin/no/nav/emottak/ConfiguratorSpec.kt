@@ -11,8 +11,8 @@ import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeSameInstanceAs
-import kotlin.time.Duration
 import no.nav.emottak.configuration.Config
+import kotlin.time.Duration
 
 class ConfiguratorSpec : StringSpec({
 
