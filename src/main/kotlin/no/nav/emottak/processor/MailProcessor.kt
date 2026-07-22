@@ -17,7 +17,6 @@ import no.nav.emottak.log
 import no.nav.emottak.model.PayloadMessage
 import no.nav.emottak.model.SignalMessage
 import no.nav.emottak.publisher.MailPublisher
-import no.nav.emottak.registerInboxSizeGauge
 import no.nav.emottak.repository.PayloadRepository
 import no.nav.emottak.smtp.EmailMsg
 import no.nav.emottak.smtp.MailReader
@@ -37,14 +36,9 @@ class MailProcessor(
     private val eventLoggingService: ScopedEventLoggingService,
     private val mailSender: MailSender,
     private val mail: Mail,
-    private val meterRegistry: MeterRegistry
+    private val meterRegistry: MeterRegistry,
+    private val inboxSize: AtomicInteger
 ) {
-
-    private val inboxSize = AtomicInteger(0)
-
-    init {
-        meterRegistry.registerInboxSizeGauge(inboxSize)
-    }
 
     enum class InboxStatus {
         EMPTY,
