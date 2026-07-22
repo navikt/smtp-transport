@@ -40,6 +40,7 @@ import no.nav.emottak.utils.kafka.client.EventPublisherClient
 import no.nav.emottak.utils.kafka.service.EventLoggingService
 import org.slf4j.LoggerFactory
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.coroutineContext
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -86,18 +87,6 @@ fun main() = SuspendApp {
             val payloadReceiver = PayloadReceiver(deps.kafkaReceiver, ebmsAsyncClient, eventLoggingService)
             val signalReceiver = SignalReceiver(deps.kafkaReceiver, eventLoggingService)
             val payloadRepository = PayloadRepository(deps.payloadDatabase, eventLoggingService)
-            val mailSender = autoCloseable { MailSender(deps.session, eventLoggingService, config().smtp, deps.meterRegistry) }
-            val mailProcessor = MailProcessor(
-                deps.store,
-                mailPublisher,
-                payloadRepository,
-                eventLoggingService,
-                mailSender,
-                config().mail,
-                deps.meterRegistry
-            )
-            val messageProcessor = MessageProcessor(payloadReceiver, signalReceiver, mailSender)
-
             val server = config().server
 
             server(
@@ -106,6 +95,22 @@ fun main() = SuspendApp {
                 preWait = server.preWait,
                 module = smtpTransportModule(deps.meterRegistry, payloadRepository)
             )
+
+            val inboxSize = AtomicInteger(0)
+            deps.meterRegistry.registerInboxSizeGauge(inboxSize)
+
+            val mailSender = autoCloseable { MailSender(deps.session, eventLoggingService, config().smtp, deps.meterRegistry) }
+            val mailProcessor = MailProcessor(
+                deps.store,
+                mailPublisher,
+                payloadRepository,
+                eventLoggingService,
+                mailSender,
+                config().mail,
+                deps.meterRegistry,
+                inboxSize
+            )
+            val messageProcessor = MessageProcessor(payloadReceiver, signalReceiver, mailSender)
 
             messageProcessor.processMailRoutingMessages(scope)
 
