@@ -175,7 +175,7 @@ private suspend fun scheduleCleanupPayloads(payloadRepository: PayloadRepository
     val cleanupPayloadsJob = config().cleanupPayloadsJob
     val initialDelay = durationUntil(cleanupPayloadsJob.startAtTime.value)
     val readableInterval = cleanupPayloadsJob.fixedInterval.readableInterval()
-    log.info("Delaying initial payload cleanup by $initialDelay, running every $readableInterval")
+    log.info("Delaying initial payload cleanup by ${initialDelay.readableInterval()}, running every $readableInterval after that")
     delay(initialDelay)
     return Schedule
         .spaced<Unit>(cleanupPayloadsJob.fixedInterval)
