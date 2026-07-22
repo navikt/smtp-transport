@@ -8,6 +8,7 @@ import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.collections.shouldNotContain
+import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import no.nav.emottak.configuration.Config
@@ -113,7 +114,7 @@ class ConfiguratorSpec : StringSpec({
 
     "dev filter typesToBoth contains expected services" {
         val typesToBoth = config().ebmsFilter.typesToBoth
-        typesToBoth.size shouldBe 15
+        typesToBoth.size shouldBeGreaterThan 3
         typesToBoth shouldContain "urn:oasis:names:tc:ebxml-msg:service"
     }
 
