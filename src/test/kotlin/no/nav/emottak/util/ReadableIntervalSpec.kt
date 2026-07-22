@@ -66,4 +66,14 @@ class ReadableIntervalSpec : StringSpec({
         val interval = Duration.parse("90m")
         interval.readableInterval() shouldBe "1 hours, 30 minutes"
     }
+
+    "should return seconds when less than one minute" {
+        val interval = Duration.parse("30s")
+        interval.readableInterval() shouldBe "30 seconds"
+    }
+
+    "should not return seconds when more than one minute" {
+        val interval = Duration.parse("90s")
+        interval.readableInterval() shouldBe "1 minutes"
+    }
 })
