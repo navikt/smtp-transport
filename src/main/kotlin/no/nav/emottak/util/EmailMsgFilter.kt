@@ -81,6 +81,7 @@ private fun isAcceptedCpaId(cpaId: String): Boolean {
 private fun ByteArray.toXmlDocument(): Document? {
     return try {
         val dbFactory = DocumentBuilderFactory.newInstance()
+        dbFactory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true)
         dbFactory.isNamespaceAware = true
         val dBuilder = dbFactory.newDocumentBuilder()
         val inputStream = this.inputStream() // ByteArrayInputStream
