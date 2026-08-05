@@ -165,6 +165,22 @@ class PayloadRepositorySpec : StringSpec(
                 either { retrieve(referenceId, contentId1) }.shouldBeRight()
             }
         }
+
+        "should not do anything if batchSize is zero or below" {
+            val referenceId = Uuid.random()
+            val contentIds = (1..7).map { "old-content-id-$it" }
+            val payloads = contentIds.map { contentId ->
+                Payload(referenceId, contentId, "text", "data".toByteArray())
+            }
+
+            with(repository) { either { insert(payloads) } }
+
+            val rowsBackdated = backdatePayloads(referenceId, contentIds, days = 100)
+            rowsBackdated shouldBe payloads.size
+
+            repository.cleanupOldPayloads(keepDays = 90, batchSize = 0) shouldBe 0
+            repository.cleanupOldPayloads(keepDays = 90, batchSize = -1) shouldBe 0
+        }
     }
 )
 

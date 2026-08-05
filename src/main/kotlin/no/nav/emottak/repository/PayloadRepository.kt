@@ -40,7 +40,7 @@ class PayloadRepository(
     suspend fun cleanupOldPayloads(keepDays: Int, batchSize: Long): Long =
         withContext(IO) {
             var totalDeleted = 0L
-            while (true) {
+            while (batchSize > 0) {
                 val deletedInBatch = payloadQueries.deleteOldPayloads(keepDays, batchSize).executeAsList().size
                 totalDeleted += deletedInBatch
                 if (deletedInBatch < batchSize) break
