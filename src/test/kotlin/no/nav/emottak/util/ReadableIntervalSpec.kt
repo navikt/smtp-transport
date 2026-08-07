@@ -42,7 +42,7 @@ class ReadableIntervalSpec : StringSpec({
         interval.readableInterval() shouldBe "3 days, 15 hours, 20 minutes"
     }
 
-    "should return '1 days, 20 minutes' when Duration is '1d 30m'" {
+    "should return '1 days, 20 minutes' when Duration is '1d 20m'" {
         val interval = Duration.parse("1d 20m")
         interval.readableInterval() shouldBe "1 days, 20 minutes"
     }
@@ -62,7 +62,7 @@ class ReadableIntervalSpec : StringSpec({
         interval.readableInterval() shouldBe "2 days, 2 hours"
     }
 
-    "should return '1 hours, 30 minutes' when Duration is '90h'" {
+    "should return '1 hours, 30 minutes' when Duration is '90m'" {
         val interval = Duration.parse("90m")
         interval.readableInterval() shouldBe "1 hours, 30 minutes"
     }
