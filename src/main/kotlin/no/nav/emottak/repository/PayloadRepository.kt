@@ -33,6 +33,21 @@ class PayloadRepository(
     suspend fun Raise<PayloadNotFound>.retrieve(referenceId: Uuid, contentId: String): Payload =
         withContext(IO) { retrievePayload(referenceId, contentId) }
 
+    /**
+     * Deletes payloads older than [keepDays], in batches of [batchSize], until no more
+     * matching rows remain. Returns the total number of deleted payloads.
+     */
+    suspend fun cleanupOldPayloads(keepDays: Int, batchSize: Long): Long =
+        withContext(IO) {
+            var totalDeleted = 0L
+            while (batchSize > 0) {
+                val deletedInBatch = payloadQueries.deleteOldPayloads(keepDays, batchSize).executeAsList().size
+                totalDeleted += deletedInBatch
+                if (deletedInBatch < batchSize) break
+            }
+            totalDeleted
+        }
+
     private fun Raise<PayloadNotFound>.retrievePayloads(referenceId: Uuid): List<Payload> {
         val payloads = payloadQueries.retrievePayloads(referenceId).executeAsList()
         return when (payloads.isEmpty()) {
