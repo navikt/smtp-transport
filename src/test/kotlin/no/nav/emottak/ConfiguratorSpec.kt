@@ -12,6 +12,7 @@ import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import no.nav.emottak.configuration.Config
+import kotlin.time.Duration
 
 class ConfiguratorSpec : StringSpec({
 
@@ -78,6 +79,15 @@ class ConfiguratorSpec : StringSpec({
         db.idleConnectionTimeout.value shouldBe 10001
         db.maxLifetimeConnections.value shouldBe 30001
         db.migrationsPath.value shouldBe "filesystem:/app/migrations"
+    }
+
+    "cleanupPayloadsJob defaults are loaded correctly" {
+        val cleanupPayloadsJob = config().cleanupPayloadsJob
+        cleanupPayloadsJob.enabled shouldBe false
+        cleanupPayloadsJob.fixedInterval shouldBe Duration.parse("24h")
+        cleanupPayloadsJob.startAtTime.value shouldBe java.time.LocalTime.MIDNIGHT
+        cleanupPayloadsJob.keepPayloadsDays.value shouldBe 90
+        cleanupPayloadsJob.batchSize.value shouldBe 10000
     }
 
     "azureAuth defaults are loaded correctly" {

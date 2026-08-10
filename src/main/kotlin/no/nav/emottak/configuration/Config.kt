@@ -5,11 +5,12 @@ import no.nav.emottak.utils.config.EventLogging
 import no.nav.emottak.utils.config.Kafka
 import no.nav.emottak.utils.config.Port
 import no.nav.emottak.utils.config.Server
+import java.time.LocalTime
 import java.util.Properties
 import kotlin.time.Duration
 
 data class Config(
-    val job: Job,
+    val mailJob: MailJob,
     val mail: Mail,
     val kafka: Kafka,
     val eventLogging: EventLogging,
@@ -21,12 +22,13 @@ data class Config(
     val httpClient: HttpClient,
     val httpTokenClient: HttpClient,
     val ebmsAsync: EbmsAsync,
-    val ebmsFilter: EbmsFilter
+    val ebmsFilter: EbmsFilter,
+    val cleanupPayloadsJob: CleanupPayloadsJob
 )
 
 fun Config.withKafka(update: Kafka.() -> Kafka) = copy(kafka = kafka.update())
 
-data class Job(
+data class MailJob(
     val fixedInterval: Duration,
     val initialDelay: Duration
 )
@@ -195,3 +197,20 @@ data class EbmsFilter(
     val typesToBoth: List<String>,
     val cpaId: Set<String>
 )
+
+data class CleanupPayloadsJob(
+    val enabled: Boolean,
+    val fixedInterval: Duration,
+    val startAtTime: StartAtTime,
+    val keepPayloadsDays: KeepDays,
+    val batchSize: BatchSize
+)
+
+@JvmInline
+value class StartAtTime(val value: LocalTime)
+
+@JvmInline
+value class KeepDays(val value: Int)
+
+@JvmInline
+value class BatchSize(val value: Long)
