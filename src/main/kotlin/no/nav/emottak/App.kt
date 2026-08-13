@@ -14,13 +14,13 @@ import io.ktor.client.plugins.timeout
 import io.ktor.client.request.get
 import io.ktor.client.statement.bodyAsText
 import io.ktor.server.application.Application
-import io.ktor.server.engine.logError
 import io.ktor.server.netty.Netty
 import io.ktor.utils.io.CancellationException
 import io.micrometer.prometheus.PrometheusMeterRegistry
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import no.nav.emottak.plugin.configureAuthentication
 import no.nav.emottak.plugin.configureCallLogging
 import no.nav.emottak.plugin.configureContentNegotiation
@@ -39,11 +39,14 @@ import no.nav.emottak.util.eventLoggingService
 import no.nav.emottak.utils.kafka.client.EventPublisherClient
 import no.nav.emottak.utils.kafka.service.EventLoggingService
 import org.slf4j.LoggerFactory
+import java.time.LocalDateTime
+import java.time.LocalTime
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.coroutineContext
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.toKotlinDuration
 
 internal val log = LoggerFactory.getLogger("no.nav.emottak.smtp")
 val mailReaderActive = AtomicBoolean(config().mail.inboxReadActive)
@@ -114,6 +117,9 @@ fun main() = SuspendApp {
 
             messageProcessor.processMailRoutingMessages(scope)
 
+            if (config().cleanupPayloadsJob.enabled) {
+                scope.launch { scheduleCleanupPayloads(payloadRepository) }
+            }
             scheduleProcessMailMessages(mailProcessor)
 
             awaitCancellation()
@@ -142,13 +148,13 @@ internal fun smtpTransportModule(
 
 private suspend fun ResourceScope.scheduleProcessMailMessages(processor: MailProcessor): Long {
     val scope = coroutineScope(coroutineContext)
-    val initialDelay = config().job.initialDelay
+    val initialDelay = config().mailJob.initialDelay
     if (initialDelay > Duration.ZERO) {
         log.info("Delaying initial mail processing by $initialDelay")
         delay(initialDelay)
     }
     return Schedule
-        .spaced<Unit>(config().job.fixedInterval)
+        .spaced<Unit>(config().mailJob.fixedInterval)
         .repeat {
             if (mailReaderActive.get()) {
                 when (processor.processMessages(scope).await()) {
@@ -163,6 +169,77 @@ private suspend fun ResourceScope.scheduleProcessMailMessages(processor: MailPro
             }
             delay(30.seconds)
         }
+}
+
+private suspend fun scheduleCleanupPayloads(payloadRepository: PayloadRepository) {
+    val cleanupPayloadsJob = config().cleanupPayloadsJob
+    val readableInterval = cleanupPayloadsJob.fixedInterval.readableInterval()
+    val (firstRunAt, initialDelay) = cleanupPayloadsJob.startAtTime.value.firstRunAt()
+    val schedule = FixedIntervalSchedule(firstRunAt, cleanupPayloadsJob.fixedInterval)
+    log.info("Delaying initial payload cleanup by ${initialDelay.readableInterval()}, running every $readableInterval after that")
+    delay(initialDelay)
+    while (true) {
+        log.info("Starting job to delete payloads older than ${cleanupPayloadsJob.keepPayloadsDays.value} days")
+        try {
+            val deleted = payloadRepository.cleanupOldPayloads(
+                cleanupPayloadsJob.keepPayloadsDays.value,
+                cleanupPayloadsJob.batchSize.value
+            )
+            log.info("Cleaned up $deleted payload(s) older than ${cleanupPayloadsJob.keepPayloadsDays.value} days")
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            log.error("Failed to clean up old payloads", e)
+        }
+        // Kalkulerer når neste kjøretid er, basert på første kjøretid
+        val nextDelay = schedule.durationUntilNextRun()
+        log.info("Next payload cleanup in ${nextDelay.readableInterval()}")
+        delay(nextDelay)
+    }
+}
+
+/**
+ * Returnerer neste LocalDateTime denne LocalTime-en inntreffer på (i dag hvis klokkeslettet
+ * ikke allerede er passert, ellers i morgen). Brukes til å regne ut ankeret (første kjøretidspunkt)
+ * for en [FixedIntervalSchedule].
+ */
+internal fun LocalTime.firstRunAt(now: LocalDateTime = LocalDateTime.now()): Pair<LocalDateTime, Duration> {
+    val today = now.toLocalDate().atTime(this)
+    val firstRunAt = if (now.isBefore(today)) today else today.plusDays(1)
+    return Pair(firstRunAt, java.time.Duration.between(now, firstRunAt).toKotlinDuration())
+}
+
+/**
+ * Holder styr på et fast, klokkeslett-forankret kjøreskjema.
+ *
+ * Eksempel 1:
+ * firstRunAt = 00:00, fixedInterval = 12 timer -> kjøring skjer kl 00:00, 12:00, 00:00, osv.
+ * Er klokka 10:00 akkurat nå, blir neste kjøretid kl 12:00 (om 2 timer).
+ *
+ * Eksempel 2:
+ * firstRunAt = 00:00, fixedInterval = 48 timer -> kjøring skjer kl 00:00 annenhver dag.
+ * Er klokka 10:00 samme dag som firstRunAt, blir neste kjøretid kl 00:00 (om 38 timer).
+ */
+internal class FixedIntervalSchedule(private val firstRunAt: LocalDateTime, private val fixedInterval: Duration) {
+    fun durationUntilNextRun(now: LocalDateTime = LocalDateTime.now()): Duration {
+        val intervalMillis = fixedInterval.inWholeMilliseconds
+        val elapsedSinceFirstRun = java.time.Duration.between(firstRunAt, now).toMillis()
+        val stepsToNextRun = Math.floorDiv(elapsedSinceFirstRun, intervalMillis) + 1
+        val nextRun = firstRunAt.plus(java.time.Duration.ofMillis(intervalMillis * stepsToNextRun))
+        return java.time.Duration.between(now, nextRun).toKotlinDuration()
+    }
+}
+
+/** Lesbar presentasjon av en Duration, slik som "1 day, 3 hours, 30 minutes". */
+internal fun Duration.readableInterval(): String {
+    this.toComponents { days, hours, minutes, seconds, nanoseconds ->
+        var readable = ""
+        if (days > 0) readable = "$days days"
+        if (hours > 0) readable = if (readable != "") "$readable, $hours hours" else "$hours hours"
+        if (minutes > 0) readable = if (readable != "") "$readable, $minutes minutes" else "$minutes minutes"
+        if (readable == "") readable = "$seconds seconds"
+        return readable
+    }
 }
 
 private fun logError(t: Throwable) = log.error("Shutdown smtp-transport due to: ${t.stackTraceToString()}")
