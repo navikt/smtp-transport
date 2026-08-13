@@ -20,3 +20,19 @@ SELECT * FROM payload WHERE reference_id = ?;
 
 retrievePayload:
 SELECT * FROM payload WHERE reference_id = ? AND content_id = ?;
+
+deleteOldPayloads:
+DELETE FROM payload
+WHERE EXISTS (
+    SELECT 1
+    FROM (
+        SELECT reference_id, content_id
+        FROM payload
+        WHERE created_at < now() - (INTERVAL '1 day' * CAST(:days AS INTEGER))
+        ORDER BY created_at
+        LIMIT :batchSize
+    ) AS old_payloads
+    WHERE old_payloads.reference_id = payload.reference_id
+    AND old_payloads.content_id = payload.content_id
+)
+RETURNING reference_id, content_id;
