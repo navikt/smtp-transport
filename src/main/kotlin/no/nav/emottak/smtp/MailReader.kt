@@ -8,9 +8,9 @@ import jakarta.mail.MessagingException
 import jakarta.mail.Store
 import jakarta.mail.internet.MimeMessage
 import jakarta.mail.internet.MimeMultipart
+import no.nav.emottak.configuration.ForwardingSystem
 import no.nav.emottak.configuration.Mail
 import no.nav.emottak.log
-import no.nav.emottak.util.ForwardingSystem
 import no.nav.emottak.util.ScopedEventLoggingService
 import no.nav.emottak.util.filterMessageForwarding
 import no.nav.emottak.util.mapEmailMsg

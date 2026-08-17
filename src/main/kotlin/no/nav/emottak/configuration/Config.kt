@@ -193,9 +193,13 @@ data class AzureAuth(
 )
 
 data class EbmsFilter(
-    val typesToEbms: List<String>,
-    val typesToBoth: List<String>,
-    val cpaId: Set<String>
+    val services: List<ServiceFilter>
+)
+
+data class ServiceFilter(
+    val name: String,
+    val forwardTo: ForwardingSystem,
+    val cpaIdsFile: String
 )
 
 data class CleanupPayloadsJob(

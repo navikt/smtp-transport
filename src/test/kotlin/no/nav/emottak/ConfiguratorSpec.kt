@@ -3,7 +3,9 @@ package no.nav.emottak
 import com.sksamuel.hoplite.ConfigLoader
 import com.sksamuel.hoplite.addResourceSource
 import io.kotest.core.spec.style.StringSpec
+import io.kotest.inspectors.forAll
 import io.kotest.matchers.booleans.shouldBeFalse
+import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotBeEmpty
@@ -12,6 +14,8 @@ import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import no.nav.emottak.configuration.Config
+import no.nav.emottak.configuration.ForwardingSystem
+import no.nav.emottak.util.toServiceRules
 import kotlin.time.Duration
 
 class ConfiguratorSpec : StringSpec({
@@ -107,77 +111,81 @@ class ConfiguratorSpec : StringSpec({
         ebmsAsync.apiUrl shouldBe "api/payloads/"
     }
 
-    "dev filter is loaded by default and contains expected typesToEbms" {
-        config().ebmsFilter.typesToEbms shouldContain "Inntektsforesporsel"
-        config().ebmsFilter.typesToEbms shouldContain "Trekkopplysning"
+    "dev filter is loaded by default and contains expected services" {
+        val services = config().ebmsFilter.services.map { it.name }
+        services shouldContain "Inntektsforesporsel"
+        services shouldContain "Trekkopplysning"
     }
 
-    "dev filter typesToEbms contains expected services" {
-        val typesToEbms = config().ebmsFilter.typesToEbms
-        typesToEbms.size shouldBe 6
-        typesToEbms shouldContain "Inntektsforesporsel"
-        typesToEbms shouldContain "Trekkopplysning"
-        typesToEbms shouldContain "Sykmelding"
-        typesToEbms shouldContain "Legemelding"
-        typesToEbms shouldContain "HarBorgerFrikortMengde"
-        typesToEbms shouldContain "PasientlisteForesporsel"
+    "dev filter routes expected services to EBMS" {
+        val toEbms = config().ebmsFilter.services
+            .filter { it.forwardTo == ForwardingSystem.EBMS }
+            .map { it.name }
+        toEbms.size shouldBe 6
+        toEbms shouldContain "Inntektsforesporsel"
+        toEbms shouldContain "Trekkopplysning"
+        toEbms shouldContain "Sykmelding"
+        toEbms shouldContain "Legemelding"
+        toEbms shouldContain "HarBorgerFrikortMengde"
+        toEbms shouldContain "PasientlisteForesporsel"
     }
 
-    "dev filter typesToBoth contains expected services" {
-        val typesToBoth = config().ebmsFilter.typesToBoth
-        typesToBoth.size shouldBeGreaterThan 3
-        typesToBoth shouldContain "urn:oasis:names:tc:ebxml-msg:service"
+    "dev filter routes expected services to BOTH" {
+        val toBoth = config().ebmsFilter.services
+            .filter { it.forwardTo == ForwardingSystem.BOTH }
+            .map { it.name }
+        toBoth.size shouldBeGreaterThan 3
+        toBoth shouldContain "urn:oasis:names:tc:ebxml-msg:service"
     }
 
-    "dev filter typesToBoth includes ebXML service" {
-        val typesToBoth = config().ebmsFilter.typesToBoth
-        typesToBoth shouldContain "urn:oasis:names:tc:ebxml-msg:service"
+    "dev filter service names are unique" {
+        val services = config().ebmsFilter.services.map { it.name }
+        services.size shouldBe services.toSet().size
     }
 
-    "dev filter typesToBoth and typesToEbms should not contain the same types" {
-        val typesToBoth = config().ebmsFilter.typesToBoth
-        val typesToEbms = config().ebmsFilter.typesToEbms
-        (typesToBoth.toSet() intersect typesToEbms.toSet()).shouldBeEmpty()
-    }
-
-    "dev filter senderCPAs are populated" {
-        val senderCPAs = config().ebmsFilter.cpaId
-        senderCPAs.shouldNotBeEmpty()
-        senderCPAs shouldContain "nav:qass:36666"
+    "dev filter accepts all CPA ids for every service" {
+        val rules = config().ebmsFilter.toServiceRules()
+        rules.size shouldBe 19
+        rules.values.forAll { it.allCpaIds.shouldBeTrue() }
     }
 
     "prod filter can be loaded directly and has expected values" {
-        val filter = prodConfig.ebmsFilter
-        filter.typesToEbms shouldContain "Inntektsforesporsel"
-        filter.typesToBoth shouldContain "urn:oasis:names:tc:ebxml-msg:service"
-        filter.cpaId.shouldNotBeEmpty()
-        filter.cpaId shouldNotContain "nav:qass:36666"
+        val services = prodConfig.ebmsFilter.services
+        services.map { it.name } shouldContain "Inntektsforesporsel"
+        services.map { it.name } shouldContain "Trekkopplysning"
+        services.single { it.name == "urn:oasis:names:tc:ebxml-msg:service" }
+            .forwardTo shouldBe ForwardingSystem.BOTH
     }
 
-    "prod filter senderCPAs differ from dev filter" {
-        val devCpa = config().ebmsFilter.cpaId
-        val prodCpa = prodConfig.ebmsFilter.cpaId
-        devCpa shouldContain "nav:qass:36666"
-        prodCpa shouldNotContain "nav:qass:36666"
-        (devCpa intersect prodCpa).shouldBeEmpty()
+    "prod filter CPA lists are resolved from file and differ from dev" {
+        val prodRules = prodConfig.ebmsFilter.toServiceRules()
+        prodRules.size shouldBe 3
+        prodRules.filter { it.key == "urn:oasis:names:tc:ebxml-msg:service" }.values.forAll { rule ->
+            rule.allCpaIds.shouldBeTrue()
+            rule.cpaIds.shouldBeEmpty()
+        }
+        prodRules.filter { it.key != "urn:oasis:names:tc:ebxml-msg:service" }.values.forAll { rule ->
+            rule.allCpaIds.shouldBeFalse()
+            rule.cpaIds.shouldNotBeEmpty()
+            rule.cpaIds shouldContain "nav:119670"
+            rule.cpaIds shouldNotContain "nav:qass:36666"
+        }
     }
 
-    "prod filter typesToBoth and typesToEbms should not contain the same types" {
-        val typesToBoth = prodConfig.ebmsFilter.typesToBoth
-        val typesToEbms = prodConfig.ebmsFilter.typesToEbms
-        (typesToBoth.toSet() intersect typesToEbms.toSet()).shouldBeEmpty()
+    "prod filter routes expected services to EBMS" {
+        val toEbms = prodConfig.ebmsFilter.services
+            .filter { it.forwardTo == ForwardingSystem.EBMS }
+            .map { it.name }
+        toEbms.size shouldBe 2
+        toEbms shouldContain "Inntektsforesporsel"
+        toEbms shouldContain "Trekkopplysning"
     }
 
-    "prod filter typesToEbms contains expected services" {
-        val typesToEbms = prodConfig.ebmsFilter.typesToEbms
-        typesToEbms.size shouldBe 2
-        typesToEbms shouldContain "Inntektsforesporsel"
-        typesToEbms shouldContain "Trekkopplysning"
-    }
-
-    "prod filter typesToBoth contains expected services" {
-        val typesToBoth = prodConfig.ebmsFilter.typesToBoth
-        typesToBoth.size shouldBe 1
-        typesToBoth shouldContain "urn:oasis:names:tc:ebxml-msg:service"
+    "prod filter routes expected services to BOTH" {
+        val toBoth = prodConfig.ebmsFilter.services
+            .filter { it.forwardTo == ForwardingSystem.BOTH }
+            .map { it.name }
+        toBoth.size shouldBe 1
+        toBoth shouldContain "urn:oasis:names:tc:ebxml-msg:service"
     }
 })

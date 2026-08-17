@@ -1,0 +1,6 @@
+# CPA-ider brukt i tester
+# Kun i bruk for tester, ikke i dev
+nav:qass:34961
+
+# Med vilje i store bokstaver for aa teste case-insensitiv matching
+NAV:QASS:30500
