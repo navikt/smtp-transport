@@ -10,7 +10,9 @@ import no.nav.emottak.smtp.Part
 internal fun MimeMessageWrapper.mapEmailMsg(): EmailMsg {
     val multipartMessage = this.mimeMessage.isMimeMultipart()
     val bodyparts: List<Part> = when (multipartMessage) {
-        true -> createMimeBodyParts(this.mimeMessage.content as MimeMultipart)
+        true -> (this.mimeMessage.content as? MimeMultipart)
+            ?.let { createMimeBodyParts(it) }
+            ?: createEmptyMimeBodyParts(this.mimeMessage)
         else -> createEmptyMimeBodyParts(this.mimeMessage)
     }
     val headers: Map<String, String> = this.mimeMessage.allHeaders
@@ -29,7 +31,7 @@ internal fun MimeMessageWrapper.mapEmailMsg(): EmailMsg {
 
 fun String.extractEmailAddressOnly() = if (this.contains("<")) this.substringAfter("<").substringBefore(">").lowercase() else this.lowercase()
 
-private fun MimeMessage.isMimeMultipart(): Boolean = content is MimeMultipart
+private fun MimeMessage.isMimeMultipart(): Boolean = isMimeType("multipart/*")
 
 private fun createEmptyMimeBodyParts(message: MimeMessage) = listOf(
     Part(

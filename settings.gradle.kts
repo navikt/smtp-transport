@@ -13,8 +13,8 @@ dependencyResolutionManagement {
     versionCatalogs {
         create("libs") {
             version("arrow", "2.0.1")
-            version("flyway", "9.16.3")
-            version("hikari", "5.0.1")
+            version("flyway", "12.6.1")
+            version("hikari", "7.0.2")
             version("suspendapp", "0.5.0")
             version("ktor", "3.4.3")
             version("token-validation-ktor", "5.0.30")
@@ -22,8 +22,8 @@ dependencyResolutionManagement {
             version("eclipse-angus", "2.0.2")
             version("hoplite", "2.8.2")
             version("kotlin-kafka", "0.4.1")
-            version("sqldelight", "2.0.2")
-            version("postgres", "42.7.4")
+            version("sqldelight", "2.3.2")
+            version("postgres", "42.7.11")
             version("vault-jdbc", "1.3.10")
             version("prometheus", "1.12.4")
             version("logback", "1.5.19")
@@ -71,6 +71,7 @@ dependencyResolutionManagement {
             library("ktor-server-auth-jvm", "io.ktor", "ktor-server-auth-jvm").versionRef("ktor")
             library("token-validation-ktor-v3", "no.nav.security", "token-validation-ktor-v3").versionRef("token-validation-ktor")
             library("flyway-core", "org.flywaydb", "flyway-core").versionRef("flyway")
+            library("flyway-database-postgresql", "org.flywaydb", "flyway-database-postgresql").versionRef("flyway")
 
             library("jakarta-mail-api", "jakarta.mail", "jakarta.mail-api").versionRef("jakarta-mail")
             library("eclipse-angus", "org.eclipse.angus", "jakarta.mail").versionRef("eclipse-angus")
@@ -97,7 +98,7 @@ dependencyResolutionManagement {
             version("testcontainers", "1.21.4")
             version("kotest-extensions", "2.0.2")
             version("greenmail", "2.1.0-alpha-3")
-            version("postgres", "42.7.4")
+            version("postgres", "42.7.7")
             version("turbine", "1.2.0")
 
             library("greenmail", "com.icegreen", "greenmail").versionRef("greenmail")
