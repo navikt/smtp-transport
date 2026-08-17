@@ -18,6 +18,23 @@ data class ServiceRule(
     fun accepts(cpaId: String): Boolean = allCpaIds || cpaIds.contains(cpaId.lowercase())
 }
 
+enum class FilterMatch { CONFIGURED, CPA_ID_NOT_IN_LIST, UNKNOWN_SERVICE }
+
+data class ForwardingDecision(
+    val forwardTo: ForwardingSystem,
+    val filterMatch: FilterMatch
+)
+
+fun Map<String, ServiceRule>.resolveForwarding(service: String, cpaId: String): ForwardingDecision {
+    val rule = this[service]
+        ?: return ForwardingDecision(ForwardingSystem.EMOTTAK, FilterMatch.UNKNOWN_SERVICE)
+    return if (rule.accepts(cpaId)) {
+        ForwardingDecision(rule.forwardTo, FilterMatch.CONFIGURED)
+    } else {
+        ForwardingDecision(ForwardingSystem.EMOTTAK, FilterMatch.CPA_ID_NOT_IN_LIST)
+    }
+}
+
 val filterRules: () -> Map<String, ServiceRule> = {
     config().ebmsFilter.toServiceRules()
         .onEach { (name, rule) -> log.info(rule.describe(name)) }
@@ -33,10 +50,12 @@ fun EbmsFilter.toServiceRules(): Map<String, ServiceRule> {
 }
 
 private fun ServiceFilter.toServiceRule(): ServiceRule {
-    check(forwardTo != ForwardingSystem.EMOTTAK) {
-        "Service '$name' cannot declare forwardTo = EMOTTAK, it is the implicit fallback"
+    val allCpaIds = cpaIdsFile.equals(ALL_CPA_IDS, ignoreCase = true)
+    check(forwardTo != ForwardingSystem.EMOTTAK || allCpaIds) {
+        "Service '$name' declares forwardTo = EMOTTAK and must use cpaIdsFile = \"$ALL_CPA_IDS\", " +
+            "a CPA id list has no effect when EMOTTAK is also the fallback"
     }
-    return if (cpaIdsFile.equals(ALL_CPA_IDS, ignoreCase = true)) {
+    return if (allCpaIds) {
         ServiceRule(forwardTo, allCpaIds = true, cpaIds = emptySet())
     } else {
         ServiceRule(forwardTo, allCpaIds = false, cpaIds = readCpaIds(cpaIdsFile, name))

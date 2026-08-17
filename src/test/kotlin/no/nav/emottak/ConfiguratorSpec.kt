@@ -138,6 +138,14 @@ class ConfiguratorSpec : StringSpec({
         toBoth shouldContain "urn:oasis:names:tc:ebxml-msg:service"
     }
 
+    "dev filter routes expected services to EMOTTAK" {
+        val toEmottak = config().ebmsFilter.services
+            .filter { it.forwardTo == ForwardingSystem.EMOTTAK }
+            .map { it.name }
+        toEmottak shouldContain "BehandlerKrav"
+        toEmottak shouldContain "OppgjorsKontroll"
+    }
+
     "dev filter service names are unique" {
         val services = config().ebmsFilter.services.map { it.name }
         services.size shouldBe services.toSet().size
@@ -145,7 +153,7 @@ class ConfiguratorSpec : StringSpec({
 
     "dev filter accepts all CPA ids for every service" {
         val rules = config().ebmsFilter.toServiceRules()
-        rules.size shouldBe 19
+        rules.keys shouldBe config().ebmsFilter.services.map { it.name }.toSet()
         rules.values.forAll { it.allCpaIds.shouldBeTrue() }
     }
 

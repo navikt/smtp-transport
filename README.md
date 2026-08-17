@@ -22,9 +22,12 @@ Rutingslogikken er basert på `ForwardingSystem`-enumen:
 Avgjørelsen tas av `EmailMsgFilter`. Tjenestenavnet (`Service`) fra ebXML-konvolutten er det primære filteret,
 og hver tjeneste har sin egen liste over godkjente CPA-ider:
 
-- Ukjent tjeneste → `EMOTTAK`
-- Kjent tjeneste og godkjent CPA-id → tjenestens konfigurerte `forwardTo` (`EBMS` eller `BOTH`)
-- Kjent tjeneste, men CPA-id ikke i tjenestens liste → `EMOTTAK`
+- Ukjent tjeneste → `EMOTTAK` (logges som `filterMatch = UNKNOWN_SERVICE`)
+- Kjent tjeneste og godkjent CPA-id → tjenestens konfigurerte `forwardTo` (`filterMatch = CONFIGURED`)
+- Kjent tjeneste, men CPA-id ikke i tjenestens liste → `EMOTTAK` (`filterMatch = CPA_ID_NOT_IN_LIST`)
+
+`filterMatch` logges sammen med `forwardingSystem`, slik at tjenester som med vilje er satt til `EMOTTAK`
+kan skilles fra tjenester vi aldri har sett før.
 
 Tjenestene konfigureres i `filter-dev.conf` / `filter-prod.conf`:
 
@@ -32,7 +35,8 @@ Tjenestene konfigureres i `filter-dev.conf` / `filter-prod.conf`:
 ebmsFilter {
   services = [
     { name = "Trekkopplysning", forwardTo = "EBMS", cpaIdsFile = "cpa/prod/trekkopplysning.txt" },
-    { name = "Sykmelding", forwardTo = "EBMS", cpaIdsFile = "all" }
+    { name = "Sykmelding", forwardTo = "EBMS", cpaIdsFile = "all" },
+    { name = "BehandlerKrav", forwardTo = "EMOTTAK", cpaIdsFile = "all" }
   ]
 }
 ```
@@ -41,9 +45,13 @@ ebmsFilter {
 eller den reserverte verdien `"all"` som godtar alle CPA-ider for tjenesten. Listene ligger under
 `src/main/resources/cpa/<miljø>/`, slik at store lister holdes utenfor selve konfigurasjonsfilen.
 
+`forwardTo = "EMOTTAK"` kan settes eksplisitt selv om det også er fallback-verdien. Da blir alle tjenester
+synlige i konfigurasjonen, i stedet for at noen bare er utelatt eller kommentert bort. En slik tjeneste må
+bruke `cpaIdsFile = "all"`, siden en CPA-liste ikke har noen effekt når resultatet uansett blir `EMOTTAK`.
+
 Tjenestenavn sammenlignes eksakt (case-sensitivt), mens CPA-ider sammenlignes case-insensitivt.
 Applikasjonen starter ikke hvis en `cpaIdsFile` mangler, et tjenestenavn er duplisert, eller en tjeneste
-har `forwardTo = "EMOTTAK"` (som er den implisitte fallback-verdien).
+med `forwardTo = "EMOTTAK"` angir en egen CPA-liste.
 
 ### Utgående meldinger (Kafka → SMTP)
 

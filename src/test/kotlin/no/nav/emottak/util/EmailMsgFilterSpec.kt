@@ -126,11 +126,45 @@ class EmailMsgFilterSpec : StringSpec({
         exception.message!! shouldContain INNTEKTSFORESPORSEL
     }
 
-    "building rules fails when a service declares EMOTTAK as forwarding system" {
+    "building rules allows an explicit EMOTTAK service when all CPA ids are accepted" {
+        val rules = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, ForwardingSystem.EMOTTAK, "all"))
+        rules[INNTEKTSFORESPORSEL].shouldNotBeNull().forwardTo shouldBe ForwardingSystem.EMOTTAK
+    }
+
+    "filterMessageForwarding returns EMOTTAK when service is explicitly configured as EMOTTAK" {
+        val rules = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, ForwardingSystem.EMOTTAK, "all"))
+        PAYLOAD_MESSAGE.forwardingSystem(rules) shouldBe ForwardingSystem.EMOTTAK
+    }
+
+    "building rules fails when an EMOTTAK service declares an explicit CPA id list" {
         val exception = shouldThrow<IllegalStateException> {
-            rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, ForwardingSystem.EMOTTAK, "all"))
+            rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, ForwardingSystem.EMOTTAK, TEST_CPA_IDS_FILE))
         }
         exception.message!! shouldContain "EMOTTAK"
+    }
+
+    "resolveForwarding reports CONFIGURED when the service and CPA id both match" {
+        val rules = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, ForwardingSystem.EBMS, TEST_CPA_IDS_FILE))
+        rules.resolveForwarding(INNTEKTSFORESPORSEL, "nav:qass:34961") shouldBe
+            ForwardingDecision(ForwardingSystem.EBMS, FilterMatch.CONFIGURED)
+    }
+
+    "resolveForwarding reports CONFIGURED for an explicit EMOTTAK service" {
+        val rules = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, ForwardingSystem.EMOTTAK, "all"))
+        rules.resolveForwarding(INNTEKTSFORESPORSEL, "nav:whatever") shouldBe
+            ForwardingDecision(ForwardingSystem.EMOTTAK, FilterMatch.CONFIGURED)
+    }
+
+    "resolveForwarding reports CPA_ID_NOT_IN_LIST when the CPA id is not accepted" {
+        val rules = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, ForwardingSystem.EBMS, TEST_CPA_IDS_FILE))
+        rules.resolveForwarding(INNTEKTSFORESPORSEL, "nav:12345") shouldBe
+            ForwardingDecision(ForwardingSystem.EMOTTAK, FilterMatch.CPA_ID_NOT_IN_LIST)
+    }
+
+    "resolveForwarding reports UNKNOWN_SERVICE when the service is not configured" {
+        val rules = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, ForwardingSystem.EBMS, "all"))
+        rules.resolveForwarding("UkonfigurertTjeneste", "nav:qass:34961") shouldBe
+            ForwardingDecision(ForwardingSystem.EMOTTAK, FilterMatch.UNKNOWN_SERVICE)
     }
 
     "extracts email address only when From contains angle brackets" {

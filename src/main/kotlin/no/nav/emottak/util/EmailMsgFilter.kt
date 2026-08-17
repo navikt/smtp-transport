@@ -20,10 +20,8 @@ fun EmailMsg.filterMessageForwarding(rules: Map<String, ServiceRule> = filterRul
     val cpaId = ebxmlDocument?.getEbxmlCpaId() ?: "UnparsableCpaId"
     val action = ebxmlDocument?.getEbxmlAction() ?: "UnparsableAction"
 
-    val forwardingSystem = rules[service]
-        ?.takeIf { it.accepts(cpaId) }
-        ?.forwardTo
-        ?: ForwardingSystem.EMOTTAK
+    val forwardingDecision = rules.resolveForwarding(service, cpaId)
+    val forwardingSystem = forwardingDecision.forwardTo
 
     val marker: LogstashMarker = Markers.appendEntries(
         mapOf(
@@ -34,6 +32,7 @@ fun EmailMsg.filterMessageForwarding(rules: Map<String, ServiceRule> = filterRul
             "cpaId" to cpaId,
             "action" to action,
             "forwardingSystem" to forwardingSystem,
+            "filterMatch" to forwardingDecision.filterMatch,
             "sourceSystem" to (this.headers["X-Mailer"] ?: "-")
         )
     )
