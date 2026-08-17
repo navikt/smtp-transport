@@ -1,0 +1,5 @@
+# CPA-ider for tjenesten Example
+# En CPA-id per linje. Linjer som starter med # og tomme linjer ignoreres.
+
+nav:dummy:123
+nav:dummy:321

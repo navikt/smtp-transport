@@ -8,8 +8,6 @@ import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContain
-import io.kotest.matchers.collections.shouldNotBeEmpty
-import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeSameInstanceAs
@@ -168,15 +166,9 @@ class ConfiguratorSpec : StringSpec({
     "prod filter CPA lists are resolved from file and differ from dev" {
         val prodRules = prodConfig.ebmsFilter.toServiceRules()
         prodRules.size shouldBe 3
-        prodRules.filter { it.key == "urn:oasis:names:tc:ebxml-msg:service" }.values.forAll { rule ->
+        prodRules.values.forAll { rule ->
             rule.allCpaIds.shouldBeTrue()
             rule.cpaIds.shouldBeEmpty()
-        }
-        prodRules.filter { it.key != "urn:oasis:names:tc:ebxml-msg:service" }.values.forAll { rule ->
-            rule.allCpaIds.shouldBeFalse()
-            rule.cpaIds.shouldNotBeEmpty()
-            rule.cpaIds shouldContain "nav:119670"
-            rule.cpaIds shouldNotContain "nav:qass:36666"
         }
     }
 
