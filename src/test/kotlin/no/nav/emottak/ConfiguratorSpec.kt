@@ -112,13 +112,13 @@ class ConfiguratorSpec : StringSpec({
     }
 
     "dev filter is loaded by default and contains expected services" {
-        val services = config().ebmsFilter.services.map { it.name }
+        val services = config().services.map { it.name }
         services shouldContain "Inntektsforesporsel"
         services shouldContain "Trekkopplysning"
     }
 
     "dev filter routes expected services to EBMS" {
-        val toEbms = config().ebmsFilter.services
+        val toEbms = config().services
             .filter { it.forwardTo == ForwardingSystem.EBMS }
             .map { it.name }
         toEbms.size shouldBe 6
@@ -131,7 +131,7 @@ class ConfiguratorSpec : StringSpec({
     }
 
     "dev filter routes expected services to BOTH" {
-        val toBoth = config().ebmsFilter.services
+        val toBoth = config().services
             .filter { it.forwardTo == ForwardingSystem.BOTH }
             .map { it.name }
         toBoth.size shouldBeGreaterThan 3
@@ -139,7 +139,7 @@ class ConfiguratorSpec : StringSpec({
     }
 
     "dev filter routes expected services to EMOTTAK" {
-        val toEmottak = config().ebmsFilter.services
+        val toEmottak = config().services
             .filter { it.forwardTo == ForwardingSystem.EMOTTAK }
             .map { it.name }
         toEmottak shouldContain "BehandlerKrav"
@@ -147,18 +147,18 @@ class ConfiguratorSpec : StringSpec({
     }
 
     "dev filter service names are unique" {
-        val services = config().ebmsFilter.services.map { it.name }
+        val services = config().services.map { it.name }
         services.size shouldBe services.toSet().size
     }
 
     "dev filter accepts all CPA ids for every service" {
-        val rules = config().ebmsFilter.toServiceRules()
-        rules.keys shouldBe config().ebmsFilter.services.map { it.name }.toSet()
+        val rules = config().services.toServiceRules()
+        rules.keys shouldBe config().services.map { it.name }.toSet()
         rules.values.forAll { it.allCpaIds.shouldBeTrue() }
     }
 
     "prod filter can be loaded directly and has expected values" {
-        val services = prodConfig.ebmsFilter.services
+        val services = prodConfig.services
         services.map { it.name } shouldContain "Inntektsforesporsel"
         services.map { it.name } shouldContain "Trekkopplysning"
         services.single { it.name == "urn:oasis:names:tc:ebxml-msg:service" }
@@ -166,7 +166,7 @@ class ConfiguratorSpec : StringSpec({
     }
 
     "prod filter CPA lists are resolved from file and differ from dev" {
-        val prodRules = prodConfig.ebmsFilter.toServiceRules()
+        val prodRules = prodConfig.services.toServiceRules()
         prodRules.size shouldBe 3
         prodRules.filter { it.key == "urn:oasis:names:tc:ebxml-msg:service" }.values.forAll { rule ->
             rule.allCpaIds.shouldBeTrue()
@@ -181,7 +181,7 @@ class ConfiguratorSpec : StringSpec({
     }
 
     "prod filter routes expected services to EBMS" {
-        val toEbms = prodConfig.ebmsFilter.services
+        val toEbms = prodConfig.services
             .filter { it.forwardTo == ForwardingSystem.EBMS }
             .map { it.name }
         toEbms.size shouldBe 2
@@ -190,7 +190,7 @@ class ConfiguratorSpec : StringSpec({
     }
 
     "prod filter routes expected services to BOTH" {
-        val toBoth = prodConfig.ebmsFilter.services
+        val toBoth = prodConfig.services
             .filter { it.forwardTo == ForwardingSystem.BOTH }
             .map { it.name }
         toBoth.size shouldBe 1

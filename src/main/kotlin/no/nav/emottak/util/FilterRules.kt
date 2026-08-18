@@ -2,7 +2,6 @@ package no.nav.emottak.util
 
 import arrow.core.memoize
 import no.nav.emottak.config
-import no.nav.emottak.configuration.EbmsFilter
 import no.nav.emottak.configuration.ForwardingSystem
 import no.nav.emottak.configuration.ServiceFilter
 import no.nav.emottak.log
@@ -36,17 +35,17 @@ fun Map<String, ServiceRule>.resolveForwarding(service: String, cpaId: String): 
 }
 
 val filterRules: () -> Map<String, ServiceRule> = {
-    config().ebmsFilter.toServiceRules()
+    config().services.toServiceRules()
         .onEach { (name, rule) -> log.info(rule.describe(name)) }
 }
     .memoize()
 
-fun EbmsFilter.toServiceRules(): Map<String, ServiceRule> {
-    val duplicates = services.groupingBy { it.name }.eachCount().filterValues { it > 1 }.keys
+fun List<ServiceFilter>.toServiceRules(): Map<String, ServiceRule> {
+    val duplicates = groupingBy { it.name }.eachCount().filterValues { it > 1 }.keys
     check(duplicates.isEmpty()) {
-        "Duplicate service names in ebmsFilter.services: ${duplicates.joinToString()}"
+        "Duplicate service names in filter: ${duplicates.joinToString()}"
     }
-    return services.associate { it.name to it.toServiceRule() }
+    return associate { it.name to it.toServiceRule() }
 }
 
 private fun ServiceFilter.toServiceRule(): ServiceRule {
