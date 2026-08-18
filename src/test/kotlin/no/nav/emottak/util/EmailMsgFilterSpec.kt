@@ -8,7 +8,6 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import jakarta.mail.internet.MimeMessage
 import no.nav.emottak.config
-import no.nav.emottak.configuration.EbmsFilter
 import no.nav.emottak.configuration.ForwardingSystem
 import no.nav.emottak.configuration.ServiceFilter
 import no.nav.emottak.session
@@ -37,7 +36,7 @@ class EmailMsgFilterSpec : StringSpec({
             requestId = Uuid.random()
         ).mapEmailMsg()
 
-    fun rulesOf(vararg services: ServiceFilter) = EbmsFilter(services.toList()).toServiceRules()
+    fun rulesOf(vararg services: ServiceFilter) = services.toList().toServiceRules()
 
     fun String.forwardingSystem(rules: Map<String, ServiceRule> = filterRules()): ForwardingSystem =
         emlToEmailMsg().filterMessageForwarding(rules).forwardingSystem

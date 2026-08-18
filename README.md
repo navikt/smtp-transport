@@ -32,13 +32,11 @@ kan skilles fra tjenester vi aldri har sett før.
 Tjenestene konfigureres i `filter-dev.conf` / `filter-prod.conf`:
 
 ```hocon
-ebmsFilter {
-  services = [
-    { name = "Trekkopplysning", forwardTo = "EBMS", cpaIdsFile = "cpa/prod/trekkopplysning.txt" },
-    { name = "Sykmelding", forwardTo = "EBMS", cpaIdsFile = "all" },
-    { name = "BehandlerKrav", forwardTo = "EMOTTAK", cpaIdsFile = "all" }
-  ]
-}
+services = [
+  { name = "Trekkopplysning", forwardTo = "EBMS", cpaIdsFile = "cpa/prod/trekkopplysning.txt" },
+  { name = "Sykmelding", forwardTo = "EBMS", cpaIdsFile = "all" },
+  { name = "BehandlerKrav", forwardTo = "EMOTTAK", cpaIdsFile = "all" }
+]
 ```
 
 `cpaIdsFile` peker på en tekstfil på classpath med én CPA-id per linje (`#` for kommentar, tomme linjer ignoreres),

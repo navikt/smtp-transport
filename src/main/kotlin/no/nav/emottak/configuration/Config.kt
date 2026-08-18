@@ -22,7 +22,7 @@ data class Config(
     val httpClient: HttpClient,
     val httpTokenClient: HttpClient,
     val ebmsAsync: EbmsAsync,
-    val ebmsFilter: EbmsFilter,
+    val services: List<ServiceFilter>,
     val cleanupPayloadsJob: CleanupPayloadsJob
 )
 
@@ -190,10 +190,6 @@ data class AzureAuth(
     val azureTokenEndpoint: AzureTokenEndpoint,
     val azureAppClientId: AzureApplicationId,
     val azureAppClientSecret: AzureApplicationSecret
-)
-
-data class EbmsFilter(
-    val services: List<ServiceFilter>
 )
 
 data class ServiceFilter(
