@@ -159,6 +159,7 @@ class ConfiguratorSpec : StringSpec({
         val services = prodConfig.services
         services.map { it.name } shouldContain "Inntektsforesporsel"
         services.map { it.name } shouldContain "Trekkopplysning"
+        services.map { it.name } shouldContain "Sykmelding"
         services.single { it.name == "urn:oasis:names:tc:ebxml-msg:service" }
             .forwardTo shouldBe ForwardingSystem.BOTH
     }
@@ -166,6 +167,8 @@ class ConfiguratorSpec : StringSpec({
     "prod filter CPA lists are resolved from file and differ from dev" {
         val prodRules = prodConfig.services.toServiceRules()
         prodRules.size shouldBe 4
+        prodRules["urn:oasis:names:tc:ebxml-msg:service"]!!.allCpaIds.shouldBeTrue()
+        prodRules["urn:oasis:names:tc:ebxml-msg:service"]!!.cpaIds.shouldBeEmpty()
         prodRules["Inntektsforesporsel"]!!.allCpaIds.shouldBeTrue()
         prodRules["Inntektsforesporsel"]!!.cpaIds.shouldBeEmpty()
         prodRules["Trekkopplysning"]!!.allCpaIds.shouldBeTrue()
