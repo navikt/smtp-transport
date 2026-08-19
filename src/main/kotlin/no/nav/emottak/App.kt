@@ -36,6 +36,7 @@ import no.nav.emottak.smtp.MailSender
 import no.nav.emottak.util.EbmsAsyncClient
 import no.nav.emottak.util.coroutineScope
 import no.nav.emottak.util.eventLoggingService
+import no.nav.emottak.util.filterRules
 import no.nav.emottak.utils.kafka.client.EventPublisherClient
 import no.nav.emottak.utils.kafka.service.EventLoggingService
 import org.slf4j.LoggerFactory
@@ -55,6 +56,7 @@ fun main() = SuspendApp {
     result {
         resourceScope {
             log.info("Starting application, initializing dependencies...")
+            log.info("Message filter rules loaded for ${filterRules().size} services")
             val deps = initDependencies()
             log.info("Dependencies initialized.")
             log.info("Starting flyway migrations...")
