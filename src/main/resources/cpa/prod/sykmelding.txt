@@ -1,0 +1,5 @@
+# CPA-ider for tjenesten Sykmelding
+# En CPA-id per linje. Linjer som starter med # og tomme linjer ignoreres.
+
+# Grunerløkka legesenter
+nav:112931
