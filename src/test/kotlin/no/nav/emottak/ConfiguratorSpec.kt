@@ -165,20 +165,23 @@ class ConfiguratorSpec : StringSpec({
 
     "prod filter CPA lists are resolved from file and differ from dev" {
         val prodRules = prodConfig.services.toServiceRules()
-        prodRules.size shouldBe 3
-        prodRules.values.forAll { rule ->
-            rule.allCpaIds.shouldBeTrue()
-            rule.cpaIds.shouldBeEmpty()
-        }
+        prodRules.size shouldBe 4
+        prodRules["Inntektsforesporsel"]!!.allCpaIds.shouldBeTrue()
+        prodRules["Inntektsforesporsel"]!!.cpaIds.shouldBeEmpty()
+        prodRules["Trekkopplysning"]!!.allCpaIds.shouldBeTrue()
+        prodRules["Trekkopplysning"]!!.cpaIds.shouldBeEmpty()
+        prodRules["Sykmelding"]!!.allCpaIds.shouldBeFalse()
+        prodRules["Sykmelding"]!!.cpaIds shouldContain "nav:112931"
     }
 
     "prod filter routes expected services to EBMS" {
         val toEbms = prodConfig.services
             .filter { it.forwardTo == ForwardingSystem.EBMS }
             .map { it.name }
-        toEbms.size shouldBe 2
+        toEbms.size shouldBe 3
         toEbms shouldContain "Inntektsforesporsel"
         toEbms shouldContain "Trekkopplysning"
+        toEbms shouldContain "Sykmelding"
     }
 
     "prod filter routes expected services to BOTH" {
