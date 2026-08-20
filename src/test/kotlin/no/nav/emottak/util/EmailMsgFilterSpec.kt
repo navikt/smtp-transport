@@ -2,6 +2,7 @@ package no.nav.emottak.util
 
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -106,6 +107,24 @@ class EmailMsgFilterSpec : StringSpec({
         forwardable.forwardableMimeMessage.shouldNotBeNull()
         forwardable.service shouldBe INNTEKTSFORESPORSEL
         forwardable.cpaId shouldBe "nav:12345"
+    }
+
+    "envelope, payload and total sizes are reported for a multipart payload message" {
+        val emailMsg = PAYLOAD_MESSAGE.emlToEmailMsg()
+        emailMsg.multipart shouldBe true
+        emailMsg.parts.size shouldBeGreaterThan 1
+        emailMsg.envelopeSizeBytes shouldBeGreaterThan 0
+        emailMsg.payloadSizeBytes shouldBeGreaterThan 0
+        emailMsg.totalSizeBytes shouldBe emailMsg.envelopeSizeBytes + emailMsg.payloadSizeBytes
+    }
+
+    "payload size is zero for a singlepart signal message" {
+        val emailMsg = SIGNAL_MESSAGE.emlToEmailMsg()
+        emailMsg.multipart shouldBe false
+        emailMsg.parts.size shouldBe 1
+        emailMsg.payloadSizeBytes shouldBe 0
+        emailMsg.envelopeSizeBytes shouldBeGreaterThan 0
+        emailMsg.totalSizeBytes shouldBe emailMsg.envelopeSizeBytes
     }
 
     "building rules fails when the CPA id file is missing" {

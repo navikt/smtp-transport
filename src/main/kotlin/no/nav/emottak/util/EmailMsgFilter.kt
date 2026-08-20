@@ -33,7 +33,11 @@ fun EmailMsg.filterMessageForwarding(rules: Map<String, ServiceRule> = filterRul
             "action" to action,
             "forwardingSystem" to forwardingSystem,
             "filterMatch" to forwardingDecision.filterMatch,
-            "sourceSystem" to (this.headers["X-Mailer"] ?: "-")
+            "sourceSystem" to (this.headers["X-Mailer"] ?: "-"),
+            "envelopeSizeBytes" to this.envelopeSizeBytes,
+            "payloadSizeBytes" to this.payloadSizeBytes,
+            "totalSizeBytes" to this.totalSizeBytes,
+            "partCount" to this.parts.size
         )
     )
     log.info(marker, "Message forwarding system identified")
