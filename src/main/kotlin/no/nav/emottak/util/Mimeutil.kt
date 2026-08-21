@@ -33,6 +33,18 @@ fun EmailMsg.getEnvelope() = parts
     .first()
     .bytes
 
+// Size of the ebXML SOAP envelope, which is always the first part.
+// All sizes are decoded body bytes, excluding MIME headers and transfer encoding overhead.
+val EmailMsg.envelopeSizeBytes: Int
+    get() = parts.firstOrNull()?.bytes?.size ?: 0
+
+// Combined size of all attachments, zero for singlepart (signal) messages
+val EmailMsg.payloadSizeBytes: Int
+    get() = parts.drop(1).sumOf { it.bytes.size }
+
+val EmailMsg.totalSizeBytes: Int
+    get() = parts.sumOf { it.bytes.size }
+
 private fun EmailMsg.getPayloads(messageId: Uuid) = parts
     // drop the envelope
     .drop(1)
