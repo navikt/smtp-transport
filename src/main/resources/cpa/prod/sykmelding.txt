@@ -1,5 +1,7 @@
 # CPA-ider for tjenesten Sykmelding
 # En CPA-id per linje. Linjer som starter med # og tomme linjer ignoreres.
 
-# Grunerløkka legesenter
+# Grunerløkka legesenter - Pridok
 nav:112931
+# SLETTEBAKKEN LEGESENTER DA - WebMed
+nav:114663
