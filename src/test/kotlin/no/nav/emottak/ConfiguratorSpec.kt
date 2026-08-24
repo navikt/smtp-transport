@@ -166,13 +166,15 @@ class ConfiguratorSpec : StringSpec({
 
     "prod filter CPA lists are resolved from file and differ from dev" {
         val prodRules = prodConfig.services.toServiceRules()
-        prodRules.size shouldBe 4
+        prodRules.size shouldBe 5
         prodRules["urn:oasis:names:tc:ebxml-msg:service"]!!.allCpaIds.shouldBeTrue()
         prodRules["urn:oasis:names:tc:ebxml-msg:service"]!!.cpaIds.shouldBeEmpty()
         prodRules["Inntektsforesporsel"]!!.allCpaIds.shouldBeTrue()
         prodRules["Inntektsforesporsel"]!!.cpaIds.shouldBeEmpty()
         prodRules["Trekkopplysning"]!!.allCpaIds.shouldBeTrue()
         prodRules["Trekkopplysning"]!!.cpaIds.shouldBeEmpty()
+        prodRules["PasientlisteForesporsel"]!!.allCpaIds.shouldBeTrue()
+        prodRules["PasientlisteForesporsel"]!!.cpaIds.shouldBeEmpty()
         prodRules["Sykmelding"]!!.allCpaIds.shouldBeFalse()
         prodRules["Sykmelding"]!!.cpaIds shouldContain "nav:112931"
     }
@@ -181,9 +183,10 @@ class ConfiguratorSpec : StringSpec({
         val toEbms = prodConfig.services
             .filter { it.forwardTo == ForwardingSystem.EBMS }
             .map { it.name }
-        toEbms.size shouldBe 3
+        toEbms.size shouldBe 4
         toEbms shouldContain "Inntektsforesporsel"
         toEbms shouldContain "Trekkopplysning"
+        toEbms shouldContain "PasientlisteForesporsel"
         toEbms shouldContain "Sykmelding"
     }
 
