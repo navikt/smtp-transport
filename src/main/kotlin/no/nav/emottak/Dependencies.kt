@@ -55,6 +55,9 @@ import org.apache.kafka.common.serialization.ByteArraySerializer
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.kafka.common.serialization.StringSerializer
 import org.flywaydb.core.Flyway
+import org.flywaydb.core.api.callback.Callback
+import org.flywaydb.core.api.callback.Context
+import org.flywaydb.core.api.callback.Event
 import java.net.InetSocketAddress
 import java.net.Proxy
 import java.net.Proxy.Type.HTTP
@@ -182,11 +185,24 @@ private fun migrationService(database: Database): Flyway {
     return Flyway
         .configure()
         .dataSource(database.url.value, user, password)
-        .initSql("SET ROLE \"${database.adminRole.value}\"")
+        .callbacks(setRoleAfterConnectCallback(database.adminRole.value))
         .locations(database.migrationsPath.value)
         .loggers("slf4j")
         .load()
 }
+
+private fun setRoleAfterConnectCallback(role: String): Callback =
+    object : Callback {
+        override fun supports(event: Event, context: Context) = event == Event.AFTER_CONNECT
+
+        override fun canHandleInTransaction(event: Event, context: Context) = true
+
+        override fun handle(event: Event, context: Context) {
+            context.connection.createStatement().use { it.execute("SET ROLE \"$role\"") }
+        }
+
+        override fun getCallbackName() = "SetRoleAfterConnect"
+    }
 
 private fun getVaultAdminCredentials(database: Database): DatabaseCredential =
     VaultUtil
