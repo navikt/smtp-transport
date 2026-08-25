@@ -19,7 +19,37 @@ Rutingslogikken er basert på `ForwardingSystem`-enumen:
 | `EMOTTAK` | Melding videresendes kun direkte til T1 via SMTP |
 | `BOTH` | Melding legges på Kafka *og* videresendes til T1 |
 
-Avgjørelsen tas av `EmailMsgFilter` basert på avsenderadresse og ebXML-tjenestenavn. Tillatte avsendere og tjenestenavn er konfigurert i `filter-dev.conf` / `filter-prod.conf`.
+Avgjørelsen tas av `EmailMsgFilter`. Tjenestenavnet (`Service`) fra ebXML-konvolutten er det primære filteret,
+og hver tjeneste har sin egen liste over godkjente CPA-ider:
+
+- Ukjent tjeneste → `EMOTTAK` (logges som `filterMatch = UNKNOWN_SERVICE`)
+- Kjent tjeneste og godkjent CPA-id → tjenestens konfigurerte `forwardTo` (`filterMatch = CONFIGURED`)
+- Kjent tjeneste, men CPA-id ikke i tjenestens liste → `EMOTTAK` (`filterMatch = CPA_ID_NOT_IN_LIST`)
+
+`filterMatch` logges sammen med `forwardingSystem`, slik at tjenester som med vilje er satt til `EMOTTAK`
+kan skilles fra tjenester vi aldri har sett før.
+
+Tjenestene konfigureres i `filter-dev.conf` / `filter-prod.conf`:
+
+```hocon
+services = [
+  { name = "Trekkopplysning", forwardTo = "EBMS", cpaIdsFile = "cpa/prod/trekkopplysning.txt" },
+  { name = "Sykmelding", forwardTo = "EBMS", cpaIdsFile = "all" },
+  { name = "BehandlerKrav", forwardTo = "EMOTTAK", cpaIdsFile = "all" }
+]
+```
+
+`cpaIdsFile` peker på en tekstfil på classpath med én CPA-id per linje (`#` for kommentar, tomme linjer ignoreres),
+eller den reserverte verdien `"all"` som godtar alle CPA-ider for tjenesten. Listene ligger under
+`src/main/resources/cpa/<miljø>/`, slik at store lister holdes utenfor selve konfigurasjonsfilen.
+
+`forwardTo = "EMOTTAK"` kan settes eksplisitt selv om det også er fallback-verdien. Da blir alle tjenester
+synlige i konfigurasjonen, i stedet for at noen bare er utelatt eller kommentert bort. En slik tjeneste må
+bruke `cpaIdsFile = "all"`, siden en CPA-liste ikke har noen effekt når resultatet uansett blir `EMOTTAK`.
+
+Tjenestenavn sammenlignes eksakt (case-sensitivt), mens CPA-ider sammenlignes case-insensitivt.
+Applikasjonen starter ikke hvis en `cpaIdsFile` mangler, et tjenestenavn er duplisert, eller en tjeneste
+med `forwardTo = "EMOTTAK"` angir en egen CPA-liste.
 
 ### Utgående meldinger (Kafka → SMTP)
 
@@ -53,7 +83,8 @@ Konfigurasjon lastes med Hoplite (HOCON) i følgende prioritetsrekkefølge:
 1. `/application-personal.conf` (valgfri lokal overstyring)
 2. `/kafka_common.conf` (fra `emottak-utils`-avhengigheten)
 3. `/application.conf`
-4. `/filter-dev.conf` eller `/filter-prod.conf` (velges basert på `NAIS_CLUSTER_NAME`)
+4. `/filter-dev.conf` eller `/filter-prod.conf` (velges basert på `NAIS_CLUSTER_NAME`), som igjen peker
+   på CPA-listefilene under `/cpa/<miljø>/`
 
 Sentrale konfigurasjonsverdier:
 

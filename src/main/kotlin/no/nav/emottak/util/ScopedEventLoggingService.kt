@@ -93,9 +93,13 @@ fun eventLoggingService(
             Instant.now()
         )
 
-        eventLoggingService.logEvent(event)
-            .onSuccess { log.debug("Event published successfully: {}", event) }
-            .onFailure { log.error("Error while publishing event: ${it.stackTraceToString()}") }
+        runCatching {
+            eventLoggingService.logEvent(event)
+        }.onSuccess {
+            log.debug("Event published successfully: {}", event)
+        }.onFailure { e ->
+            log.error("Error while publishing event: ${e.stackTraceToString()}")
+        }
     }
 }
 
