@@ -1,0 +1,5 @@
+# CPA-ider for tjenesten Legemelding
+# En CPA-id per linje. Linjer som starter med # og tomme linjer ignoreres.
+
+# Langnes legesenter - WebMed
+nav:112935
