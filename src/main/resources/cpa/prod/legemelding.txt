@@ -3,3 +3,9 @@
 
 # Langnes legesenter - WebMed
 nav:112935
+# Sandvika helsesenter - WebMed
+nav:113817
+# Vennesla legesenter - Infodoc
+nav:110651
+# Vadsø legekontor - Infodoc
+nav:121972
