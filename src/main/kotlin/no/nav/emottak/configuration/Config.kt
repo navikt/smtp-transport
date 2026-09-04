@@ -194,8 +194,10 @@ data class AzureAuth(
 
 data class ServiceFilter(
     val name: String,
-    val forwardTo: ForwardingSystem,
-    val cpaIdsFile: String
+    val both: Boolean,
+    val selection: String,
+    val whitelist: String? = null,
+    val blacklist: String? = null
 )
 
 data class CleanupPayloadsJob(
