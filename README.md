@@ -23,17 +23,17 @@ Avgjørelsen tas av `EmailMsgFilter`. Tjenestenavnet (`Service`) fra ebXML-konvo
 og hver tjeneste kan konfigureres til å sende alle eller noen meldinger til EBMS. Dersom det ikke finnes et filter for en tjeneste,
 vil alle meldinger for tjenesten sendes til EMOTTAK.
 
-Hvert filter settes opp med `mode` som enten er 
-- `both` (matchende meldinger sendes både til EBMS og EMOTTAK) eller 
-- `split` (matchende meldinger sendes bare EBMS).
+Hvert filter settes opp med `both = true|false`  
+- `true` matchende meldinger sendes både til EBMS og EMOTTAK 
+- `false` matchende meldinger sendes bare til EBMS
 
 Matchende meldinger angis med `selection`, en av følgende:
-- `all` alle meldinger for tjenesten rutes ihht. mode
-- `percentageNN` NN prosent (heltall < 100) rutes ihht. mode, resten til EMOTTAK
-- `lastDigitN` CPA-IDer med sistesiffer lik N (kan angi flere) rutes ihht. mode, resten til EMOTTAK
-- `none` ingen CPA-IDer rutes ihht. mode. Brukes sammen med whitelist, eller for å dokumentere tjenester til EMOTTAK eksplisitt
+- `all` alle meldinger for tjenesten rutes ihht. both-setting
+- `percentageNN` NN prosent (heltall < 100) rutes ihht. both-setting, resten til EMOTTAK
+- `lastDigitN` CPA-IDer med sistesiffer lik N (kan angi flere) rutes ihht. both-setting, resten til EMOTTAK
+- `none` ingen CPA-IDer rutes ihht. both-setting. Brukes sammen med whitelist, eller for å dokumentere tjenester til EMOTTAK eksplisitt
 
-Alle konfigurasjoner må angi `mode` og `selection`.
+Alle konfigurasjoner må angi `both` og `selection`.
 
 Dersom `blacklist` er angitt, vil CPA-IDene i lista IKKE inkluderes, uansett `selection`, disse rutes alltid til EMOTTAK
 
@@ -43,9 +43,9 @@ Tjenestene konfigureres i `filter-dev.conf` / `filter-prod.conf`:
 
 ```hocon
 services = [
-  { name = "Trekkopplysning", mode = "split", selection = "none", whitelist = "cpa/prod/trekkopplysning.txt" },
-  { name = "Sykmelding", mode = "split", selection = "all" },
-  { name = "BehandlerKrav", mode = "split", selection = "none" }
+  { name = "Trekkopplysning", both=false, selection = "none", whitelist = "cpa/prod/trekkopplysning.txt" },
+  { name = "Sykmelding", both=false, selection = "all" },
+  { name = "BehandlerKrav", both=false, selection = "none" }
 ]
 ```
 
@@ -53,7 +53,7 @@ services = [
 . Listene ligger under `src/main/resources/cpa/<miljø>/`, slik at store lister holdes utenfor selve konfigurasjonsfilen.
 
 Tjenestenavn sammenlignes eksakt (case-sensitivt), mens CPA-ider sammenlignes case-insensitivt.
-Applikasjonen starter ikke hvis en `mode` eller `selection` mangler, eller et tjenestenavn er duplisert.
+Applikasjonen starter ikke hvis en `both` eller `selection` mangler, eller et tjenestenavn er duplisert.
 
 ### Utgående meldinger (Kafka → SMTP)
 

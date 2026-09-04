@@ -7,9 +7,6 @@ import no.nav.emottak.configuration.ForwardingSystem
 import no.nav.emottak.configuration.ServiceFilter
 import no.nav.emottak.log
 
-private const val MODE_BOTH = "both"
-private const val MODE_NEW_EMOTTAK = "split"
-
 private const val ALL_CPA_IDS = "all"
 private const val ONLY_OLD_EMOTTAK = "none"
 private const val PERCENT_PREFIX = "percentage"
@@ -18,9 +15,8 @@ private const val LAST_DIGIT_PREFIX = "lastdigit"
 private const val COMMENT_PREFIX = "#"
 
 enum class FilterType {
-    ALL_TO_OLD,
-    SOME_TO_BOTH,
-    SOME_TO_NEW
+    MATCHING_TO_BOTH,
+    MATCHING_TO_NEW
 }
 enum class SelectionType {
     ALL,
@@ -40,8 +36,6 @@ data class ServiceRule(
     val blacklist: Set<String>
 ) {
     fun accepts(cpaId: String): Pair<Boolean, FilterMatch> {
-        if (filterType == FilterType.ALL_TO_OLD) return Pair(false, FilterMatch.ALL)
-
         // Blacklist og whitelist overstyrer alle andre settinger
         if (blacklist.contains(cpaId)) return Pair(false, FilterMatch.BLACK_LISTED)
         if (whitelist.contains(cpaId)) return Pair(true, FilterMatch.WHITE_LISTED)
@@ -76,9 +70,8 @@ fun Map<String, ServiceRule>.resolveForwarding(service: String, cpaId: String): 
         ?: return ForwardingDecision(ForwardingSystem.EMOTTAK, FilterMatch.UNKNOWN_SERVICE)
     val decision = rule.accepts(cpaId)
     val forwardTo = when (rule.filterType) {
-        FilterType.ALL_TO_OLD -> ForwardingSystem.EMOTTAK
-        FilterType.SOME_TO_BOTH -> if (decision.first) ForwardingSystem.BOTH else ForwardingSystem.EMOTTAK
-        FilterType.SOME_TO_NEW -> if (decision.first) ForwardingSystem.EBMS else ForwardingSystem.EMOTTAK
+        FilterType.MATCHING_TO_BOTH -> if (decision.first) ForwardingSystem.BOTH else ForwardingSystem.EMOTTAK
+        FilterType.MATCHING_TO_NEW -> if (decision.first) ForwardingSystem.EBMS else ForwardingSystem.EMOTTAK
     }
     return ForwardingDecision(forwardTo, decision.second)
 }
@@ -98,11 +91,9 @@ fun List<ServiceFilter>.toServiceRules(): Map<String, ServiceRule> {
 }
 
 private fun ServiceFilter.toServiceRule(): ServiceRule {
-    val filterType = when (mode.toLowerCasePreservingASCIIRules()) {
-        ONLY_OLD_EMOTTAK -> FilterType.ALL_TO_OLD
-        MODE_BOTH -> FilterType.SOME_TO_BOTH
-        MODE_NEW_EMOTTAK -> FilterType.SOME_TO_NEW
-        else -> { throw IllegalStateException("Unknown mode: $mode") }
+    val filterType = when (both) {
+        true -> FilterType.MATCHING_TO_BOTH
+        false -> FilterType.MATCHING_TO_NEW
     }
     val selectionType = if (selection.toLowerCasePreservingASCIIRules() == ALL_CPA_IDS) {
         SelectionType.ALL

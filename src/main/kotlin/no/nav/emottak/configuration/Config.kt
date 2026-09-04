@@ -194,7 +194,7 @@ data class AzureAuth(
 
 data class ServiceFilter(
     val name: String,
-    val mode: String,
+    val both: Boolean,
     val selection: String,
     val whitelist: String? = null,
     val blacklist: String? = null

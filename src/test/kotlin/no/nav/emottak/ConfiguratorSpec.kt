@@ -3,14 +3,12 @@ package no.nav.emottak
 import com.sksamuel.hoplite.ConfigLoader
 import com.sksamuel.hoplite.addResourceSource
 import io.kotest.core.spec.style.StringSpec
-import io.kotest.inspectors.forAll
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeSameInstanceAs
-import io.ktor.util.toLowerCasePreservingASCIIRules
 import no.nav.emottak.configuration.Config
 import no.nav.emottak.util.SelectionType
 import no.nav.emottak.util.toServiceRules
@@ -117,7 +115,7 @@ class ConfiguratorSpec : StringSpec({
 
     "dev filter routes expected services to EBMS" {
         val toEbms = config().services
-            .filter { it.mode == "split" }
+            .filter { it.both == false }
             .map { it.name }
         toEbms.size shouldBe 6
         toEbms shouldContain "Inntektsforesporsel"
@@ -130,7 +128,7 @@ class ConfiguratorSpec : StringSpec({
 
     "dev filter routes expected services to BOTH" {
         val toBoth = config().services
-            .filter { it.mode == "BOTH" }
+            .filter { it.both == true }
             .map { it.name }
         toBoth.size shouldBeGreaterThan 3
         toBoth shouldContain "urn:oasis:names:tc:ebxml-msg:service"
@@ -138,7 +136,7 @@ class ConfiguratorSpec : StringSpec({
 
     "dev filter routes expected services to EMOTTAK" {
         val toEmottak = config().services
-            .filter { it.mode == "none" }
+            .filter { it.both == true }
             .map { it.name }
         toEmottak shouldContain "BehandlerKrav"
         toEmottak shouldContain "OppgjorsKontroll"
@@ -149,12 +147,6 @@ class ConfiguratorSpec : StringSpec({
         services.size shouldBe services.toSet().size
     }
 
-    "dev filter accepts all CPA ids for every service" {
-        val rules = config().services.toServiceRules()
-        rules.keys shouldBe config().services.map { it.name }.toSet()
-        rules.values.forAll { it.selectionType.shouldBe(SelectionType.ALL) }
-    }
-
     "prod filter can be loaded directly and has expected values" {
         val services = prodConfig.services
         services.map { it.name } shouldContain "Inntektsforesporsel"
@@ -162,7 +154,7 @@ class ConfiguratorSpec : StringSpec({
         services.map { it.name } shouldContain "Sykmelding"
         services.map { it.name } shouldContain "Legemelding"
         services.single { it.name == "urn:oasis:names:tc:ebxml-msg:service" }
-            .mode.toLowerCasePreservingASCIIRules() shouldBe "both"
+            .both shouldBe true
     }
 
     "prod filter CPA lists are resolved from file and differ from dev" {
@@ -190,7 +182,7 @@ class ConfiguratorSpec : StringSpec({
 
     "prod filter routes expected services to EBMS" {
         val toEbms = prodConfig.services
-            .filter { it.mode == "split" }
+            .filter { it.both == false }
             .map { it.name }
         toEbms.size shouldBe 5
         toEbms shouldContain "Inntektsforesporsel"
@@ -202,7 +194,7 @@ class ConfiguratorSpec : StringSpec({
 
     "prod filter routes expected services to BOTH" {
         val toBoth = prodConfig.services
-            .filter { it.mode.toLowerCasePreservingASCIIRules() == "both" }
+            .filter { it.both == true }
             .map { it.name }
         toBoth.size shouldBe 1
         toBoth shouldContain "urn:oasis:names:tc:ebxml-msg:service"

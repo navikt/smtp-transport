@@ -60,49 +60,49 @@ class EmailMsgFilterSpec : StringSpec({
     }
 
     "filterMessageForwarding returns configured system when service CPA id is in the list" {
-        val rules = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, "split", "all", TEST_CPA_IDS_FILE))
+        val rules = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, false, "all", TEST_CPA_IDS_FILE))
         PAYLOAD_MESSAGE.forwardingSystem(rules) shouldBe ForwardingSystem.EBMS
     }
 
     "filterMessageForwarding matches CPA ids case-insensitively" {
-        val rules = rulesOf(ServiceFilter("urn:oasis:names:tc:ebxml-msg:service", "both", "all", TEST_CPA_IDS_FILE))
+        val rules = rulesOf(ServiceFilter("urn:oasis:names:tc:ebxml-msg:service", true, "all", TEST_CPA_IDS_FILE))
         SIGNAL_MESSAGE.forwardingSystem(rules) shouldBe ForwardingSystem.BOTH
     }
 
     "filterMessageForwarding returns EMOTTAK when service CPA id is not in the list" {
-        val rules = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, "split", "lastDigit9", TEST_CPA_IDS_FILE))
+        val rules = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, false, "lastDigit9", TEST_CPA_IDS_FILE))
         PAYLOAD_MESSAGE_INVALID_CPAID.forwardingSystem(rules) shouldBe ForwardingSystem.EMOTTAK
     }
 
     "filterMessageForwarding returns EMOTTAK when CPA id is missing and service has an explicit list" {
-        val rules = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, "split", "lastDigit9", TEST_CPA_IDS_FILE))
+        val rules = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, false, "lastDigit9", TEST_CPA_IDS_FILE))
         EBXML_NO_CPAID.forwardingSystem(rules) shouldBe ForwardingSystem.EMOTTAK
     }
 
     "filterMessageForwarding returns configured system for any CPA id when service is configured with all" {
-        val rules = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, "both", "all"))
+        val rules = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, true, "all"))
         PAYLOAD_MESSAGE_INVALID_CPAID.forwardingSystem(rules) shouldBe ForwardingSystem.BOTH
     }
 
     "filterMessageForwarding returns EMOTTAK when another service is configured" {
-        val rules = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, "none", "all"))
+        val rules = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, true, "all"))
         PAYLOAD_MESSAGE_OTHER_SERVICE.forwardingSystem(rules) shouldBe ForwardingSystem.EMOTTAK
     }
 
     "filterMessageForwarding matches service names case-sensitively" {
-        val rules = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL.uppercase(), "none", "all"))
+        val rules = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL.uppercase(), true, "all"))
         PAYLOAD_MESSAGE.forwardingSystem(rules) shouldBe ForwardingSystem.EMOTTAK
     }
 
     "filterMessageForwarding drops the original message when forwarding to EBMS only" {
-        val rules = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, "split", "all", TEST_CPA_IDS_FILE))
+        val rules = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, false, "all", TEST_CPA_IDS_FILE))
         val forwardable = PAYLOAD_MESSAGE.emlToEmailMsg().filterMessageForwarding(rules)
         forwardable.forwardingSystem shouldBe ForwardingSystem.EBMS
         forwardable.forwardableMimeMessage.shouldBeNull()
     }
 
     "filterMessageForwarding keeps the original message when forwarding to EMOTTAK" {
-        val rules = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, "none", "all", TEST_CPA_IDS_FILE))
+        val rules = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, both = true, "none", TEST_CPA_IDS_FILE))
         val forwardable = PAYLOAD_MESSAGE_INVALID_CPAID.emlToEmailMsg().filterMessageForwarding(rules)
         forwardable.forwardingSystem shouldBe ForwardingSystem.EMOTTAK
         forwardable.forwardableMimeMessage.shouldNotBeNull()
@@ -130,35 +130,28 @@ class EmailMsgFilterSpec : StringSpec({
 
     "building rules fails when the CPA id file is missing" {
         val exception = shouldThrow<IllegalStateException> {
-            rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, "none", "all", "cpa/test/does-not-exist.txt"))
+            rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, true, "all", "cpa/test/does-not-exist.txt"))
         }
         exception.message!! shouldContain "cpa/test/does-not-exist.txt"
     }
 
-    "building rules fails when mode is invalid" {
-        val exception = shouldThrow<IllegalStateException> {
-            rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, "non", selection = "all"))
-        }
-        exception.message!! shouldContain "mode"
-    }
-
     "building rules fails when selection is invalid" {
         val exception = shouldThrow<IllegalStateException> {
-            rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, "none", selection = "firstdigit1"))
+            rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, true, selection = "firstdigit1"))
         }
         exception.message!! shouldContain "selection"
     }
 
     "building rules fails when percentage is invalid" {
         val exception = shouldThrow<NumberFormatException> {
-            rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, "none", selection = "percentageXX"))
+            rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, true, selection = "percentageXX"))
         }
         exception.message!! shouldContain "XX"
     }
 
     "building rules fails when last digit setting is invalid" {
         val exception = shouldThrow<IllegalArgumentException> {
-            rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, "none", selection = "lastDigitXX"))
+            rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, true, selection = "lastDigitXX"))
         }
         exception.message!! shouldContain "digit"
     }
@@ -166,8 +159,8 @@ class EmailMsgFilterSpec : StringSpec({
     "building rules fails on duplicate service names" {
         val exception = shouldThrow<IllegalStateException> {
             rulesOf(
-                ServiceFilter(INNTEKTSFORESPORSEL, "none", "all"),
-                ServiceFilter(INNTEKTSFORESPORSEL, "both", "all")
+                ServiceFilter(INNTEKTSFORESPORSEL, true, "all"),
+                ServiceFilter(INNTEKTSFORESPORSEL, true, "all")
             )
         }
         exception.message!! shouldContain INNTEKTSFORESPORSEL
@@ -185,90 +178,90 @@ blacklist match: alle ovenfor som ga nye/begge gir gamle.
  */
 
     "filterMessageForwarding returns EMOTTAK when service is NOT configured" {
-        val rules = rulesOf(ServiceFilter("someOtherService", "both", "all"))
+        val rules = rulesOf(ServiceFilter("someOtherService", true, "all"))
         PAYLOAD_MESSAGE.forwardingSystem(rules) shouldBe ForwardingSystem.EMOTTAK
     }
 
     "filterMessageForwarding returns EMOTTAK when service is configured with NONE + BOTH/SPLIT" {
-        val rules = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, "both", "none"))
+        val rules = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, true, "none"))
         PAYLOAD_MESSAGE.forwardingSystem(rules) shouldBe ForwardingSystem.EMOTTAK
-        val rules2 = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, "split", "none"))
+        val rules2 = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, false, "none"))
         PAYLOAD_MESSAGE.forwardingSystem(rules2) shouldBe ForwardingSystem.EMOTTAK
     }
 
     "filterMessageForwarding returns EBMS/BOTH when service is configured with ALL + SPLIT/BOTH" {
-        val rules = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, "split", "all"))
+        val rules = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, false, "all"))
         PAYLOAD_MESSAGE.forwardingSystem(rules) shouldBe ForwardingSystem.EBMS
-        val rules2 = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, "both", "all"))
+        val rules2 = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, true, "all"))
         PAYLOAD_MESSAGE.forwardingSystem(rules2) shouldBe ForwardingSystem.BOTH
     }
 
     "filterMessageForwarding returns EMOTTAK when service is configured with UNmatching CPA-ID lastdigit + BOTH/SPLIT" {
-        val rules = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, "both", "lastDigit234567890")) // 1 would match
+        val rules = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, true, "lastDigit234567890")) // 1 would match
         PAYLOAD_MESSAGE.forwardingSystem(rules) shouldBe ForwardingSystem.EMOTTAK
-        val rules2 = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, "split", "lastDigit234567890"))
+        val rules2 = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, false, "lastDigit234567890"))
         PAYLOAD_MESSAGE.forwardingSystem(rules2) shouldBe ForwardingSystem.EMOTTAK
     }
 
     "filterMessageForwarding returns EBMS/BOTH when service is configured with matching CPA-ID lastdigit + SPLIT/BOTH" {
-        val rules = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, "split", "lastDigit1"))
+        val rules = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, false, "lastDigit1"))
         PAYLOAD_MESSAGE.forwardingSystem(rules) shouldBe ForwardingSystem.EBMS
-        val rules2 = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, "both", "lastDigit1"))
+        val rules2 = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, true, "lastDigit1"))
         PAYLOAD_MESSAGE.forwardingSystem(rules2) shouldBe ForwardingSystem.BOTH
     }
 
     "filterMessageForwarding returns EMOTTAK when service is configured with UNmatching percentage + BOTH/SPLIT" {
-        val rules = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, "both", "percentage0")) // 0 percent will be routed
+        val rules = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, true, "percentage0")) // 0 percent will be routed
         PAYLOAD_MESSAGE.forwardingSystem(rules) shouldBe ForwardingSystem.EMOTTAK
-        val rules2 = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, "split", "percentage0"))
+        val rules2 = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, false, "percentage0"))
         PAYLOAD_MESSAGE.forwardingSystem(rules2) shouldBe ForwardingSystem.EMOTTAK
     }
 
     "filterMessageForwarding returns EBMS/BOTH when service is configured with matching percentage + SPLIT/BOTH" {
-        val rules = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, "split", "percentage101")) // 100 percent will be routed
+        val rules = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, false, "percentage101")) // 100 percent will be routed
         PAYLOAD_MESSAGE.forwardingSystem(rules) shouldBe ForwardingSystem.EBMS
-        val rules2 = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, "both", "percentage101"))
+        val rules2 = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, true, "percentage101"))
         PAYLOAD_MESSAGE.forwardingSystem(rules2) shouldBe ForwardingSystem.BOTH
     }
 
     "filterMessageForwarding returns EBMS/BOTH in all cases that normally give EMOTTAK when whitelist includes the CPA-ID" {
-        val rules = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, "both", "none", whitelist = TEST_CPA_IDS_FILE))
+        val rules = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, true, "none", whitelist = TEST_CPA_IDS_FILE))
         PAYLOAD_MESSAGE.forwardingSystem(rules) shouldBe ForwardingSystem.BOTH
-        val rules2 = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, "split", "none", whitelist = TEST_CPA_IDS_FILE))
+        val rules2 = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, false, "none", whitelist = TEST_CPA_IDS_FILE))
         PAYLOAD_MESSAGE.forwardingSystem(rules2) shouldBe ForwardingSystem.EBMS
-        val rules3 = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, "both", "lastDigit234567890", whitelist = TEST_CPA_IDS_FILE)) // 1 would match
+        val rules3 = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, true, "lastDigit234567890", whitelist = TEST_CPA_IDS_FILE)) // 1 would match
         PAYLOAD_MESSAGE.forwardingSystem(rules3) shouldBe ForwardingSystem.BOTH
-        val rules4 = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, "split", "lastDigit234567890", whitelist = TEST_CPA_IDS_FILE))
+        val rules4 = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, false, "lastDigit234567890", whitelist = TEST_CPA_IDS_FILE))
         PAYLOAD_MESSAGE.forwardingSystem(rules4) shouldBe ForwardingSystem.EBMS
-        val rule5 = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, "both", "percentage0", whitelist = TEST_CPA_IDS_FILE))
+        val rule5 = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, true, "percentage0", whitelist = TEST_CPA_IDS_FILE))
         PAYLOAD_MESSAGE.forwardingSystem(rules) shouldBe ForwardingSystem.BOTH
-        val rules6 = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, "split", "percentage0", whitelist = TEST_CPA_IDS_FILE))
+        val rules6 = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, false, "percentage0", whitelist = TEST_CPA_IDS_FILE))
         PAYLOAD_MESSAGE.forwardingSystem(rules2) shouldBe ForwardingSystem.EBMS
     }
 
     "filterMessageForwarding returns EMOTTAK in all cases that normally give EBMS/BOTH when blacklist includes the CPA-ID" {
-        val rules = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, "split", "all", blacklist = TEST_CPA_IDS_FILE))
+        val rules = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, false, "all", blacklist = TEST_CPA_IDS_FILE))
         PAYLOAD_MESSAGE.forwardingSystem(rules) shouldBe ForwardingSystem.EMOTTAK
-        val rules2 = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, "both", "all", blacklist = TEST_CPA_IDS_FILE))
+        val rules2 = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, true, "all", blacklist = TEST_CPA_IDS_FILE))
         PAYLOAD_MESSAGE.forwardingSystem(rules2) shouldBe ForwardingSystem.EMOTTAK
-        val rules3 = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, "split", "lastDigit1", blacklist = TEST_CPA_IDS_FILE))
+        val rules3 = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, false, "lastDigit1", blacklist = TEST_CPA_IDS_FILE))
         PAYLOAD_MESSAGE.forwardingSystem(rules3) shouldBe ForwardingSystem.EMOTTAK
-        val rules4 = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, "both", "lastDigit1", blacklist = TEST_CPA_IDS_FILE))
+        val rules4 = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, true, "lastDigit1", blacklist = TEST_CPA_IDS_FILE))
         PAYLOAD_MESSAGE.forwardingSystem(rules4) shouldBe ForwardingSystem.EMOTTAK
-        val rule5 = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, "both", "percentage101", blacklist = TEST_CPA_IDS_FILE))
+        val rule5 = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, true, "percentage101", blacklist = TEST_CPA_IDS_FILE))
         PAYLOAD_MESSAGE.forwardingSystem(rules) shouldBe ForwardingSystem.EMOTTAK
-        val rules6 = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, "split", "percentage101", blacklist = TEST_CPA_IDS_FILE))
+        val rules6 = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, false, "percentage101", blacklist = TEST_CPA_IDS_FILE))
         PAYLOAD_MESSAGE.forwardingSystem(rules2) shouldBe ForwardingSystem.EMOTTAK
     }
 
     "resolveForwarding reports UNKNOWN_SERVICE when the service is not configured" {
-        val rules = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, "both", "all"))
+        val rules = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, true, "all"))
         rules.resolveForwarding("UkonfigurertTjeneste", CPAID_IN_TESTFILE) shouldBe
             ForwardingDecision(ForwardingSystem.EMOTTAK, FilterMatch.UNKNOWN_SERVICE)
     }
 
     "resolveForwarding reports BOTH when last digit in CPA-ID matches, EMOTTAK otherwise" {
-        val rules = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, "both", "lastDigit24680"))
+        val rules = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, true, "lastDigit24680"))
         rules.resolveForwarding(INNTEKTSFORESPORSEL, "cpaId1") shouldBe
             ForwardingDecision(ForwardingSystem.EMOTTAK, FilterMatch.BY_CPAID_MATCH)
         rules.resolveForwarding(INNTEKTSFORESPORSEL, "cpaId2") shouldBe
@@ -292,7 +285,7 @@ blacklist match: alle ovenfor som ga nye/begge gir gamle.
     }
 
     "resolveForwarding reports BOTH when percentage setting gets hit, EMOTTAK otherwise" {
-        val rules = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, "both", "percentage50"))
+        val rules = rulesOf(ServiceFilter(INNTEKTSFORESPORSEL, true, "percentage50"))
         var count_both = 0
         var count_emottak = 0
         for (i in 1..1000) {
