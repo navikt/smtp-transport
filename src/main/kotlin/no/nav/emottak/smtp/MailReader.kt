@@ -8,6 +8,7 @@ import jakarta.mail.MessagingException
 import jakarta.mail.Store
 import jakarta.mail.internet.MimeMessage
 import jakarta.mail.internet.MimeMultipart
+import kotlinx.serialization.json.Json
 import no.nav.emottak.configuration.ForwardingSystem
 import no.nav.emottak.configuration.Mail
 import no.nav.emottak.log
@@ -148,9 +149,15 @@ class MailReader(
 
     private fun registerEvent(wrapper: MimeMessageWrapper) = eventLoggingService
         .registerEvent(
-            MESSAGE_RECEIVED_VIA_SMTP,
-            wrapper.mimeMessage,
-            wrapper.requestId
+            eventType = MESSAGE_RECEIVED_VIA_SMTP,
+            mimeMessage = wrapper.mimeMessage,
+            requestId = wrapper.requestId,
+            eventData = Json.encodeToString(
+                mapOf(
+                    "senderAddress" to (wrapper.mimeMessage.from?.firstOrNull()?.toString() ?: ""),
+                    "receiverAddress" to (wrapper.mimeMessage.allRecipients?.firstOrNull()?.toString() ?: "")
+                )
+            )
         )
 
     private fun registerEvent(error: MessagingException) = eventLoggingService

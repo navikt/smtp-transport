@@ -16,6 +16,7 @@ import jakarta.mail.internet.MimeMultipart
 import jakarta.mail.util.ByteArrayDataSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
 import no.nav.emottak.configuration.Smtp
 import no.nav.emottak.incrementMessagesSent
 import no.nav.emottak.log
@@ -100,7 +101,13 @@ class MailSender(
                 eventLoggingService.registerEvent(
                     MESSAGE_SENT_VIA_SMTP,
                     wrapper.mimeMessage,
-                    wrapper.requestId
+                    wrapper.requestId,
+                    Json.encodeToString(
+                        mapOf(
+                            "senderAddress" to (wrapper.mimeMessage.from?.firstOrNull()?.toString() ?: ""),
+                            "receiverAddress" to (wrapper.mimeMessage.allRecipients?.firstOrNull()?.toString() ?: "")
+                        )
+                    )
                 )
             }) { error: MessagingException ->
                 log.error("Failed to send $messageType message: ${error.stackTraceToString()}")
