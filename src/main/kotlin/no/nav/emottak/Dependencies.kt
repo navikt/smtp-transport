@@ -193,12 +193,12 @@ private fun migrationService(database: Database): Flyway {
 
 private fun setRoleAfterConnectCallback(role: String): Callback =
     object : Callback {
-        override fun supports(event: Event, context: Context) = event == Event.AFTER_CONNECT
+        override fun supports(event: Event, context: Context?) = event == Event.AFTER_CONNECT
 
-        override fun canHandleInTransaction(event: Event, context: Context) = true
+        override fun canHandleInTransaction(event: Event, context: Context?) = true
 
-        override fun handle(event: Event, context: Context) {
-            context.connection.createStatement().use { it.execute("SET ROLE \"$role\"") }
+        override fun handle(event: Event, context: Context?) {
+            context?.connection?.createStatement().use { it?.execute("SET ROLE \"$role\"") }
         }
 
         override fun getCallbackName() = "SetRoleAfterConnect"
