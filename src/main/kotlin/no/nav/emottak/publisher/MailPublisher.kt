@@ -1,12 +1,14 @@
 package no.nav.emottak.publisher
 
 import io.github.nomisRev.kafka.publisher.KafkaPublisher
+import kotlinx.serialization.json.Json
 import no.nav.emottak.config
 import no.nav.emottak.log
 import no.nav.emottak.model.PayloadMessage
 import no.nav.emottak.model.SignalMessage
 import no.nav.emottak.util.SENDER_ADDRESS
 import no.nav.emottak.util.ScopedEventLoggingService
+import no.nav.emottak.utils.kafka.model.EventDataType
 import no.nav.emottak.utils.kafka.model.EventType.ERROR_WHILE_STORING_MESSAGE_IN_QUEUE
 import no.nav.emottak.utils.kafka.model.EventType.MESSAGE_PLACED_IN_QUEUE
 import org.apache.kafka.clients.producer.ProducerRecord
@@ -37,17 +39,27 @@ class MailPublisher(
                 log.info("Published message with reference id $referenceId to: $topic")
 
                 eventLoggingService.registerEvent(
-                    MESSAGE_PLACED_IN_QUEUE,
-                    referenceId
+                    eventType = MESSAGE_PLACED_IN_QUEUE,
+                    messageId = referenceId,
+                    referenceId = referenceId,
+                    eventData = Json.encodeToString(
+                        mapOf(EventDataType.QUEUE_NAME.value to topic)
+                    )
                 )
             }
             .onFailure {
-                log.error("Failed to publish message with reference id: $referenceId")
+                log.error("Failed to publish message with reference id: $referenceId", it)
 
                 eventLoggingService.registerEvent(
-                    ERROR_WHILE_STORING_MESSAGE_IN_QUEUE,
-                    Exception("Failed to publish message with reference id: $referenceId and content: $content"),
-                    referenceId
+                    eventType = ERROR_WHILE_STORING_MESSAGE_IN_QUEUE,
+                    messageId = referenceId,
+                    referenceId = referenceId,
+                    eventData = Json.encodeToString(
+                        mapOf(
+                            EventDataType.ERROR_MESSAGE.value to it.localizedMessage,
+                            EventDataType.QUEUE_NAME.value to topic
+                        )
+                    )
                 )
             }
 

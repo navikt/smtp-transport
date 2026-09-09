@@ -24,6 +24,7 @@ import no.nav.emottak.util.EbmsAsyncClient
 import no.nav.emottak.util.SENDER_ADDRESS
 import no.nav.emottak.util.ScopedEventLoggingService
 import no.nav.emottak.util.getHeaderValueAsString
+import no.nav.emottak.utils.kafka.model.EventDataType
 import no.nav.emottak.utils.kafka.model.EventType.ERROR_WHILE_RECEIVING_PAYLOAD_VIA_HTTP
 import no.nav.emottak.utils.kafka.model.EventType.MESSAGE_READ_FROM_QUEUE
 import no.nav.emottak.utils.kafka.model.EventType.PAYLOAD_RECEIVED_VIA_HTTP
@@ -66,8 +67,14 @@ class PayloadReceiver(
             )
 
         eventLoggingService.registerEvent(
-            MESSAGE_READ_FROM_QUEUE,
-            referenceId
+            eventType = MESSAGE_READ_FROM_QUEUE,
+            messageId = referenceId,
+            referenceId = referenceId,
+            eventData = Json.encodeToString(
+                mapOf(
+                    EventDataType.QUEUE_NAME.value to kafka.payloadOutTopic
+                )
+            )
         )
 
         return MailRoutingPayloadMessage(mailMetadata, payloadMessage)
