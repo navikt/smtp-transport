@@ -5,6 +5,7 @@ import io.github.nomisRev.kafka.receiver.ReceiverRecord
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.json.Json
 import no.nav.emottak.config
 import no.nav.emottak.log
 import no.nav.emottak.model.MailMetadata
@@ -16,6 +17,7 @@ import no.nav.emottak.util.EMAIL_ADDRESSES
 import no.nav.emottak.util.SENDER_ADDRESS
 import no.nav.emottak.util.ScopedEventLoggingService
 import no.nav.emottak.util.getHeaderValueAsString
+import no.nav.emottak.utils.kafka.model.EventDataType
 import no.nav.emottak.utils.kafka.model.EventType.MESSAGE_READ_FROM_QUEUE
 import kotlin.uuid.Uuid
 
@@ -51,8 +53,14 @@ class SignalReceiver(
         )
 
         eventLoggingService.registerEvent(
-            MESSAGE_READ_FROM_QUEUE,
-            signalMessage.messageId
+            eventType = MESSAGE_READ_FROM_QUEUE,
+            messageId = signalMessage.messageId,
+            referenceId = signalMessage.messageId,
+            eventData = Json.encodeToString(
+                mapOf(
+                    EventDataType.QUEUE_NAME.value to kafka.signalOutTopic
+                )
+            )
         )
 
         return MailRoutingSignalMessage(mailMetadata, signalMessage)
