@@ -233,10 +233,10 @@ blacklist match: alle ovenfor som ga nye/begge gir gamle.
         PAYLOAD_MESSAGE.forwardingSystem(rules3) shouldBe ForwardingSystem.BOTH
         val rules4 = rulesOf(ServiceFilter(name = INNTEKTSFORESPORSEL, both = false, selection = "lastDigit234567890", whitelist = TEST_CPA_IDS_FILE))
         PAYLOAD_MESSAGE.forwardingSystem(rules4) shouldBe ForwardingSystem.EBMS
-        val rule5 = rulesOf(ServiceFilter(name = INNTEKTSFORESPORSEL, both = true, selection = "percentage0", whitelist = TEST_CPA_IDS_FILE))
-        PAYLOAD_MESSAGE.forwardingSystem(rules) shouldBe ForwardingSystem.BOTH
+        val rules5 = rulesOf(ServiceFilter(name = INNTEKTSFORESPORSEL, both = true, selection = "percentage0", whitelist = TEST_CPA_IDS_FILE))
+        PAYLOAD_MESSAGE.forwardingSystem(rules5) shouldBe ForwardingSystem.BOTH
         val rules6 = rulesOf(ServiceFilter(name = INNTEKTSFORESPORSEL, both = false, selection = "percentage0", whitelist = TEST_CPA_IDS_FILE))
-        PAYLOAD_MESSAGE.forwardingSystem(rules2) shouldBe ForwardingSystem.EBMS
+        PAYLOAD_MESSAGE.forwardingSystem(rules6) shouldBe ForwardingSystem.EBMS
     }
 
     "filterMessageForwarding returns EMOTTAK in all cases that normally give EBMS/BOTH when blacklist includes the CPA-ID" {
@@ -248,10 +248,10 @@ blacklist match: alle ovenfor som ga nye/begge gir gamle.
         PAYLOAD_MESSAGE.forwardingSystem(rules3) shouldBe ForwardingSystem.EMOTTAK
         val rules4 = rulesOf(ServiceFilter(name = INNTEKTSFORESPORSEL, both = true, selection = "lastDigit1", blacklist = TEST_CPA_IDS_FILE))
         PAYLOAD_MESSAGE.forwardingSystem(rules4) shouldBe ForwardingSystem.EMOTTAK
-        val rule5 = rulesOf(ServiceFilter(name = INNTEKTSFORESPORSEL, both = true, selection = "percentage101", blacklist = TEST_CPA_IDS_FILE))
-        PAYLOAD_MESSAGE.forwardingSystem(rules) shouldBe ForwardingSystem.EMOTTAK
+        val rules5 = rulesOf(ServiceFilter(name = INNTEKTSFORESPORSEL, both = true, selection = "percentage101", blacklist = TEST_CPA_IDS_FILE))
+        PAYLOAD_MESSAGE.forwardingSystem(rules5) shouldBe ForwardingSystem.EMOTTAK
         val rules6 = rulesOf(ServiceFilter(name = INNTEKTSFORESPORSEL, both = false, selection = "percentage101", blacklist = TEST_CPA_IDS_FILE))
-        PAYLOAD_MESSAGE.forwardingSystem(rules2) shouldBe ForwardingSystem.EMOTTAK
+        PAYLOAD_MESSAGE.forwardingSystem(rules6) shouldBe ForwardingSystem.EMOTTAK
     }
 
     "resolveForwarding reports UNKNOWN_SERVICE when the service is not configured" {

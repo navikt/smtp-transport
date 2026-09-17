@@ -33,7 +33,7 @@ Matchende meldinger angis med `selection`, en av følgende:
 - `lastDigitN` CPA-IDer med sistesiffer lik N (kan angi flere) rutes ihht. both-setting, resten til EMOTTAK
 - `none` ingen CPA-IDer rutes ihht. both-setting. Brukes sammen med whitelist, eller for å dokumentere tjenester til EMOTTAK eksplisitt
 
-Alle konfigurasjoner må angi `both` og `selection`.
+Alle konfigurasjoner må angi `selection`. `both` er valgfri og er `false` som standard.
 
 Dersom `blacklist` er angitt, vil CPA-IDene i lista IKKE inkluderes, uansett `selection`, disse rutes alltid til EMOTTAK
 
@@ -53,7 +53,7 @@ services = [
 . Listene ligger under `src/main/resources/cpa/<miljø>/`, slik at store lister holdes utenfor selve konfigurasjonsfilen.
 
 Tjenestenavn sammenlignes eksakt (case-sensitivt), mens CPA-ider sammenlignes case-insensitivt.
-Applikasjonen starter ikke hvis en `both` eller `selection` mangler, eller et tjenestenavn er duplisert.
+Applikasjonen starter ikke hvis `selection` mangler, eller et tjenestenavn er duplisert.
 
 ### Utgående meldinger (Kafka → SMTP)
 

@@ -49,6 +49,7 @@ data class ServiceRule(
     }
 
     private fun acceptedThroughLastDigit(lastDigits: Set<Int>, cpaId: String): Boolean {
+        if (cpaId.isEmpty()) return false
         val lastChar = cpaId.substring(cpaId.length - 1)
         if (lastChar.toIntOrNull() == null) return false
         val lastDigit = lastChar.toInt()
@@ -68,7 +69,7 @@ data class ForwardingDecision(
 fun Map<String, ServiceRule>.resolveForwarding(service: String, cpaId: String): ForwardingDecision {
     val rule = this[service]
         ?: return ForwardingDecision(ForwardingSystem.EMOTTAK, FilterMatch.UNKNOWN_SERVICE)
-    val decision = rule.accepts(cpaId)
+    val decision = rule.accepts(cpaId.lowercase())
     val forwardTo = when (rule.filterType) {
         FilterType.MATCHING_TO_BOTH -> if (decision.first) ForwardingSystem.BOTH else ForwardingSystem.EMOTTAK
         FilterType.MATCHING_TO_NEW -> if (decision.first) ForwardingSystem.EBMS else ForwardingSystem.EMOTTAK
