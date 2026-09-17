@@ -198,11 +198,15 @@ data class ServiceFilter(
     val whitelist: String? = null,
     val blacklist: String? = null,
     val selection: String =
-        if (!whitelist.isNullOrBlank()) // exists
+        if (!whitelist.isNullOrBlank()) {
+            // exists
             "NONE"
-        else if (!blacklist.isNullOrBlank()) // exists
+        } else if (!blacklist.isNullOrBlank()) {
+            // exists
             "ALL"
-        else throw IllegalStateException("Config for filter $name Selection verdi ikke satt implisitt eller eksplisitt")
+        } else {
+            throw IllegalStateException("Config for filter $name Selection verdi ikke satt implisitt eller eksplisitt")
+        }
 )
 
 data class CleanupPayloadsJob(
