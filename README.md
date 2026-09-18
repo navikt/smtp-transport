@@ -20,36 +20,40 @@ Rutingslogikken er basert på `ForwardingSystem`-enumen:
 | `BOTH` | Melding legges på Kafka *og* videresendes til T1 |
 
 Avgjørelsen tas av `EmailMsgFilter`. Tjenestenavnet (`Service`) fra ebXML-konvolutten er det primære filteret,
-og hver tjeneste har sin egen liste over godkjente CPA-ider:
+og hver tjeneste kan konfigureres til å sende alle eller noen meldinger til EBMS. Dersom det ikke finnes et filter for en tjeneste,
+vil alle meldinger for tjenesten sendes til EMOTTAK.
 
-- Ukjent tjeneste → `EMOTTAK` (logges som `filterMatch = UNKNOWN_SERVICE`)
-- Kjent tjeneste og godkjent CPA-id → tjenestens konfigurerte `forwardTo` (`filterMatch = CONFIGURED`)
-- Kjent tjeneste, men CPA-id ikke i tjenestens liste → `EMOTTAK` (`filterMatch = CPA_ID_NOT_IN_LIST`)
+Hvert filter settes opp med `both = true|false`  
+- `true` matchende meldinger sendes både til EBMS og EMOTTAK 
+- `false` matchende meldinger sendes bare til EBMS
 
-`filterMatch` logges sammen med `forwardingSystem`, slik at tjenester som med vilje er satt til `EMOTTAK`
-kan skilles fra tjenester vi aldri har sett før.
+Matchende meldinger angis med `selection`, en av følgende:
+- `all` alle meldinger for tjenesten rutes ihht. both-setting
+- `percentageNN` NN prosent (heltall < 100) rutes ihht. both-setting, resten til EMOTTAK
+- `lastDigitN` CPA-IDer med sistesiffer lik N (kan angi flere) rutes ihht. both-setting, resten til EMOTTAK
+- `none` ingen CPA-IDer rutes ihht. both-setting. Brukes sammen med whitelist, eller for å dokumentere tjenester til EMOTTAK eksplisitt
+
+Alle konfigurasjoner må angi `both` og `selection`.
+
+Dersom `blacklist` er angitt, vil CPA-IDene i lista IKKE inkluderes, uansett `selection`, disse rutes alltid til EMOTTAK
+
+Dersom `whitelist` er angitt, vil CPA-IDene i lista ALLTID inkluderes, uansett `selection`, disse rutes alltid til EBMS
 
 Tjenestene konfigureres i `filter-dev.conf` / `filter-prod.conf`:
 
 ```hocon
 services = [
-  { name = "Trekkopplysning", forwardTo = "EBMS", cpaIdsFile = "cpa/prod/trekkopplysning.txt" },
-  { name = "Sykmelding", forwardTo = "EBMS", cpaIdsFile = "all" },
-  { name = "BehandlerKrav", forwardTo = "EMOTTAK", cpaIdsFile = "all" }
+  { name = "Trekkopplysning", both=false, selection = "none", whitelist = "cpa/prod/trekkopplysning.txt" },
+  { name = "Sykmelding", both=false, selection = "all" },
+  { name = "BehandlerKrav", both=false, selection = "none" }
 ]
 ```
 
-`cpaIdsFile` peker på en tekstfil på classpath med én CPA-id per linje (`#` for kommentar, tomme linjer ignoreres),
-eller den reserverte verdien `"all"` som godtar alle CPA-ider for tjenesten. Listene ligger under
-`src/main/resources/cpa/<miljø>/`, slik at store lister holdes utenfor selve konfigurasjonsfilen.
-
-`forwardTo = "EMOTTAK"` kan settes eksplisitt selv om det også er fallback-verdien. Da blir alle tjenester
-synlige i konfigurasjonen, i stedet for at noen bare er utelatt eller kommentert bort. En slik tjeneste må
-bruke `cpaIdsFile = "all"`, siden en CPA-liste ikke har noen effekt når resultatet uansett blir `EMOTTAK`.
+`blacklist`/`whitelist` peker på en tekstfil på classpath (innhold: en CPA-id per linje, # for kommentar)
+. Listene ligger under `src/main/resources/cpa/<miljø>/`, slik at store lister holdes utenfor selve konfigurasjonsfilen.
 
 Tjenestenavn sammenlignes eksakt (case-sensitivt), mens CPA-ider sammenlignes case-insensitivt.
-Applikasjonen starter ikke hvis en `cpaIdsFile` mangler, et tjenestenavn er duplisert, eller en tjeneste
-med `forwardTo = "EMOTTAK"` angir en egen CPA-liste.
+Applikasjonen starter ikke hvis en `both` eller `selection` mangler, eller et tjenestenavn er duplisert.
 
 ### Utgående meldinger (Kafka → SMTP)
 
