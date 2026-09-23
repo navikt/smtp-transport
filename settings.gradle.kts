@@ -26,8 +26,8 @@ dependencyResolutionManagement {
             version("postgres", "42.7.4")
             version("vault-jdbc", "1.3.10")
             version("prometheus", "1.12.4")
-            version("logback", "1.5.19")
-            version("logstash", "7.4")
+            version("logback", "1.6.3")
+            version("logstash", "9.0")
             version("emottak-utils", "0.5.0")
             version("bouncycastle", "1.82")
 
