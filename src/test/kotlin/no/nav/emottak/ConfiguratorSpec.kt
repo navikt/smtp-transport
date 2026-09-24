@@ -136,7 +136,7 @@ class ConfiguratorSpec : StringSpec({
 
     "dev filter routes expected services to EMOTTAK" {
         val toEmottak = config().services
-            .filter { it.both == true }
+            .filter { it.both && it.selection.equals("none", ignoreCase = true) }
             .map { it.name }
         toEmottak shouldContain "BehandlerKrav"
         toEmottak shouldContain "OppgjorsKontroll"
