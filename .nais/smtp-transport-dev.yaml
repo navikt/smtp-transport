@@ -111,5 +111,3 @@ spec:
       value: "DEBUG"
     - name: INBOX_EXPUNGE
       value: "true"
-    - name: CPA_FILTER_OFF
-      value: "true"

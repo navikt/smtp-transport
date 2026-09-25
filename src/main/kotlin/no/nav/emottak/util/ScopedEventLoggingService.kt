@@ -17,6 +17,8 @@ interface ScopedEventLoggingService {
     fun registerEvent(eventType: EventType, payload: Payload)
     fun registerEvent(eventType: EventType, mimeMessage: MimeMessage, requestId: Uuid)
     fun registerEvent(eventType: EventType, error: Exception, requestId: Uuid = Uuid.random())
+    fun registerEvent(eventType: EventType, messageId: Uuid, referenceId: Uuid, eventData: String)
+    fun registerEvent(eventType: EventType, mimeMessage: MimeMessage, requestId: Uuid, eventData: String)
 }
 
 fun eventLoggingService(
@@ -28,12 +30,11 @@ fun eventLoggingService(
         mimeMessage: MimeMessage,
         requestId: Uuid
     ) {
-        publishEvent(
+        registerEvent(
             eventType,
-            mimeMessage.contentID ?: "",
-            mimeMessage.messageID ?: "",
-            "{}",
-            requestId = requestId
+            mimeMessage,
+            requestId,
+            "{}"
         )
     }
 
@@ -77,6 +78,36 @@ fun eventLoggingService(
         )
     }
 
+    override fun registerEvent(
+        eventType: EventType,
+        messageId: Uuid,
+        referenceId: Uuid,
+        eventData: String
+    ) {
+        publishEvent(
+            eventType = eventType,
+            contentId = "",
+            messageId = messageId.toString(),
+            eventData = eventData,
+            requestId = referenceId
+        )
+    }
+
+    override fun registerEvent(
+        eventType: EventType,
+        mimeMessage: MimeMessage,
+        requestId: Uuid,
+        eventData: String
+    ) {
+        publishEvent(
+            eventType = eventType,
+            contentId = mimeMessage.contentID ?: "",
+            messageId = mimeMessage.messageID ?: "",
+            eventData = eventData,
+            requestId = requestId
+        )
+    }
+
     private fun publishEvent(
         eventType: EventType,
         contentId: String,
@@ -93,9 +124,13 @@ fun eventLoggingService(
             Instant.now()
         )
 
-        eventLoggingService.logEvent(event)
-            .onSuccess { log.debug("Event published successfully: {}", event) }
-            .onFailure { log.error("Error while publishing event: ${it.stackTraceToString()}") }
+        runCatching {
+            eventLoggingService.logEvent(event)
+        }.onSuccess {
+            log.debug("Event published successfully: {}", event)
+        }.onFailure { e ->
+            log.error("Error while publishing event: ${e.stackTraceToString()}")
+        }
     }
 }
 
@@ -127,6 +162,24 @@ fun fakeEventLoggingService(): ScopedEventLoggingService =
             eventType: EventType,
             error: Exception,
             requestId: Uuid
+        ) {
+            logEvent(eventType)
+        }
+
+        override fun registerEvent(
+            eventType: EventType,
+            messageId: Uuid,
+            referenceId: Uuid,
+            eventData: String
+        ) {
+            logEvent(eventType)
+        }
+
+        override fun registerEvent(
+            eventType: EventType,
+            mimeMessage: MimeMessage,
+            requestId: Uuid,
+            eventData: String
         ) {
             logEvent(eventType)
         }

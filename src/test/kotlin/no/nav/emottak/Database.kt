@@ -12,6 +12,8 @@ import no.nav.emottak.utils.sql.sqldelight.UuidAdapter
 import org.flywaydb.core.Flyway
 import org.flywaydb.core.api.output.MigrateResult
 import org.testcontainers.containers.PostgreSQLContainer
+import java.sql.DriverManager
+import kotlin.uuid.Uuid
 
 private const val MIGRATIONS_PATH = "filesystem:./build/generated/migrations"
 private const val TEST_DATA_PATH = "filesystem:./src/test/resources/testDb"
@@ -34,6 +36,25 @@ fun runMigrations(): MigrateResult {
 private fun Spec.jdbcDriver(): JdbcDriver {
     val containerExtension = JdbcDatabaseContainerExtension(container())
     return install(containerExtension).asJdbcDriver()
+}
+
+/**
+ * Test helper for backdating the created_at column of payloads, bypassing the DEFAULT now()
+ * so cleanup logic can be exercised without waiting for real time to pass.
+ */
+fun backdatePayloads(referenceId: Uuid, contentIds: List<String>, days: Int): Int {
+    val container = container()
+    return DriverManager.getConnection(container.jdbcUrl, container.username, container.password).use { connection ->
+        connection.prepareStatement(
+            "UPDATE payload SET created_at = now() - (INTERVAL '1 day' * ?) " +
+                "WHERE reference_id = ? AND content_id = ANY(?)"
+        ).use { statement ->
+            statement.setInt(1, days)
+            statement.setObject(2, referenceId.toString(), java.sql.Types.OTHER)
+            statement.setArray(3, connection.createArrayOf("varchar", contentIds.toTypedArray()))
+            statement.executeUpdate()
+        }
+    }
 }
 
 private val container: () -> PostgreSQLContainer<Nothing> = {

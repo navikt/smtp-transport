@@ -3,11 +3,10 @@ package no.nav.emottak.util
 import jakarta.mail.internet.MimeMessage
 import net.logstash.logback.marker.LogstashMarker
 import net.logstash.logback.marker.Markers
-import no.nav.emottak.config
+import no.nav.emottak.configuration.ForwardingSystem
 import no.nav.emottak.log
 import no.nav.emottak.smtp.EmailMsg
 import no.nav.emottak.smtp.ForwardableMimeMessage
-import no.nav.emottak.utils.environment.getEnvVar
 import org.w3c.dom.Document
 import org.w3c.dom.NodeList
 import javax.xml.namespace.NamespaceContext
@@ -15,67 +14,39 @@ import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.xpath.XPathConstants
 import javax.xml.xpath.XPathFactory
 
-private val typesToEbms = config().ebmsFilter.typesToEbms
-private val typesToBoth = config().ebmsFilter.typesToBoth
-private val cpaIds = config().ebmsFilter.cpaId
-private val cpaFilterOff = getEnvVar("CPA_FILTER_OFF", "false").toBoolean()
-
-fun EmailMsg.filterMessageForwarding(): ForwardableMimeMessage {
-    val (forwardingSystem, service, cpaId, action) = this.computeForwardingDecision()
-    return when (forwardingSystem) {
-        ForwardingSystem.EBMS -> ForwardableMimeMessage(forwardingSystem, null, service, cpaId, action)
-        ForwardingSystem.EMOTTAK -> ForwardableMimeMessage(forwardingSystem, MimeMessage(originalMimeMessage), service, cpaId, action)
-        ForwardingSystem.BOTH -> ForwardableMimeMessage(forwardingSystem, MimeMessage(originalMimeMessage), service, cpaId, action)
-    }
-}
-
-fun EmailMsg.getForwardingSystem(): ForwardingSystem = computeForwardingDecision().forwardingSystem
-
-private data class ForwardingDecision(
-    val forwardingSystem: ForwardingSystem,
-    val service: String,
-    val cpaId: String,
-    val action: String
-)
-
-private fun EmailMsg.computeForwardingDecision(): ForwardingDecision {
+fun EmailMsg.filterMessageForwarding(rules: Map<String, ServiceRule> = filterRules()): ForwardableMimeMessage {
     val ebxmlDocument = getEnvelope().toXmlDocument()
-    val envelopeServiceName = ebxmlDocument?.getEbxmlServiceName() ?: "UnparsableService"
-    val envelopeCpaId = ebxmlDocument?.getEbxmlCpaId() ?: "UnparsableCpaId"
-    val envelopeAction = ebxmlDocument?.getEbxmlAction() ?: "UnparsableAction"
+    val service = ebxmlDocument?.getEbxmlServiceName() ?: "UnparsableService"
+    val cpaId = ebxmlDocument?.getEbxmlCpaId() ?: "UnparsableCpaId"
+    val action = ebxmlDocument?.getEbxmlAction() ?: "UnparsableAction"
 
-    val forwardingSystem = if (isAcceptedCpaId(envelopeCpaId)) {
-        if (typesToBoth.contains(envelopeServiceName)) {
-            ForwardingSystem.BOTH
-        } else if (typesToEbms.contains(envelopeServiceName)) {
-            ForwardingSystem.EBMS
-        } else {
-            ForwardingSystem.EMOTTAK
-        }
-    } else {
-        ForwardingSystem.EMOTTAK
-    }
+    val forwardingDecision = rules.resolveForwarding(service, cpaId)
+    val forwardingSystem = forwardingDecision.forwardTo
 
     val marker: LogstashMarker = Markers.appendEntries(
         mapOf(
             "requestId" to this.requestId.toString(),
             "smtpSender" to this.senderAddress,
             "smtpSubject" to (this.headers["Subject"] ?: "-"),
-            "service" to envelopeServiceName,
-            "cpaId" to envelopeCpaId,
-            "action" to envelopeAction,
+            "service" to service,
+            "cpaId" to cpaId,
+            "action" to action,
             "forwardingSystem" to forwardingSystem,
-            "sourceSystem" to (this.headers["X-Mailer"] ?: "-")
+            "filterMatch" to forwardingDecision.filterMatch,
+            "sourceSystem" to (this.headers["X-Mailer"] ?: "-"),
+            "envelopeSizeBytes" to this.envelopeSizeBytes,
+            "payloadSizeBytes" to this.payloadSizeBytes,
+            "totalSizeBytes" to this.totalSizeBytes,
+            "partCount" to this.parts.size
         )
     )
     log.info(marker, "Message forwarding system identified")
 
-    return ForwardingDecision(forwardingSystem, envelopeServiceName, envelopeCpaId, envelopeAction)
-}
-
-private fun isAcceptedCpaId(cpaId: String): Boolean {
-    if (cpaFilterOff) return true
-    return cpaIds.any { it.equals(cpaId, ignoreCase = true) }
+    return when (forwardingSystem) {
+        ForwardingSystem.EBMS -> ForwardableMimeMessage(forwardingSystem, null, service, cpaId, action)
+        ForwardingSystem.EMOTTAK -> ForwardableMimeMessage(forwardingSystem, MimeMessage(originalMimeMessage), service, cpaId, action)
+        ForwardingSystem.BOTH -> ForwardableMimeMessage(forwardingSystem, MimeMessage(originalMimeMessage), service, cpaId, action)
+    }
 }
 
 private fun ByteArray.toXmlDocument(): Document? {
@@ -120,8 +91,4 @@ private fun Document.getXmlElementValue(elementName: String): String {
         log.warn("Failed to check XML for element '$elementName': ${e.message}")
         e::class.simpleName ?: "UnknownError"
     }
-}
-
-enum class ForwardingSystem {
-    EBMS, EMOTTAK, BOTH
 }

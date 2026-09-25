@@ -1,0 +1,13 @@
+# CPA-ider for tjenesten Sykmelding
+# En CPA-id per linje. Linjer som starter med # og tomme linjer ignoreres.
+
+# Grunerløkka legesenter - Pridok
+nav:112931
+# SLETTEBAKKEN LEGESENTER DA - WebMed
+nav:114663
+# SOKNDAL LEGEKONTOR - PasientSky
+nav:112819
+# LARDAL LEGEKONTOR - Infodoc
+nav:121320
+# SYKEHUSET ØSTFOLD - Sykehuspartner
+nav:108314

@@ -16,7 +16,7 @@ dependencyResolutionManagement {
             version("flyway", "9.16.3")
             version("hikari", "5.0.1")
             version("suspendapp", "0.5.0")
-            version("ktor", "3.4.3")
+            version("ktor", "3.5.1")
             version("token-validation-ktor", "5.0.30")
             version("jakarta-mail", "2.1.2")
             version("eclipse-angus", "2.0.2")
@@ -28,7 +28,7 @@ dependencyResolutionManagement {
             version("prometheus", "1.12.4")
             version("logback", "1.5.19")
             version("logstash", "7.4")
-            version("emottak-utils", "0.3.6")
+            version("emottak-utils", "0.5.0")
             version("bouncycastle", "1.82")
 
             library("arrow-core", "io.arrow-kt", "arrow-core").versionRef("arrow")
@@ -90,8 +90,8 @@ dependencyResolutionManagement {
         create("testLibs") {
             version("arrow", "2.0.0")
             version("testPostgres", "1.18.0")
-            version("ktor", "3.4.3")
-            version("ktor-server-test", "3.4.3")
+            version("ktor", "3.5.1")
+            version("ktor-server-test", "3.5.1")
             version("kotest", "5.9.1")
             version("mock-oauth2", "2.1.2")
             version("testcontainers", "1.21.4")
