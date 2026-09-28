@@ -115,7 +115,7 @@ class ConfiguratorSpec : StringSpec({
 
     "dev filter routes expected services to EBMS" {
         val toEbms = config().services
-            .filter { it.both == false }
+            .filter { !it.both }
             .map { it.name }
         toEbms.size shouldBe 6
         toEbms shouldContain "Inntektsforesporsel"
@@ -128,7 +128,7 @@ class ConfiguratorSpec : StringSpec({
 
     "dev filter routes expected services to BOTH" {
         val toBoth = config().services
-            .filter { it.both == true }
+            .filter { it.both }
             .map { it.name }
         toBoth.size shouldBeGreaterThan 3
         toBoth shouldContain "urn:oasis:names:tc:ebxml-msg:service"
