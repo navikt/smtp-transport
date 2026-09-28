@@ -5,7 +5,7 @@ plugins {
     val kotlinVersion = "2.4.10"
     kotlin("jvm") version kotlinVersion
     kotlin("plugin.serialization") version kotlinVersion
-    id("io.ktor.plugin") version "3.5.1"
+    id("io.ktor.plugin") version "3.5.2"
     id("app.cash.sqldelight") version "2.0.2"
     id("org.jlleitschuh.gradle.ktlint") version "11.6.1"
     id("com.gradleup.shadow") version "9.2.2"
