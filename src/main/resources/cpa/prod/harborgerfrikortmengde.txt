@@ -1,0 +1,35 @@
+# CPA-ider for tjenesten HarBorgerFrikortMengde
+# En CPA-id per linje. Linjer som starter med # og tomme linjer ignoreres.
+
+#### FASE 1
+# Sandnes Legekontor
+883992342_889640782_011
+# Herøy Legekontor
+872417982_889640782_011
+
+#### FASE 1.5
+# Landfalløya Legesenter
+# 894512172_889640782_011
+# Rindal legekontor
+# 940138051_889640782_011
+# Moa Legesenter
+# 929911709_889640782_012
+# Gressvik Legekontor
+# 924576766_889640782_011
+# Sandefjord Legesenter
+# nav:116452
+# Storhamar Legesenter
+# 830367802_889640782_011
+# Leirfjord Legekontor
+# 945034572_889640782_011
+# ØRSKOG LEGEKONTOR
+# 864978932_889640782_011
+# 929911709_889640782_018
+
+#### FASE 2
+# Helse Bergen HF
+# nav:87891
+
+#### FASE 3
+# Akershus universitetssykehus
+# 983971636_889640782_001
