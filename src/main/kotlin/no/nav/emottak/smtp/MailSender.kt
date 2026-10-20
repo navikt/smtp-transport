@@ -6,6 +6,7 @@ import jakarta.activation.DataHandler
 import jakarta.mail.Address
 import jakarta.mail.Message.RecipientType.TO
 import jakarta.mail.MessagingException
+import jakarta.mail.SendFailedException
 import jakarta.mail.Session
 import jakarta.mail.Transport
 import jakarta.mail.internet.ContentType
@@ -96,7 +97,9 @@ class MailSender(
     private suspend fun sendMessage(wrapper: MimeMessageWrapper, messageType: MessageType, service: String, action: String, senderAddress: String) =
         withContext(Dispatchers.IO) {
             catch({
-                sendSynchronized(wrapper.mimeMessage, wrapper.mimeMessage.allRecipients)
+                val recipients = wrapper.mimeMessage.allRecipients?.takeIf { it.isNotEmpty() }
+                    ?: throw SendFailedException("Message has no recipients")
+                sendSynchronized(wrapper.mimeMessage, recipients)
                 meterRegistry.incrementMessagesSent(messageType.name, service, action, senderAddress)
                 eventLoggingService.registerEvent(
                     MESSAGE_SENT_VIA_SMTP,
@@ -105,7 +108,7 @@ class MailSender(
                     Json.encodeToString(
                         mapOf(
                             "senderAddress" to (wrapper.mimeMessage.from?.firstOrNull()?.toString() ?: ""),
-                            "receiverAddress" to (wrapper.mimeMessage.allRecipients?.firstOrNull()?.toString() ?: "")
+                            "receiverAddress" to recipients.first().toString()
                         )
                     )
                 )
