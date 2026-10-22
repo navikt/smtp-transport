@@ -45,10 +45,10 @@ spec:
     cpuThresholdPercentage: 50
   resources:
     limits:
-      memory: "4096Mi"
+      memory: "2048Mi"
     requests:
       cpu: "200m"
-      memory: "2048Mi"
+      memory: "1536Mi"
   ingresses:
     - "https://smtp-transport.intern.nav.no"
   kafka:
