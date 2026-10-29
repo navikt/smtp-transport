@@ -89,8 +89,6 @@ spec:
 #      value: "devnull@example.com"
     - name: SMTP_FROM_ADDRESS
       value: "ebms-prod@es.nav.no"
-    - name: SMTP_T1_EMOTTAK_ADDRESS
-      value: "mottak-a01wavl00008.adeo.no@es.nav.no"
     - name: POSTGRES_JDBC_URL
       value: "jdbc:postgresql://a01dbvl037.adeo.no:5432/emottak-smtp-transport-payload"
     - name: POSTGRES_MOUNT_PATH
