@@ -173,11 +173,9 @@ class ConfiguratorSpec : StringSpec({
         prodRules["PasientlisteForesporsel"]!!.selectionType.shouldBe(SelectionType.ALL)
         prodRules["PasientlisteForesporsel"]!!.whitelist.shouldBeEmpty()
         prodRules["PasientlisteForesporsel"]!!.blacklist.shouldBeEmpty()
-        prodRules["Sykmelding"]!!.selectionType.shouldBe(SelectionType.CPAID_FORMAT)
-        prodRules["Sykmelding"]!!.whitelist shouldContain "nav:112931"
+        prodRules["Sykmelding"]!!.selectionType.shouldBe(SelectionType.ALL)
         prodRules["Sykmelding"]!!.blacklist.shouldBeEmpty()
-        prodRules["Legemelding"]!!.selectionType.shouldBe(SelectionType.CPAID_FORMAT)
-        prodRules["Legemelding"]!!.whitelist shouldContain "nav:112935"
+        prodRules["Legemelding"]!!.selectionType.shouldBe(SelectionType.ALL)
         prodRules["Legemelding"]!!.blacklist.shouldBeEmpty()
         prodRules["HarBorgerFrikortMengde"]!!.selectionType.shouldBe(SelectionType.CPAID_FORMAT)
         prodRules["HarBorgerFrikortMengde"]!!.whitelist shouldContain "883992342_889640782_011"
