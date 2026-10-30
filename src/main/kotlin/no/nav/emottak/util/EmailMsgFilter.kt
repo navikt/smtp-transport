@@ -69,15 +69,14 @@ private fun Document.resolveSignalForwarding(action: String): ForwardingDecision
         "RefToMessageId",
         pathPrefix
     ).trim()
-    val forwardingSystem = when {
-        EMOTTAK_MESSAGE_ID.matches(refToMessageId) -> ForwardingSystem.EMOTTAK
-        refToMessageId.isValidUuid() -> ForwardingSystem.EBMS
+    return when {
+        EMOTTAK_MESSAGE_ID.matches(refToMessageId) -> ForwardingDecision(ForwardingSystem.EMOTTAK, FilterMatch.BY_REF_TO_MESSAGE_ID)
+        refToMessageId.isValidUuid() -> ForwardingDecision(ForwardingSystem.EBMS, FilterMatch.BY_REF_TO_MESSAGE_ID)
         else -> {
             log.warn("Signal RefToMessageId is missing or unparseable; forwarding to both systems")
-            return ForwardingDecision(ForwardingSystem.BOTH, FilterMatch.UNKNOWN_REF_TO_MESSAGE_ID)
+            ForwardingDecision(ForwardingSystem.BOTH, FilterMatch.UNKNOWN_REF_TO_MESSAGE_ID)
         }
     }
-    return ForwardingDecision(forwardingSystem, FilterMatch.BY_REF_TO_MESSAGE_ID)
 }
 
 private fun ByteArray.toXmlDocument(): Document? {
