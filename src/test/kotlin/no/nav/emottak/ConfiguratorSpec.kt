@@ -6,6 +6,7 @@ import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContain
+import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeSameInstanceAs
@@ -131,7 +132,7 @@ class ConfiguratorSpec : StringSpec({
             .filter { it.both }
             .map { it.name }
         toBoth.size shouldBeGreaterThan 3
-        toBoth shouldContain "urn:oasis:names:tc:ebxml-msg:service"
+        toBoth shouldNotContain "urn:oasis:names:tc:ebxml-msg:service"
     }
 
     "dev filter routes expected services to EMOTTAK" {
@@ -154,16 +155,11 @@ class ConfiguratorSpec : StringSpec({
         services.map { it.name } shouldContain "Sykmelding"
         services.map { it.name } shouldContain "Legemelding"
         services.map { it.name } shouldContain "HarBorgerFrikortMengde"
-        services.single { it.name == "urn:oasis:names:tc:ebxml-msg:service" }
-            .both shouldBe true
     }
 
     "prod filter CPA lists are resolved from file and differ from dev" {
         val prodRules = prodConfig.services.toServiceRules()
-        prodRules.size shouldBe 7
-        prodRules["urn:oasis:names:tc:ebxml-msg:service"]!!.selectionType.shouldBe(SelectionType.ALL)
-        prodRules["urn:oasis:names:tc:ebxml-msg:service"]!!.whitelist.shouldBeEmpty()
-        prodRules["urn:oasis:names:tc:ebxml-msg:service"]!!.blacklist.shouldBeEmpty()
+        prodRules.size shouldBe 6
         prodRules["Inntektsforesporsel"]!!.selectionType.shouldBe(SelectionType.ALL)
         prodRules["Inntektsforesporsel"]!!.whitelist.shouldBeEmpty()
         prodRules["Inntektsforesporsel"]!!.blacklist.shouldBeEmpty()
@@ -186,7 +182,7 @@ class ConfiguratorSpec : StringSpec({
 
     "prod filter routes expected services to EBMS" {
         val toEbms = prodConfig.services
-            .filter { it.both == false }
+            .filter { !it.both }
             .map { it.name }
         toEbms.size shouldBe 6
         toEbms shouldContain "Inntektsforesporsel"
@@ -195,13 +191,5 @@ class ConfiguratorSpec : StringSpec({
         toEbms shouldContain "Sykmelding"
         toEbms shouldContain "Legemelding"
         toEbms shouldContain "HarBorgerFrikortMengde"
-    }
-
-    "prod filter routes expected services to BOTH" {
-        val toBoth = prodConfig.services
-            .filter { it.both == true }
-            .map { it.name }
-        toBoth.size shouldBe 1
-        toBoth shouldContain "urn:oasis:names:tc:ebxml-msg:service"
     }
 })

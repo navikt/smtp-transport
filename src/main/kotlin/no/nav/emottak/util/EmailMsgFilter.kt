@@ -14,13 +14,20 @@ import javax.xml.parsers.DocumentBuilderFactory
 import javax.xml.xpath.XPathConstants
 import javax.xml.xpath.XPathFactory
 
+private const val SIGNAL_SERVICE = "urn:oasis:names:tc:ebxml-msg:service"
+private val EMOTTAK_MESSAGE_ID = Regex("""[0-9]{8}-[0-9]{6}-[0-9]+@(?:qa\.)?ebxml\.nav\.no""")
+
 fun EmailMsg.filterMessageForwarding(rules: Map<String, ServiceRule> = filterRules()): ForwardableMimeMessage {
     val ebxmlDocument = getEnvelope().toXmlDocument()
     val service = ebxmlDocument?.getEbxmlServiceName() ?: "UnparsableService"
     val cpaId = ebxmlDocument?.getEbxmlCpaId() ?: "UnparsableCpaId"
     val action = ebxmlDocument?.getEbxmlAction() ?: "UnparsableAction"
 
-    val forwardingDecision = rules.resolveForwarding(service, cpaId)
+    val forwardingDecision = if (service == SIGNAL_SERVICE && ebxmlDocument != null) {
+        ebxmlDocument.resolveSignalForwarding(action)
+    } else {
+        rules.resolveForwarding(service, cpaId)
+    }
     val forwardingSystem = forwardingDecision.forwardTo
 
     val marker: LogstashMarker = Markers.appendEntries(
@@ -49,6 +56,29 @@ fun EmailMsg.filterMessageForwarding(rules: Map<String, ServiceRule> = filterRul
     }
 }
 
+private fun Document.resolveSignalForwarding(action: String): ForwardingDecision {
+    val pathPrefix = when (action) {
+        "Acknowledgment" -> "//*[local-name()='Header']/*[local-name()='Acknowledgment']/*"
+        "MessageError" -> "//*[local-name()='MessageHeader']/*[local-name()='MessageData']/*"
+        else -> {
+            log.warn("Unknown signal action; forwarding to both systems")
+            return ForwardingDecision(ForwardingSystem.BOTH, FilterMatch.UNKNOWN_REF_TO_MESSAGE_ID)
+        }
+    }
+    val refToMessageId = getXmlElementValue(
+        "RefToMessageId",
+        pathPrefix
+    ).trim()
+    return when {
+        EMOTTAK_MESSAGE_ID.matches(refToMessageId) -> ForwardingDecision(ForwardingSystem.EMOTTAK, FilterMatch.BY_REF_TO_MESSAGE_ID)
+        refToMessageId.isValidUuid() -> ForwardingDecision(ForwardingSystem.EBMS, FilterMatch.BY_REF_TO_MESSAGE_ID)
+        else -> {
+            log.warn("Signal RefToMessageId is missing or unparseable; forwarding to both systems")
+            ForwardingDecision(ForwardingSystem.BOTH, FilterMatch.UNKNOWN_REF_TO_MESSAGE_ID)
+        }
+    }
+}
+
 private fun ByteArray.toXmlDocument(): Document? {
     return try {
         val dbFactory = DocumentBuilderFactory.newInstance()
@@ -69,7 +99,7 @@ private fun Document.getEbxmlServiceName(): String = this.getXmlElementValue("Se
 private fun Document.getEbxmlCpaId(): String = this.getXmlElementValue("CPAId")
 private fun Document.getEbxmlAction(): String = this.getXmlElementValue("Action")
 
-private fun Document.getXmlElementValue(elementName: String): String {
+private fun Document.getXmlElementValue(elementName: String, pathPrefix: String = "//*"): String {
     return try {
         val nsUri = this.documentElement.namespaceURI
         val xPath = XPathFactory.newInstance().newXPath()
@@ -80,7 +110,7 @@ private fun Document.getXmlElementValue(elementName: String): String {
                 override fun getPrefixes(namespaceURI: String?): MutableIterator<String> = mutableListOf<String>().iterator()
             }
         }
-        val localNameExpr = "//*[local-name()='$elementName']"
+        val localNameExpr = "$pathPrefix[local-name()='$elementName']"
         val nodeList = xPath.evaluate(localNameExpr, this, XPathConstants.NODESET) as NodeList
         return if (nodeList.length == 1) {
             nodeList.item(0).textContent
