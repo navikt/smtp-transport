@@ -177,8 +177,8 @@ class ConfiguratorSpec : StringSpec({
         prodRules["Sykmelding"]!!.blacklist.shouldBeEmpty()
         prodRules["Legemelding"]!!.selectionType.shouldBe(SelectionType.ALL)
         prodRules["Legemelding"]!!.blacklist.shouldBeEmpty()
-        prodRules["HarBorgerFrikortMengde"]!!.selectionType.shouldBe(SelectionType.CPAID_FORMAT)
-        prodRules["HarBorgerFrikortMengde"]!!.whitelist shouldContain "883992342_889640782_011"
+        prodRules["HarBorgerFrikortMengde"]!!.selectionType.shouldBe(SelectionType.ALL)
+        prodRules["HarBorgerFrikortMengde"]!!.whitelist.shouldBeEmpty()
         prodRules["HarBorgerFrikortMengde"]!!.blacklist.shouldBeEmpty()
     }
 
