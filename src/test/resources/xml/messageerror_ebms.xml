@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<SOAP:Envelope xmlns:SOAP="http://schemas.xmlsoap.org/soap/envelope/"
+               xmlns:eb="http://www.oasis-open.org/committees/ebxml-msg/schema/msg-header-2_0.xsd"
+               xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:schemaLocation="http://schemas.xmlsoap.org/soap/envelope/ http://www.oasis-open.org/committees/ebxml-msg/schema/envelope.xsd http://www.oasis-open.org/committees/ebxml-msg/schema/msg-header-2_0.xsd http://www.oasis-open.org/committees/ebxml-msg/schema/msg-header-2_0.xsd">
+    <SOAP:Header xmlns:eb="http://www.oasis-open.org/committees/ebxml-msg/schema/msg-header-2_0.xsd"
+                 xsi:schemaLocation="http://www.oasis-open.org/committees/ebxml-msg/schema/msg-header-2_0.xsd http://www.oasis-open.org/committees/ebxml-msg/schema/msg-header-2_0.xsd">
+        <eb:MessageHeader SOAP:mustUnderstand="1" eb:version="2.0">
+            <eb:From>
+                <eb:PartyId eb:type="orgnummer">123456789</eb:PartyId>
+                <eb:PartyId eb:type="ENH">12345</eb:PartyId>
+            </eb:From>
+            <eb:To>
+                <eb:PartyId eb:type="HER">79768</eb:PartyId>
+                <eb:PartyId eb:type="ENH">889640782</eb:PartyId>
+                <eb:PartyId eb:type="orgnummer">889640782</eb:PartyId>
+            </eb:To>
+            <eb:CPAId>997506499_889640782_11</eb:CPAId>
+            <eb:ConversationId>e624f480-96cb-4f4f-a510-0721a5322aaf</eb:ConversationId>
+            <eb:Service>urn:oasis:names:tc:ebxml-msg:service</eb:Service>
+            <eb:Action>MessageError</eb:Action>
+            <eb:MessageData>
+                <eb:MessageId>6E9D540B-0715-49AC-A7D7-5DDC66414722</eb:MessageId>
+                <eb:Timestamp>2026-10-30T04:29:26+01:00</eb:Timestamp>
+                <eb:RefToMessageId>3c0003a4-a0ee-4c34-b01b-b4d1943ff58f</eb:RefToMessageId>
+            </eb:MessageData>
+            <eb:Description xml:lang="NO">{"MSH-system":"DIPS
+                Communicator","MSH-versjon":"7.5.7.50018","fagsystem":"VISION"}
+            </eb:Description>
+        </eb:MessageHeader>
+        <eb:ErrorList SOAP:mustUnderstand="1" eb:highestSeverity="Error" eb:version="2.0">
+            <eb:Error eb:errorCode="DeliveryFailure" eb:severity="Error" eb:shortDescription="">
+                <eb:Description xml:lang="en">description</eb:Description>
+            </eb:Error>
+        </eb:ErrorList>
+        <Signature xmlns="http://www.w3.org/2000/09/xmldsig#">
+            <SignedInfo>
+                <CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/>
+                <SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/>
+                <Reference URI="">
+                    <Transforms>
+                        <Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>
+                        <Transform Algorithm="http://www.w3.org/TR/1999/REC-xpath-19991116">
+                            <XPath xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/">
+                                not(ancestor-or-self::node()[@SOAP-ENV:actor="urn:oasis:names:tc:ebxml-msg:actor:nextMSH"]
+                                |
+                                ancestor-or-self::node()[@SOAP-ENV:actor="http://schemas.xmlsoap.org/soap/actor/next"])
+                            </XPath>
+                        </Transform>
+                        <Transform Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/>
+                    </Transforms>
+                    <DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/>
+                    <DigestValue>digest</DigestValue>
+                </Reference>
+            </SignedInfo>
+            <SignatureValue>
+                signatureValue
+            </SignatureValue>
+            <KeyInfo>
+                <X509Data>
+                    <X509Certificate>
+                        certificate
+                    </X509Certificate>
+                </X509Data>
+                <KeyValue>
+                    <RSAKeyValue>
+                        <Modulus>
+                            modulus
+                        </Modulus>
+                        <Exponent>
+                            AQAB
+                        </Exponent>
+                    </RSAKeyValue>
+                </KeyValue>
+            </KeyInfo>
+        </Signature>
+    </SOAP:Header>
+    <SOAP:Body>
+    </SOAP:Body>
+</SOAP:Envelope>

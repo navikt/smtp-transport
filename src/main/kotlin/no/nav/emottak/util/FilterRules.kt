@@ -25,7 +25,7 @@ enum class SelectionType {
     NONE
 }
 
-enum class FilterMatch { BLACK_LISTED, WHITE_LISTED, ALL, BY_PERCENTAGE, BY_CPAID_MATCH, UNKNOWN_SERVICE }
+enum class FilterMatch { BLACK_LISTED, WHITE_LISTED, ALL, BY_PERCENTAGE, BY_CPAID_MATCH, UNKNOWN_SERVICE, BY_REF_TO_MESSAGE_ID, UNKNOWN_REF_TO_MESSAGE_ID }
 
 data class ServiceRule(
     val filterType: FilterType,
