@@ -60,7 +60,7 @@ private fun ByteArray.toXmlDocument(): Document? {
         doc.documentElement.normalize()
         doc
     } catch (e: Exception) {
-        log.warn("Failed to parse XML: ${e.message}")
+        log.warn("Failed to parse XML: ${e.message}", e)
         null
     }
 }
