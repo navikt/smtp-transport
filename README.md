@@ -23,6 +23,12 @@ Avgjørelsen tas av `EmailMsgFilter`. Tjenestenavnet (`Service`) fra ebXML-konvo
 og hver tjeneste kan konfigureres til å sende alle eller noen meldinger til EBMS. Dersom det ikke finnes et filter for en tjeneste,
 vil alle meldinger for tjenesten sendes til EMOTTAK.
 
+Signalmeldinger (`Service = urn:oasis:names:tc:ebxml-msg:service`) er unntatt tjenestefilteret.
+Disse rutes etter `RefToMessageId` i `Acknowledgment` for kvitteringer og i
+`MessageHeader/MessageData` for `MessageError`: formatet
+`20261030-105647-30444@ebxml.nav.no` (og `@qa.ebxml.nav.no`) sendes kun til EMOTTAK,
+mens UUID sendes kun til EBMS. Manglende eller ukjent format sendes til begge systemer.
+
 Hvert filter settes opp med `both = true|false`  
 - `true` matchende meldinger sendes både til EBMS og EMOTTAK 
 - `false` matchende meldinger sendes bare til EBMS
