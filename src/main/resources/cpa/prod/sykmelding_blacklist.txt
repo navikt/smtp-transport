@@ -1,0 +1,5 @@
+# Blacklist av CPA-ider for tjenesten Sykmelding
+# Disse sendes til gamle emottak enn så lenge
+# En CPA-id per linje. Linjer som starter med # og tomme linjer ignoreres.
+
+nav:47185
