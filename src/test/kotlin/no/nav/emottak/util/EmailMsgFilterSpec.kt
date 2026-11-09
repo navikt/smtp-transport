@@ -43,8 +43,133 @@ class EmailMsgFilterSpec : StringSpec({
     fun String.forwardingSystem(rules: Map<String, ServiceRule> = filterRules()): ForwardingSystem =
         emlToEmailMsg().filterMessageForwarding(rules).forwardingSystem
 
-    "filterMessageForwarding returns BOTH when signal message service is configured as BOTH" {
-        SIGNAL_MESSAGE.forwardingSystem() shouldBe ForwardingSystem.BOTH
+    fun xmlToEmailMsg(xml: String): EmailMsg {
+        val message = MimeMessage(session(config.smtp), classLoader.getResourceAsStream(SIGNAL_MESSAGE))
+        message.setText(xml, "UTF-8", "xml")
+        return MimeMessageWrapper(message, Uuid.random()).mapEmailMsg()
+    }
+
+    fun signalMessage(
+        refToMessageId: String?,
+        action: String = "Acknowledgment",
+        additionalReference: String = ""
+    ): EmailMsg {
+        val reference = refToMessageId?.let { "<eb:RefToMessageId>$it</eb:RefToMessageId>" } ?: ""
+        return xmlToEmailMsg(
+            """
+            <SOAP:Envelope xmlns:SOAP="http://schemas.xmlsoap.org/soap/envelope/"
+                           xmlns:eb="http://www.oasis-open.org/committees/ebxml-msg/schema/msg-header-2_0.xsd">
+                <SOAP:Header>
+                    <eb:MessageHeader>
+                        <eb:CPAId>$CPAID_IN_TESTFILE</eb:CPAId>
+                        <eb:Service>urn:oasis:names:tc:ebxml-msg:service</eb:Service>
+                        <eb:Action>$action</eb:Action>
+                        <eb:MessageData>${if (action == "MessageError") reference else ""}</eb:MessageData>
+                    </eb:MessageHeader>
+                    ${if (action == "Acknowledgment") "<eb:Acknowledgment>$reference</eb:Acknowledgment>" else ""}
+                    $additionalReference
+                </SOAP:Header>
+                <SOAP:Body/>
+            </SOAP:Envelope>
+            """.trimIndent()
+        )
+    }
+
+    for ((fixture, expectedSystem) in mapOf(
+        "acknowledgment_emottak" to ForwardingSystem.EMOTTAK,
+        "acknowledgment_ebms" to ForwardingSystem.EBMS,
+        "messageerror_emottak" to ForwardingSystem.EMOTTAK,
+        "messageerror_ebms" to ForwardingSystem.EBMS
+    )) {
+        "filterMessageForwarding routes XML fixture $fixture to $expectedSystem" {
+            val xml = requireNotNull(classLoader.getResourceAsStream("xml/$fixture.xml"))
+                .bufferedReader().use { it.readText() }
+            val forwardable = xmlToEmailMsg(xml).filterMessageForwarding()
+            forwardable.forwardingSystem shouldBe expectedSystem
+            if (expectedSystem == ForwardingSystem.EBMS) {
+                forwardable.forwardableMimeMessage.shouldBeNull()
+            } else {
+                forwardable.forwardableMimeMessage.shouldNotBeNull()
+            }
+        }
+    }
+
+    "filterMessageForwarding routes the existing acknowledgment to EMOTTAK despite repeated references" {
+        SIGNAL_MESSAGE.forwardingSystem() shouldBe ForwardingSystem.EMOTTAK
+    }
+
+    "filterMessageForwarding routes signals by reference instead of service rules" {
+        val rules = rulesOf(ServiceFilter(name = "urn:oasis:names:tc:ebxml-msg:service", both = true, selection = "all"))
+        for (action in listOf("Acknowledgment", "MessageError")) {
+            for (ref in listOf("20261030-105647-30444@ebxml.nav.no", "20261030-105647-30444@qa.ebxml.nav.no")) {
+                val forwardable = signalMessage(ref, action).filterMessageForwarding(rules)
+                forwardable.forwardingSystem shouldBe ForwardingSystem.EMOTTAK
+                forwardable.forwardableMimeMessage.shouldNotBeNull()
+                forwardable.action shouldBe action
+            }
+            for (ref in listOf("a86bd780-c345-4be3-876b-fefc4b7a8777", "A86BD780-C345-4BE3-876B-FEFC4B7A8777")) {
+                val forwardable = signalMessage(ref, action).filterMessageForwarding(emptyMap())
+                forwardable.forwardingSystem shouldBe ForwardingSystem.EBMS
+                forwardable.forwardableMimeMessage.shouldBeNull()
+            }
+        }
+    }
+
+    "filterMessageForwarding defaults signals with missing or unparseable references to BOTH" {
+        for (action in listOf("Acknowledgment", "MessageError")) {
+            for (ref in listOf(null, "", " ", "not-a-message-id", "1-1-1-1-1", "20261030-105647-30444@example.com", "20261030-105647@ebxml.nav.no")) {
+                val forwardable = signalMessage(ref, action).filterMessageForwarding(emptyMap())
+                forwardable.forwardingSystem shouldBe ForwardingSystem.BOTH
+                forwardable.forwardableMimeMessage.shouldNotBeNull()
+            }
+        }
+    }
+
+    "filterMessageForwarding uses only the MessageData reference for MessageError" {
+        val extra = "<eb:Acknowledgment><eb:RefToMessageId>20261030-105647-30444@ebxml.nav.no</eb:RefToMessageId></eb:Acknowledgment>"
+        signalMessage("a86bd780-c345-4be3-876b-fefc4b7a8777", "MessageError", extra)
+            .filterMessageForwarding().forwardingSystem shouldBe ForwardingSystem.EBMS
+        signalMessage(null, "MessageError", extra)
+            .filterMessageForwarding().forwardingSystem shouldBe ForwardingSystem.BOTH
+    }
+
+    "filterMessageForwarding uses only the Acknowledgment reference for acknowledgments" {
+        val extra = """
+            <eb:MessageHeader><eb:MessageData>
+                <eb:RefToMessageId>20261030-105647-30444@ebxml.nav.no</eb:RefToMessageId>
+            </eb:MessageData></eb:MessageHeader>
+        """.trimIndent()
+        signalMessage("a86bd780-c345-4be3-876b-fefc4b7a8777", additionalReference = extra)
+            .filterMessageForwarding().forwardingSystem shouldBe ForwardingSystem.EBMS
+        signalMessage(null, additionalReference = extra)
+            .filterMessageForwarding().forwardingSystem shouldBe ForwardingSystem.BOTH
+    }
+
+    "filterMessageForwarding defaults duplicate signal references to BOTH" {
+        for (action in listOf("Acknowledgment", "MessageError")) {
+            val reference = "<eb:RefToMessageId>20261030-105647-30444@ebxml.nav.no</eb:RefToMessageId>"
+            val extra = if (action == "Acknowledgment") {
+                "<eb:Acknowledgment>$reference</eb:Acknowledgment>"
+            } else {
+                "<eb:MessageHeader><eb:MessageData>$reference</eb:MessageData></eb:MessageHeader>"
+            }
+            signalMessage("a86bd780-c345-4be3-876b-fefc4b7a8777", action, extra)
+                .filterMessageForwarding().forwardingSystem shouldBe ForwardingSystem.BOTH
+        }
+    }
+
+    "filterMessageForwarding defaults unknown signal actions to BOTH" {
+        signalMessage("a86bd780-c345-4be3-876b-fefc4b7a8777", "Unknown")
+            .filterMessageForwarding().forwardingSystem shouldBe ForwardingSystem.BOTH
+    }
+
+    "filterMessageForwarding trims whitespace around signal references" {
+        for (action in listOf("Acknowledgment", "MessageError")) {
+            signalMessage(" \n20261030-105647-30444@ebxml.nav.no\n ", action)
+                .filterMessageForwarding().forwardingSystem shouldBe ForwardingSystem.EMOTTAK
+            signalMessage(" \na86bd780-c345-4be3-876b-fefc4b7a8777\n ", action)
+                .filterMessageForwarding().forwardingSystem shouldBe ForwardingSystem.EBMS
+        }
     }
 
     "filterMessageForwarding returns EBMS when service is configured as EBMS" {
@@ -65,8 +190,9 @@ class EmailMsgFilterSpec : StringSpec({
     }
 
     "filterMessageForwarding matches CPA ids case-insensitively" {
-        val rules = rulesOf(ServiceFilter(name = "urn:oasis:names:tc:ebxml-msg:service", both = true, selection = "all", whitelist = TEST_CPA_IDS_FILE))
-        SIGNAL_MESSAGE.forwardingSystem(rules) shouldBe ForwardingSystem.BOTH
+        val rules = rulesOf(ServiceFilter(name = INNTEKTSFORESPORSEL, both = true, selection = "none", whitelist = TEST_CPA_IDS_FILE))
+        PAYLOAD_MESSAGE.forwardingSystem(rules) shouldBe ForwardingSystem.BOTH
+        rules.resolveForwarding(INNTEKTSFORESPORSEL, CPAID_IN_TESTFILE.uppercase()).forwardTo shouldBe ForwardingSystem.BOTH
     }
 
     "filterMessageForwarding returns EMOTTAK when service CPA id is not in the list" {
