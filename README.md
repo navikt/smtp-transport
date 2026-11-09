@@ -8,8 +8,8 @@ Tjeneste som fungerer som bro mellom e-post og Kafka for ebXML-meldingsutvekslin
 
 `MailProcessor` poller en POP3-innboks på et fast intervall og behandler e-postene i batches:
 
-- **Multipart-meldinger** (ebXML-melding med vedlegg): ebXML-konvolutten legges på Kafka-topic `*.smtp.in.ebxml.payload`, mens vedlegget lagres i PostgreSQL.
-- **Singlepart-meldinger** (ebXML-signalmeldinger som Acknowledgment og MessageError): legges direkte på Kafka-topic `*.smtp.in.ebxml.signal`.
+- **Signalmeldinger** (`Service = urn:oasis:names:tc:ebxml-msg:service`, som Acknowledgment og MessageError): ebXML-konvolutten legges på Kafka-topic `*.smtp.in.ebxml.signal`, uavhengig av om e-posten er singlepart eller multipart.
+- **Payload-meldinger** (andre ebXML-tjenester): ebXML-konvolutten legges på Kafka-topic `*.smtp.in.ebxml.payload`, mens eventuelle vedlegg lagres i PostgreSQL.
 
 Rutingslogikken er basert på `ForwardingSystem`-enumen:
 
