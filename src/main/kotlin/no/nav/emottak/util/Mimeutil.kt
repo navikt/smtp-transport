@@ -38,7 +38,7 @@ fun EmailMsg.getEnvelope() = parts
 val EmailMsg.envelopeSizeBytes: Int
     get() = parts.firstOrNull()?.bytes?.size ?: 0
 
-// Combined size of all attachments, zero for singlepart (signal) messages
+// Combined size of all attachments, zero for singlepart messages.
 val EmailMsg.payloadSizeBytes: Int
     get() = parts.drop(1).sumOf { it.bytes.size }
 

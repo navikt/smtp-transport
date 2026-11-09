@@ -23,6 +23,7 @@ import no.nav.emottak.smtp.EmailMsg
 import no.nav.emottak.smtp.MailReader
 import no.nav.emottak.smtp.MailSender
 import no.nav.emottak.util.ScopedEventLoggingService
+import no.nav.emottak.util.isSignalMessage
 import no.nav.emottak.util.toPayloadMessage
 import no.nav.emottak.util.toSignalMessage
 import java.util.concurrent.atomic.AtomicInteger
@@ -133,9 +134,9 @@ class MailProcessor(
     }
 
     private suspend fun publishToKafka(emailMsg: EmailMsg) {
-        when (emailMsg.multipart) {
-            true -> publishPayloadMessage(emailMsg.toPayloadMessage(emailMsg.requestId), emailMsg.senderAddress)
-            false -> publishSignalMessage(emailMsg.toSignalMessage(emailMsg.requestId), emailMsg.senderAddress)
+        when (emailMsg.isSignalMessage) {
+            true -> publishSignalMessage(emailMsg.toSignalMessage(emailMsg.requestId), emailMsg.senderAddress)
+            false -> publishPayloadMessage(emailMsg.toPayloadMessage(emailMsg.requestId), emailMsg.senderAddress)
         }
     }
 
