@@ -159,7 +159,7 @@ class ConfiguratorSpec : StringSpec({
 
     "prod filter CPA lists are resolved from file and differ from dev" {
         val prodRules = prodConfig.services.toServiceRules()
-        prodRules.size shouldBe 6
+        prodRules.size shouldBe 7
         prodRules["Inntektsforesporsel"]!!.selectionType.shouldBe(SelectionType.ALL)
         prodRules["Inntektsforesporsel"]!!.whitelist.shouldBeEmpty()
         prodRules["Inntektsforesporsel"]!!.blacklist.shouldBeEmpty()
@@ -173,6 +173,9 @@ class ConfiguratorSpec : StringSpec({
         prodRules["Sykmelding"]!!.blacklist.size shouldBe 1
         prodRules["Legemelding"]!!.selectionType.shouldBe(SelectionType.ALL)
         prodRules["Legemelding"]!!.blacklist.size shouldBe 1
+        prodRules["HarBorgerFrikort"]!!.selectionType.shouldBe(SelectionType.ALL)
+        prodRules["HarBorgerFrikort"]!!.blacklist.shouldBeEmpty()
+        prodRules["HarBorgerFrikort"]!!.whitelist.shouldBeEmpty()
         prodRules["HarBorgerFrikortMengde"]!!.selectionType.shouldBe(SelectionType.ALL)
         prodRules["HarBorgerFrikortMengde"]!!.whitelist.shouldBeEmpty()
         prodRules["HarBorgerFrikortMengde"]!!.blacklist.shouldBeEmpty()
@@ -182,12 +185,13 @@ class ConfiguratorSpec : StringSpec({
         val toEbms = prodConfig.services
             .filter { !it.both }
             .map { it.name }
-        toEbms.size shouldBe 6
+        toEbms.size shouldBe 7
         toEbms shouldContain "Inntektsforesporsel"
         toEbms shouldContain "Trekkopplysning"
         toEbms shouldContain "PasientlisteForesporsel"
         toEbms shouldContain "Sykmelding"
         toEbms shouldContain "Legemelding"
+        toEbms shouldContain "HarBorgerFrikort"
         toEbms shouldContain "HarBorgerFrikortMengde"
     }
 })
