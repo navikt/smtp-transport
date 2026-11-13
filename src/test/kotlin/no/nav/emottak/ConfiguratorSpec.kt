@@ -174,7 +174,8 @@ class ConfiguratorSpec : StringSpec({
         prodRules["Legemelding"]!!.selectionType.shouldBe(SelectionType.ALL)
         prodRules["Legemelding"]!!.blacklist.size shouldBe 1
         prodRules["HarBorgerFrikort"]!!.selectionType.shouldBe(SelectionType.ALL)
-        prodRules["HarBorgerFrikort"]!!.blacklist.size shouldBe 1
+        prodRules["HarBorgerFrikort"]!!.blacklist.shouldBeEmpty()
+        prodRules["HarBorgerFrikort"]!!.whitelist.shouldBeEmpty()
         prodRules["HarBorgerFrikortMengde"]!!.selectionType.shouldBe(SelectionType.ALL)
         prodRules["HarBorgerFrikortMengde"]!!.whitelist.shouldBeEmpty()
         prodRules["HarBorgerFrikortMengde"]!!.blacklist.shouldBeEmpty()
