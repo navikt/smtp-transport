@@ -17,6 +17,9 @@ import javax.xml.xpath.XPathFactory
 private const val SIGNAL_SERVICE = "urn:oasis:names:tc:ebxml-msg:service"
 private val EMOTTAK_MESSAGE_ID = Regex("""[0-9]{8}-[0-9]{6}-[0-9]+@(?:qa\.)?ebxml\.nav\.no""")
 
+val EmailMsg.isSignalMessage: Boolean
+    get() = forwardableMimeMessage.service == SIGNAL_SERVICE
+
 fun EmailMsg.filterMessageForwarding(rules: Map<String, ServiceRule> = filterRules()): ForwardableMimeMessage {
     val ebxmlDocument = getEnvelope().toXmlDocument()
     val service = ebxmlDocument?.getEbxmlServiceName() ?: "UnparsableService"
